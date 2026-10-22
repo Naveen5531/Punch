@@ -1,0 +1,26 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.punch.attendance'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.punch.attendance'
+        minSdk 26
+        targetSdk 34
+        versionCode 23
+        versionName '3.2'
+    }
+    // Fixed key so every new build installs as an update over the previous one.
+    signingConfigs {
+        punch { storeFile file('punch.keystore'); storePassword 'punch1234'; keyAlias 'punch'; keyPassword 'punch1234' }
+    }
+    buildTypes {
+        debug { signingConfig signingConfigs.punch }
+        release { minifyEnabled false; signingConfig signingConfigs.punch }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+    // Google sign-in (Authorization API) for Google sync to the user's Drive
+    implementation 'com.google.android.gms:play-services-auth:21.2.0'
+}

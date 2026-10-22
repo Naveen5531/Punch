@@ -1,0 +1,51 @@
+# Builds Punch on every push to main and publishes the APK to the punch-apk branch (Punch.apk).
+# Optional repository secrets EJ_SERVICE, EJ_TEMPLATE, EJ_KEY turn on password reset by mail (EmailJS).
+name: Punch build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.9" }
+      - name: Fill in the mail settings from secrets
+        env:
+          EJS: ${{ secrets.EJ_SERVICE }}
+          EJT: ${{ secrets.EJ_TEMPLATE }}
+          EJK: ${{ secrets.EJ_KEY }}
+        shell: bash
+        run: |
+          F=app/src/main/assets/index.html
+          python3 - "$F" <<'PY'
+          import os, sys
+          p = sys.argv[1]; s = open(p).read()
+          for k, v in (("__EJ_SERVICE__", "EJS"), ("__EJ_TEMPLATE__", "EJT"), ("__EJ_KEY__", "EJK")):
+              val = os.environ.get(v, "").replace("\\", "").replace("'", "")
+              if val: s = s.replace(k, val)
+          open(p, "w").write(s)
+          PY
+      - name: Build
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon 2>&1 | tee build.log
+      - name: Publish APK and status
+        if: always()
+        shell: bash
+        run: |
+          mkdir out
+          { echo "commit: ${GITHUB_SHA::7}"; echo "result: ${{ steps.build.outcome }}"; grep -E "error:|FAILED|AAPT|What went wrong" build.log | head -60 || true; } > out/status.txt
+          cat out/status.txt
+          [ -f app/build/outputs/apk/debug/app-debug.apk ] && cp app/build/outputs/apk/debug/app-debug.apk out/Punch.apk
+          cd out && git init -q && git checkout -q -b punch-apk && git add . 
+          git -c user.name=github-actions -c user.email=actions@github.com commit -qm "Punch build ${GITHUB_SHA::7}: ${{ steps.build.outcome }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" punch-apk
