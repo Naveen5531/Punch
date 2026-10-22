@@ -1682,8 +1682,8 @@ const MAILH='2067f1632009e080d67a854e10a413b1001cf19ff9dac518b0df5c46d65a32bc',E
 const sh256=async v=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')};
 let MAIL='';
 /* ===== EMAIL SETUP (EmailJS) — paste your 3 values here ===== */
-/* Filled in when the APK is built, from the repository secrets EJ_SERVICE, EJ_TEMPLATE and EJ_KEY. */
-const EJ={service:'__EJ_SERVICE__',template:'__EJ_TEMPLATE__',key:'__EJ_KEY__'};
+/* EmailJS settings for the reset mail (the same as before; an EmailJS public key is meant to sit in the app). */
+const EJ={service:'Naveen@1243',template:'template_ts1f3mq',key:'GYdp2calx6qNHSZq0'};
 if(/^__/.test(EJ.service))EJ.service=EJ.template=EJ.key='';
 let code='',exp=0;
 /* The password set on this phone (after a reset); null = the first password, checked by its hash. */
