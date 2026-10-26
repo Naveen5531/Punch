@@ -147,3 +147,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - Comp off expiry (Leave): set how many days a comp off stays valid; the oldest valid one is used first; shows valid-till dates, days left, used and expired, with a warning a week before expiry.
 - Attendance: "Monthly attendance PDF" makes a one-page A4 report (date, status, in, out, hours, overtime, totals) to print or save.
 - Home: a reminder card when Google backup is off (once a month) or the last backup is old, with "Back up now".
+
+## Changes in v4.2
+- Comp off is used up as soon as it is applied: a pending comp off request (Leave or Attendance) is taken out of the balance straight away, and comp off booked for a future date counts as used (before, future days were not counted until the day passed). Cancel or reject gives it back.
+- Apply for leave: new "CO · Comp off" type, checked against the comp off balance; approving it marks those days as Comp off.

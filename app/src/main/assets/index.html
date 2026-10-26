@@ -1345,6 +1345,7 @@ function coSync(){
     if(x.co&&!(typeof P==='function'&&P().holDbl))S.coL[x.k]=x.co;else delete S.coL[x.k];
     if(S.marks[x.k]==='compoff')S.coU[x.k]=1;else delete S.coU[x.k];
     if(x.st==='Leave'&&S.lt&&S.lt[x.k])S.lvL[x.k]=S.lt[x.k];else delete S.lvL[x.k]});
+  Object.keys(S.marks).forEach(k=>{if(S.marks[k]==='compoff')S.coU[k]=1});  // future comp off days count as used as soon as they are booked
   Object.keys(S.coU).forEach(k=>{if(k>tk&&S.marks[k]!=='compoff')delete S.coU[k]});
   Object.keys(S.marks).forEach(k=>{if(k>tk&&S.marks[k]==='compoff')S.coU[k]=1});
   Object.keys(S.lvL).forEach(k=>{if(k>tk&&!(S.marks[k]==='leave'&&S.lt&&S.lt[k]))delete S.lvL[k]});
@@ -1378,14 +1379,18 @@ function coDetail(){const V=+S.coDays||0,today=dayKey(Date.now()),add=(k,n)=>{co
     over+=need});
   E.forEach(e=>{e.exp=!!(e.till&&today>e.till&&e.left>0);e.daysLeft=e.till?Math.round((new Date(e.till+'T00:00:00')-new Date(today+'T00:00:00'))/864e5):null});
   return{E,over,V,today}}
-function coStats(){const d=coDetail(),e=d.E.reduce((s,x)=>s+x.v,0),u=Object.keys(S.coU||{}).length,x=d.E.filter(z=>z.exp).reduce((s,z)=>s+z.left,0),av=d.E.filter(z=>!z.exp).reduce((s,z)=>s+z.left,0);
-  return{e,u,x,b:r2(av-d.over)}}
+/* Comp off applied but not yet approved: counted as used straight away, so it never shows as available. */
+function coPending(){const marked=k=>S.marks[k]==='compoff';let n=0;
+  (S.req||[]).forEach(q=>{if(q.t==='CO'&&q.s==='Pending')n+=q.n||0});
+  (S.areq||[]).forEach(q=>{if(q.v==='compoff'&&q.s==='Pending')n+=(q.days||[]).filter(k=>!marked(k)).length});return n}
+function coStats(){const d=coDetail(),e=d.E.reduce((s,x)=>s+x.v,0),pn=coPending(),u=Object.keys(S.coU||{}).length+pn,x=d.E.filter(z=>z.exp).reduce((s,z)=>s+z.left,0),av=d.E.filter(z=>!z.exp).reduce((s,z)=>s+z.left,0);
+  return{e,u,x,p:pn,b:r2(av-d.over-pn)}}
 function coCard(){const el=$('coCard');if(!el)return;const d=coDetail(),st=coStats(),soon=d.E.filter(e=>!e.exp&&e.left>0&&e.daysLeft!==null&&e.daysLeft<=7);
-  el.innerHTML=`<h2>Comp off</h2><div class="tiles" style="grid-template-columns:repeat(3,1fr)"><div class="tile"><span>Earned</span><b>${fN(st.e)}</b></div><div class="tile"><span>Available</span><b style="${st.b<0?'color:var(--out)':''}">${fN(st.b)}</b></div><div class="tile"><span>Expired</span><b>${fN(st.x)}</b></div></div>
+  el.innerHTML=`<h2>Comp off</h2><div class="tiles" style="grid-template-columns:repeat(2,1fr)"><div class="tile"><span>Earned</span><b>${fN(st.e)}</b></div><div class="tile"><span>Available</span><b style="${st.b<0?'color:var(--out)':''}">${fN(st.b)}</b></div><div class="tile"><span>Used${st.p?' / applied':''}</span><b>${fN(st.u)}</b></div><div class="tile"><span>Expired</span><b>${fN(st.x)}</b></div></div>
 ${soon.length?`<p class="sub" style="color:var(--out)">${soon.map(e=>`${fN(e.left)} comp off from ${fd(e.k)} expires ${e.daysLeft===0?'today':'in '+e.daysLeft+' day'+(e.daysLeft===1?'':'s')}`).join('<br>')}</p>`:''}
 <div class="row" id="coExpRow"><label for="coDays">Valid for (days after earning)</label><input class="in2" id="coDays" type="number" min="0" max="365" value="${d.V}" style="max-width:100px"></div><p class="sub">${d.V?`Each comp off must be used within ${d.V} days. The oldest valid one is used first.`:'0 = comp offs never expire. Check the DMart rule with HR and set it here.'}</p>
 ${d.E.length?`<div class="hbox">${d.E.slice().reverse().map(e=>`<div class="hrow"><div><b>Earned ${fd(e.k)}</b><small>${e.till?'Valid till '+fd(e.till):'No expiry'}${e.used.length?' · Used on '+e.used.map(fd).join(', '):''}</small></div><b style="${e.exp?'color:var(--out)':''}">${e.left<=0?'Used':e.exp?'Expired':e.daysLeft!==null?e.daysLeft+' day'+(e.daysLeft===1?'':'s')+' left':'Available'}</b></div>`).join('')}</div>`:'<p class="sub">No comp off earned yet. Mark a worked holiday as "Holiday + Present" to earn one.</p>'}
-${d.over>0?`<p class="sub" style="color:var(--out)">${fN(d.over)} comp off taken without a valid one to use.</p>`:''}`}
+${st.p?`<p class="sub">${fN(st.p)} comp off applied and waiting for approval, already taken out of the balance.</p>`:''}${d.over>0?`<p class="sub" style="color:var(--out)">${fN(d.over)} comp off taken without a valid one to use.</p>`:''}`}
 /* ===== Holidays: file reading (xlsx / csv), date parsing, template builder ===== */
 const MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
 const y4=y=>y<100?2000+y:y;
@@ -2265,11 +2270,14 @@ function lvStats(){const c=lvCfg(),[sy,sm]=c.start.split('-').map(Number),n=new 
 function lvTotal(){const s=lvStats(),co=coStats();let t=0;ACC.forEach(x=>t+=s[x].b);return{t:r2(t+co.b),s,co}}
 function lvDays(a,b){const o=[];if(!a||!b||b<a)return o;const d=new Date(a+'T00:00:00'),e=new Date(b+'T00:00:00');
   for(;d<=e&&o.length<400;d.setDate(d.getDate()+1)){const k=dayKey(d.getTime());if(woFor(k).includes(d.getDay())||holInfo(k)||S.marks[k]==='holiday')continue;o.push(k)}return o}
-function lvApprove(q,by){const days=lvDays(q.a,q.b),st=lvStats()[q.t];
+function lvApprove(q,by){const days=lvDays(q.a,q.b);
+  if(q.t==='CO'){if(!days.length)return 'No working days in that range.';const av=coStats().b+(q.s==='Pending'?(q.n||0):0);if(days.length>av+1e-9)return `Not enough comp off (${fN(Math.max(0,av))} left, ${days.length} needed).`;
+    S.lt=S.lt||{};days.forEach(k=>{S.marks[k]='compoff';delete S.lt[k]});q.days=days;q.n=days.length;q.s='Approved';q.by=by;save();coSync();return ''}
+  const st=lvStats()[q.t];
   if(!days.length)return 'No working days in that range.';
   if(st.b!==null&&days.length>st.b+1e-9)return `Not enough ${q.t} balance (${st.b} left, ${days.length} needed).`;
   S.lt=S.lt||{};days.forEach(k=>{S.marks[k]='leave';S.lt[k]=q.t});q.days=days;q.n=days.length;q.s='Approved';q.by=by;save();coSync();return ''}
-function lvCancel(q){(q.days||[]).forEach(k=>{if(S.lt&&S.lt[k]===q.t&&S.marks[k]==='leave'){delete S.marks[k];delete S.lt[k];if(S.lvL)delete S.lvL[k]}});q.s='Cancelled';save();coSync()}
+function lvCancel(q){if(q.t==='CO')(q.days||[]).forEach(k=>{if(S.marks[k]==='compoff')delete S.marks[k]});(q.days||[]).forEach(k=>{if(S.lt&&S.lt[k]===q.t&&S.marks[k]==='leave'){delete S.marks[k];delete S.lt[k];if(S.lvL)delete S.lvL[k]}});q.s='Cancelled';save();coSync()}
 function optStats(){const ys=[...new Set([...(S.hols||[]),...(S.opts||[])].map(h=>h.k.slice(0,4)))].sort(),cy=String(new Date().getFullYear());
   let y=S.holYear&&ys.includes(S.holYear)?S.holYear:(ys.includes(cy)?cy:(ys.find(v=>v>cy)||ys[ys.length-1]||cy));
   const mine=a=>(a||[]).filter(h=>regionOk(h)&&h.k.startsWith(y)),M=mine(S.hols),O=mine(S.opts),taken=O.filter(h=>S.marks[h.k]==='holiday').length,q=lvCfg().optQ;
@@ -2285,8 +2293,8 @@ function renderLeave(){
   $('lvRule').textContent=`Credited every month: PL ${r2(c.PL.r)}, SL ${r2(c.SL.r)}, CL ${r2(c.CL.r)}. Counting from ${c.start} (${s.months} month${s.months===1?'':'s'} credited so far, including this month).`;
   const nt=Object.keys(S.marks).filter(k=>S.marks[k]==='leave'&&!(S.lt&&S.lt[k])).length;
   $('lvNote').hidden=!nt;$('lvNote').textContent=nt?`${nt} leave day${nt===1?'':'s'} marked without a type ${nt===1?'is':'are'} not deducted. In Reports pick the leave type for those days.`:'';
-  const ts=$('lvT');if(!ts.dataset.b){ts.dataset.b=1;ts.innerHTML=LT.map(([t,n])=>`<option value="${t}">${t} · ${n}</option>`).join('')}
-  {const tv=ts.value||'PL',av=s[tv];$('lvAvail').textContent=av.b===null?tv+' has no balance limit.':'Available '+tv+': '+av.b}
+  const ts=$('lvT');if(!ts.dataset.b){ts.dataset.b=1;ts.innerHTML=LT.map(([t,n])=>`<option value="${t}">${t} · ${n}</option>`).join('')+'<option value="CO">CO · Comp off</option>'}
+  {const tv=ts.value||'PL';if(tv==='CO')$('lvAvail').textContent='Available comp off: '+fN(T.co.b);else{const av=s[tv];$('lvAvail').textContent=av.b===null?tv+' has no balance limit.':'Available '+tv+': '+av.b}}
   $('lvReqs').innerHTML=S.req.length?`<h3 class="hh">My requests</h3><div class="hbox">`+S.req.slice(0,10).map(q=>`<div class="hrow"><div><b>${q.a===q.b?fd(q.a):fd(q.a)+' to '+fd(q.b)}</b><small>${q.t} · ${q.n} day${q.n===1?'':'s'} · ${q.s}${q.why?' · '+esc(q.why):''}</small></div>${q.s==='Pending'||q.s==='Approved'?`<button class="ghost" data-cq="${q.id}" style="width:auto;padding:7px 14px">Cancel</button>`:''}</div>`).join('')+'</div>':'';
   /* holiday calendar split */
   const row=(h,opt)=>{const tk=S.marks[h.k]==='holiday';return `<div class="hrow"><div><b>${fdt(h.k)}</b><small>${esc(h.n)}${h.o?' · '+esc(h.o):''}${h.r?' · '+esc(h.r):''}</small></div>${opt?`<button class="ghost" data-ok="${h.k}" style="width:auto;padding:7px 14px${tk?';background:#7c3aed;color:#fff':''}">${tk?'Taken':'Take'}</button>`:''}</div>`};
@@ -2302,7 +2310,8 @@ function renderLeave(){
 const lvName=t=>(LT.find(x=>x[0]===t)||[t,t])[1];
 $('lvGo').onclick=()=>{const t=$('lvT').value,a=$('lvA').value,b=$('lvB').value||a,why=$('lvW').value.trim();
   if(!a){say('Choose the from date.',true);return}if(b<a){say('The to date is before the from date.',true);return}
-  const d=lvDays(a,b).length,st=lvStats()[t];if(!d){say('Those dates are week offs or holidays, so no leave is needed.',true);return}
+  const d=lvDays(a,b).length,st=t==='CO'?{b:coStats().b}:lvStats()[t];if(!d){say('Those dates are week offs or holidays, so no leave is needed.',true);return}
+  if(t==='CO'&&d>st.b+1e-9){say(`Only ${fN(Math.max(0,st.b))} comp off available but you need ${d}.`,true);return}
   if(st.b!==null&&d>st.b+1e-9){say(`Only ${st.b} ${t} left but you need ${d}. Choose fewer days or LOP.`,true);return}
   const q={id:Date.now(),t,a,b,n:d,why,s:'Pending',at:Date.now()};S.req.unshift(q);
   if(!lvCfg().appr){const m=lvApprove(q,'Auto');if(m){say(m,true);S.req.shift();return}}
