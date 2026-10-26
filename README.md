@@ -122,3 +122,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 ## Changes in v3.6
 - Quick switch: a "⇄ Admin" / "⇄ Employee" button in the top bar switches login without logging out. It always asks for that login's user ID and password.
 - Hike %: admin sets "Hike %" and "Hike from month" on the Salary page. From that month on, Basic, HRA, Conveyance and Special allowance go up by the %, and PF follows the new Basic. The calculation shows each step; employees see a "Hike x% from <month>" line with the final figures.
+
+## Changes in v3.7
+- Worked holiday is paid once: by default it earns a comp off (no extra double-pay day). Turn on "Pay double for a worked holiday (instead of a comp off)" to get double pay instead; then no comp off is earned. Before, both were given, so paid days could go above the days in the month.
+- Home dashboard "Net pay" now always shows the current month (it used the month picked on the Salary page) and counts Conveyance.

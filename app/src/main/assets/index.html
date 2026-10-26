@@ -817,7 +817,7 @@ function renderRep(){
   const full=c('Full day')+c('Shift completed')+c('Marked present'),half=c('Half day');
   $('repSum').innerHTML=`<div class="hero"><div class="big">${full+half/2}</div><div>days attendance<br><small>Full ${full}, Half ${half}</small></div></div><div class="tiles"><div class="tile"><span>Time worked</span><b>${hm(tot)}</b></div><div class="tile ot"><span>Overtime</span><b>${hm(ot)}</b></div></div><div class="chips"><span class="chip" style="--c:#0f8a6d"><i></i>Present<b>${full}</b></span><span class="chip" style="--c:#d99a06"><i></i>Half day<b>${half}</b></span><span class="chip" style="--c:#dc2626"><i></i>Absent<b>${c('Absent')+c('Marked absent')}</b></span><span class="chip" style="--c:#3b6fd4"><i></i>Week off<b>${c('Week off')}</b></span><span class="chip" style="--c:#7c3aed"><i></i>Holiday<b>${c('Holiday')}</b></span><span class="chip" style="--c:#ea580c"><i></i>Leave<b>${c('Leave')}</b></span><span class="chip" style="--c:#0891b2"><i></i>Comp off taken<b>${c('Comp off')}</b></span><span class="chip" style="--c:#0891b2"><i></i>Comp off earned<b>${r.reduce((s,x)=>s+(x.co||0),0)}</b></span><span class="chip" style="--c:var(--mute)"><i></i>No check-in<b>${c('No check-in')}</b></span></div>`;
   $('rep').innerHTML=r.map(x=>{
-    if(WORK.includes(x.st))return `<div class="log" style="--s:${sc(x.st)}"><b>${dy(x.d)}</b><span class="dur">${hm(x.ms)}</span><span>${esc(loc)}${x.lat!==undefined?` (${f5(x.lat)}, ${f5(x.lng)})`:''}<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}<br><b style="color:var(--s)">${x.st}${x.live?' so far':''}</b>${x.ot?`, Overtime ${hm(x.ot)}`:''}${x.hol?', Holiday work'+(P().holDbl?' (double pay)':'')+(x.co?`, Comp off +${x.co} earned`:''):''}</span><div class="mk"><button data-k="${x.k}" data-v="holiday" class="${x.hol?'on':''}">Holiday</button></div></div>`;
+    if(WORK.includes(x.st))return `<div class="log" style="--s:${sc(x.st)}"><b>${dy(x.d)}</b><span class="dur">${hm(x.ms)}</span><span>${esc(loc)}${x.lat!==undefined?` (${f5(x.lat)}, ${f5(x.lng)})`:''}<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}<br><b style="color:var(--s)">${x.st}${x.live?' so far':''}</b>${x.ot?`, Overtime ${hm(x.ot)}`:''}${x.hol?', Holiday work'+(P().holDbl?' (double pay)':(x.co?`, Comp off +${x.co} earned`:'')):''}</span><div class="mk"><button data-k="${x.k}" data-v="holiday" class="${x.hol?'on':''}">Holiday</button></div></div>`;
     const btn=(v,t)=>`<button data-k="${x.k}" data-v="${v}" class="${x.st===t||x.st==='Marked '+t.toLowerCase()?'on':''}">${t}</button>`;
     const note=x.st==='No check-in'?(x.short!==undefined?`Only ${hm(x.short)} at workplace, not counted`:'No check-in'):x.st==='Not joined'?'Before joining date':x.st==='Week off'&&!S.marks[x.k]?'Weekly off':x.st==='Holiday'&&!S.marks[x.k]?'Holiday: '+esc(hname(x.k)):x.st==='Leave'?'Leave'+(S.lt&&S.lt[x.k]?' ('+S.lt[x.k]+')':' (no type, not deducted)'):x.hp?'Holiday + Present (double pay, comp off earned)':'Marked by admin';
     return `<div class="log" style="--s:${sc(x.st)}"><b>${dy(x.d)}</b><span class="dur" style="color:var(--s)">${x.short!==undefined?hm(x.short):x.st==='No check-in'?'':x.st}</span><span>${note}${x.a!==undefined?`<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}`:''}</span>${x.st==='Not joined'?'':!isAdm()?`<div class="mk"><button data-rq="${x.k}">Request change</button></div>`:`<div class="mk">${btn('present','Present')}${btn('weekoff','Week off')}${btn('holiday','Holiday')}${LT.map(x=>x[0]).map(t=>`<button data-k="${x.k}" data-v="leave" data-lt="${t}" class="${x.st==='Leave'&&S.lt&&S.lt[x.k]===t?'on':''}">${t}</button>`).join('')}${btn('compoff','Comp off')}${btn('absent','Absent')}</div>`}</div>`;
@@ -868,9 +868,9 @@ $('wo').onchange=e=>{const s=new Set(S.wo||[]),d=+e.target.dataset.d;if(e.target
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function hikeOpts(){const n=new Date(),o=[['','Not set']];for(let i=-12;i<=12;i++){const d=new Date(n.getFullYear(),n.getMonth()+i,1);o.push([`${d.getFullYear()}-${pad(d.getMonth()+1)}`,`${MN[d.getMonth()]} ${d.getFullYear()}`])}return o}
 function cycOpts(){const n=new Date(),o=[];let y=n.getFullYear(),m=n.getMonth();for(let i=0;i<12;i++){o.push([`${y}-${pad(m+1)}`,`${MN[m]} ${y}`]);m--;if(m<0){m=11;y--}}return o}
-const PD={month:'',hike:0,hikeFrom:'',basicAmt:0,hraAmt:0,convAmt:0,splAmt:0,pfMode:'',pfPct:12,basis:'cal',ot:1.5,hpd:9,vpf:0,pt:0,oth:0,leavePaid:1,holPaid:1,holDbl:1,pf:0,pfEr:0,esi:0};
+const PD={month:'',hike:0,hikeFrom:'',basicAmt:0,hraAmt:0,convAmt:0,splAmt:0,pfMode:'',pfPct:12,basis:'cal',ot:1.5,hpd:9,vpf:0,pt:0,oth:0,leavePaid:1,holPaid:1,holDbl:0,pf:0,pfEr:0,esi:0};
 const PF=[['month','Salary month','select',cycOpts()],['hike','Hike % (on full salary)','number'],['hikeFrom','Hike from month','select',hikeOpts()],['basicAmt','Basic per month (₹), before hike','number'],['hraAmt','HRA per month (₹)','number'],['convAmt','Conveyance per month (₹)','number'],['splAmt','Special allowance per month (₹)','number'],['basis','Days basis','select',[['cal','Calendar days in month'],['work','Working days (no week offs)'],['26','Fixed 26 days'],['30','Fixed 30 days']]],['ot','Overtime pay','select',[[0,'Off'],[1,'1x'],[1.5,'1.5x'],[2,'2x']]],['hpd','Hours in a day','number'],['pfMode','PF calculation','select',[['pct','% of earned Basic (as on payslip)'],['fix','Fixed amount (₹)']]],['pfPct','PF % of Basic','number'],['pf','PF employee, fixed (₹)','number'],['pfEr','PF employer, fixed (₹)','number'],['vpf','VPF (₹)','number'],['esi','ESI (₹)','number'],['pt','Professional tax (₹)','number'],['oth','Other deduction (₹)','number']];
-const PT=[['leavePaid','Leave is paid'],['holPaid','Holidays are paid'],['holDbl','Double pay if worked on a holiday']];
+const PT=[['leavePaid','Leave is paid'],['holPaid','Holidays are paid'],['holDbl','Pay double for a worked holiday (instead of a comp off)']];
 const P=()=>{const q=Object.assign({},S.pay);if(!q.v2)['pf','pfEr','vpf','esi'].forEach(k=>delete q[k]);const p=Object.assign({},PD,q);if(!p.pfMode)p.pfMode=(p.pf||p.pfEr)?'fix':'pct';const o=cycOpts();if(!o.some(x=>x[0]===p.month))p.month=o[0][0];return p};
 const inr=v=>'₹'+Math.round(v).toLocaleString('en-IN');
 const f2=v=>(+v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}),inr2=v=>'₹'+f2(v),fN=v=>(+v||0).toLocaleString('en-IN',{maximumFractionDigits:2});
@@ -890,8 +890,8 @@ function exOcc(a,z){const out=[],idx=k=>(+k.slice(0,4))*12+(+k.slice(5,7))-1;
     for(;i<=zi&&i<=ei;i+=st){const y=Math.floor(i/12),m=i%12,dim=new Date(y,m+1,0).getDate(),dd=Math.min(+e.d.slice(8,10),dim),o=y+'-'+String(m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
       if(o>=a&&o<=z)out.push(Object.assign({},e,{o}))}});
   return out}
-function calcPay(){
-  const p=P();p.ot=+p.ot||0;
+function calcPay(mo){
+  const p=P();if(mo)p.month=mo;p.ot=+p.ot||0;
   /* Hike: from the chosen month on, every full-month amount (Basic, HRA, Conveyance, Special) goes up by the %. */
   const hk=(+p.hike&&p.hikeFrom&&p.month>=p.hikeFrom)?+p.hike:0,hf=1+hk/100,pre={b:p.basicAmt,h:p.hraAmt,c:p.convAmt,s:p.splAmt};
   if(hk){p.basicAmt=r2(p.basicAmt*hf);p.hraAmt=r2(p.hraAmt*hf);p.convAmt=r2(p.convAmt*hf);p.splAmt=r2(p.splAmt*hf)}
@@ -1280,7 +1280,7 @@ function coSync(){
   S.coL=S.coL||{};S.coU=S.coU||{};S.lvL=S.lvL||{};const sig=JSON.stringify([S.coL,S.coU,S.lvL]);
   const t0=new Date();t0.setHours(0,0,0,0);const tk=dayKey(t0.getTime());
   dayRows(Array.from({length:90},(_,i)=>{const d=new Date(t0);d.setDate(d.getDate()-89+i);return d})).forEach(x=>{
-    if(x.co)S.coL[x.k]=x.co;else delete S.coL[x.k];
+    if(x.co&&!(typeof P==='function'&&P().holDbl))S.coL[x.k]=x.co;else delete S.coL[x.k];
     if(S.marks[x.k]==='compoff')S.coU[x.k]=1;else delete S.coU[x.k];
     if(x.st==='Leave'&&S.lt&&S.lt[x.k])S.lvL[x.k]=S.lt[x.k];else delete S.lvL[x.k]});
   Object.keys(S.coU).forEach(k=>{if(k>tk&&S.marks[k]!=='compoff')delete S.coU[k]});
@@ -1890,7 +1890,7 @@ function dash(){
   let st=0;for(let i=0;i<r60.length;i++){const x=r60[i];if(FULL.includes(x.st)||x.st==='Half day'){st++;continue}if(['Week off','Holiday','Leave','Comp off'].includes(x.st)||(i===0&&x.st==='No check-in'))continue;break}
   const y=n.getFullYear(),m=n.getMonth(),mr=dayRows(Array.from({length:n.getDate()},(_,i)=>new Date(y,m,i+1))),c=s=>mr.filter(x=>x.st===s).length;
   const att=c('Full day')+c('Shift completed')+c('Marked present')+c('Half day')/2,cnt=mr.filter((x,i)=>!['Week off','Holiday','Not joined','Leave','Comp off'].includes(x.st)&&!(i===mr.length-1&&x.st==='No check-in')).length,rate=cnt?Math.round(Math.min(100,att/cnt*100)):0;
-  const ot=mr.reduce((s,x)=>s+(x.ot||0),0),p=P(),sal=p.basicAmt+p.hraAmt+p.splAmt>0;let net='';if(sal){const r=calcPay().find(x=>x[0]==='Net pay (take home)');net=r?r[1]:''}
+  const ot=mr.reduce((s,x)=>s+(x.ot||0),0),p=P(),sal=p.basicAmt+p.hraAmt+p.convAmt+p.splAmt>0;let net='';if(sal){const r=calcPay(cycOpts()[0][0]).find(x=>x[0]==='Net pay (take home)');net=r?r[1]:''}
   const ev=[];S.logs.slice(0,4).forEach(l=>ev.push({t:l.out,i:'home',a:'Worked '+hm(l.out-l.in),b:dy(l.in)+' · '+tm(l.in)+' to '+tm(l.out)}));
   if(S.open)ev.push({t:S.open.t,i:'home',a:'Checked in',b:'Today · '+tm(S.open.t)});
   S.trips.slice(0,4).forEach(t=>ev.push({t:t.t1,i:'trips',a:esc(t.from)+' → '+esc(t.to),b:dy(t.t0)+' · travel '+hm(t.t1-t.t0)}));
