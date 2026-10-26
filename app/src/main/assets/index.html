@@ -257,7 +257,8 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
 .fbn span{font-size:12px;opacity:.88;font-weight:500;text-align:right}
 .ftag{display:inline-block;margin-bottom:12px;padding:5px 14px;border-radius:99px;font-size:12px;font-weight:700;background:rgba(255,255,255,.2)}
 @media (prefers-reduced-motion:reduce){#festFx{display:none}}
-</style>
+#cloudBar{position:fixed;left:10px;right:10px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:60;background:#fff7ed;color:#7c2d12;border:1px solid #fdba74;border-radius:14px;padding:10px 12px;font-size:.84rem;line-height:1.35;display:flex;gap:10px;align-items:center;box-shadow:0 8px 24px -12px rgba(0,0,0,.35)}#cloudBar b{display:block}#cloudBar button{flex:none;border:0;border-radius:10px;background:#f26a1b;color:#fff;font:600 .8rem inherit;padding:8px 10px}body.locked #cloudBar{display:none}
+#cloudChip{position:fixed;top:calc(6px + env(safe-area-inset-top,0px));right:10px;z-index:60;font-size:.66rem;font-weight:600;padding:3px 8px;border-radius:99px;background:rgba(12,155,118,.12);color:#0c9b76;pointer-events:none}body.locked #cloudChip{display:none}#cloudBar[hidden],#cloudChip[hidden]{display:none}</style>
 </head>
 <body>
 <header class="top"><span class="logo">Punch</span><small>Location attendance</small></header>
@@ -2877,7 +2878,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
    profile come down. Without the connection (or offline) Punch keeps working on its own as before. */
 (()=>{const g=id=>document.getElementById(id);
 const CFG_URL='https://naveen5531.github.io/portal/firebase-config.js',DOMAIN='staff.movana.app',VER='10.12.2';
-const HR=['superadmin','admin_head','hr_head','hr_manager','hr_exec'],APPR=['superadmin','admin_head','hr_head','hr_manager'];
+const HR=['superadmin','admin_head','hr_head','hr_manager','hr_exec','hr_sr','hr_tl','hr_am','hr_srm','hr_gm','hr_sgm','hr_avp','hr_vp','hr_svp'],APPR=['superadmin','admin_head','hr_head','hr_manager','hr_tl','hr_am','hr_srm','hr_gm','hr_sgm','hr_avp','hr_vp','hr_svp'];
 const toEmail=u=>{u=String(u||'').trim().toLowerCase();return u.includes('@')?u:u.replace(/[^a-z0-9._-]/g,'')+'@'+DOMAIN};
 const C=window.PunchCloud={ready:false,on:false,uid:'',role:'',hr:false,approve:false,name:'',err:''};
 let fsx=null,auth=null,unsub=[],lastAtt='',lastMk='',cfg=null;
@@ -2902,7 +2903,8 @@ async function whoAmI(u){C.uid=u.uid;
   const[m,o,p]=await Promise.all([fsx.doc('members/'+u.uid).get().catch(()=>null),fsx.doc('settings/owner').get().catch(()=>null),fsx.doc('users/'+u.uid).get().catch(()=>null)]);
   const owner=o&&o.exists&&o.data().uid===u.uid,md=m&&m.exists?m.data():null;
   C.role=owner?'superadmin':(md&&md.status!=='Suspended'?md.role:'none');C.name=(p&&p.exists&&p.data().name)||'';
-  C.hr=HR.includes(C.role);C.approve=APPR.includes(C.role);C.salEdit=['superadmin','admin_head','hr_head'].includes(C.role);
+  C.roles=owner?['superadmin']:(md&&md.status!=='Suspended'?[md.role].concat(md.roles||[]):['none']);const any=l=>C.roles.some(r=>l.includes(r));
+  C.hr=any(HR);C.approve=any(APPR);C.salEdit=any(['superadmin','admin_head','hr_head','hr_gm','hr_sgm','hr_avp','hr_vp','hr_svp']);
   if(C.role==='none'){const x=new Error('no access');x.code='no-access';throw x}
   return C}
 C.signIn=async(user,pw)=>{if(!C.ready){const x=new Error('offline');x.code='auth/network-request-failed';throw x}
@@ -2943,7 +2945,7 @@ C.pushAtt=pushAtt;function pushAtt(){if(!C.on)return;const uid=C.uid,out=[];
     const days={};try{dayRows(Array.from({length:dim},(_,i)=>new Date(y,m-1,i+1))).forEach(x=>{if(x.a!==undefined||x.ms)days[x.k.slice(8)]={st:x.st,a:x.a??null,b:x.b??null,ms:x.ms||0,ot:x.ot||0}})}catch(e){}
     if(!logs.length&&!open&&!Object.keys(days).length)return;out.push([ym,{uid,ym,name:(S.slip&&S.slip.name)||C.name||'',eid:(S.slip&&S.slip.eid)||'',logs,open,days,updatedAt:Date.now()}])});
   const sig=JSON.stringify(out.map(([y,d])=>[y,d.logs,d.open,d.days]));if(sig===lastAtt)return;lastAtt=sig;
-  out.forEach(([ym,d])=>fsx.doc(`punch_att/${uid}_${ym}`).set(d).catch(()=>{lastAtt=''}))}
+  out.forEach(([ym,d])=>fsx.doc(`punch_att/${uid}_${ym}`).set(d).then(()=>{C.okAt=Date.now()}).catch(()=>{lastAtt=''}))}
 /* HR's own marks from the app → punch_mark (employees cannot mark; HR can, for themselves too) */
 function myMarks(){const o={};Object.keys(S.marks||{}).forEach(k=>{if(months().includes(ymOf(k)))o[k]=[S.marks[k],(S.lt||{})[k]||'']});return o}
 C.pushMarks=pushMarks;function pushMarks(){if(!C.on||!C.hr)return;const cur=myMarks(),sig=JSON.stringify(cur);if(sig===lastMk)return;lastMk=sig;
@@ -2995,6 +2997,15 @@ const note=()=>{const f=g('payForm');if(!f)return;const on=C.on&&S.payCloud;f.qu
 setInterval(()=>{try{note()}catch(e){}},1500);
 start();
 })();
+
+/* Show plainly whether this phone is sending attendance to the Movana portal. */
+(function(){const bar=document.createElement('div');bar.id='cloudBar';bar.hidden=true;bar.innerHTML='<div><b>Not connected to the Movana portal</b>Your check-ins stay on this phone only, so HR cannot see them. Sign out, then sign in with your portal username and password.</div><button type="button">Sign out</button>';
+  const chip=document.createElement('div');chip.id='cloudChip';chip.hidden=true;document.body.appendChild(bar);document.body.appendChild(chip);
+  bar.querySelector('button').onclick=()=>{try{document.getElementById('lgout').click()}catch(e){}};
+  let since=0;setInterval(()=>{const C=window.PunchCloud||{},inApp=!document.body.classList.contains('locked')&&!!window.PunchRole;
+    if(!inApp){bar.hidden=true;chip.hidden=true;since=0;return}
+    if(C.on){bar.hidden=true;chip.hidden=false;chip.textContent=C.okAt?'Synced '+new Date(C.okAt).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}):'Connected';since=0;return}
+    chip.hidden=true;if(!since)since=Date.now();bar.hidden=Date.now()-since<6000},2000)})();
 </script>
 </body>
 </html>
