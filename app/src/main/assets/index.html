@@ -179,6 +179,12 @@ body:has(#statusCard.on) .hero-clock::after{content:'● ON DUTY';background:#ff
 .slip .xp{margin-top:12px}
 .slip .xp td.f{color:#4b5563;font-size:.92em}
 .slip .st td.y{color:#4b5563}.slip .st td.ys{font-weight:400;color:#6a7686;font-size:.85em;text-align:center}.slip .lb th{font-size:.9em}
+.slipwrap.scr-hide{display:none}@media print{.slipwrap.scr-hide{display:block!important}#slipM{display:none!important}}
+#slipM .mh .lh{display:flex;align-items:center;gap:12px}#slipM .mh .lh img{width:46px;height:46px;border-radius:11px}#slipM .mh .lht b{font-family:Georgia,'Times New Roman',serif;font-size:19px;color:var(--bc,#a87a1e);display:block}
+#slipM .mh .lhbar{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--bc,#a87a1e),transparent);margin:10px 0}#slipM .mt{font-weight:800;font-size:15px;color:var(--ink);margin-bottom:10px}
+#slipM .mnet{background:color-mix(in srgb,var(--in) 12%,var(--card));border-radius:16px;padding:14px;margin:4px 0 12px;display:flex;flex-direction:column;gap:2px}#slipM .mnet span{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mute)}#slipM .mnet b{font-size:30px;color:var(--ink);font-variant-numeric:tabular-nums}#slipM .mnet small{color:var(--mute);font-size:12.5px}
+#slipM .ml{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}#slipM .ml span{display:flex;flex-direction:column;color:var(--ink)}#slipM .ml small{color:var(--mute);font-size:11.5px;font-variant-numeric:tabular-nums}#slipM .ml b{font-variant-numeric:tabular-nums;white-space:nowrap}
+#slipM .ml.t span,#slipM .ml.t b{font-weight:800}#slipM .ml.big b{font-size:18px;color:var(--in)}#slipM .mc{margin-top:12px}#slipM .mc summary{cursor:pointer;font-weight:700;color:var(--in);padding:8px 0}
 .slip .at th,.slip .at td{padding:3px 6px;font-size:.92em}.slip .at tr.wo td{background:#f1f3f6;color:#4b5563}
 .ytbl{overflow-x:auto}.ytbl table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13.5px}.ytbl th,.ytbl td{padding:7px 4px;text-align:right;border-bottom:1px solid var(--line)}.ytbl th:first-child,.ytbl td:first-child{text-align:left}.ytbl th{color:var(--mute);font-size:12px;font-weight:700}.ytbl tr.on td{font-weight:800;color:var(--in)}.ytbl tr.t td{font-weight:800;border-bottom:0}.ytbl tr[data-m]{cursor:pointer}
 .cc{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-bottom:1px dashed var(--line,#d9dee5)}.cc small{grid-column:1/3;color:var(--mut,#6a7686);font-variant-numeric:tabular-nums}.cc b{text-align:right;font-variant-numeric:tabular-nums}.cc.h{border:0;padding-top:12px}.cc.t b,.cc.t span{font-weight:800}
@@ -439,7 +445,9 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
       <div class="row" id="slogoRow"><button class="ghost" id="slogoBtn">Add company logo</button><button class="ghost" id="slogoDel">Remove logo</button></div>
       <p class="sub">A logo is made automatically from the company name in Employees › Company details. To use your own image instead, add it here. Everything else is filled in from Settings and Salary.</p>
     </div>
-    <div class="slipwrap"><div class="slip a4" id="slip"></div></div>
+    <div class="seg noprint" id="slipView" style="margin:0 0 12px"><button data-sv="m">Phone view</button><button data-sv="a4">A4 page</button></div>
+    <div class="card noprint" id="slipM"></div>
+    <div class="slipwrap" id="slipA4"><div class="slip a4" id="slip"></div></div>
     <div class="row noprint"><button class="ghost" id="slipBack">Back to Salary</button><button id="slipPrint" style="background:var(--in);font-size:16px;padding:12px">Print / Save as PDF</button></div>
   </section>
 
@@ -1104,7 +1112,30 @@ function slipExp(mo){const[y,m]=mo.split('-').map(Number),ks=[];for(let i=11;i>=
   const half=Math.ceil(rows.length/2),cell=r=>r?`<td${r[0]===mo?' style="font-weight:800"':''}>${nm(r[0])}</td><td class="r"${r[0]===mo?' style="font-weight:800"':''}>${a(r[2])}</td>`:'<td></td><td></td>';
   const mbm=`<table class="st xp"><thead><tr class="h1"><th colspan="4">Expenses month by month (last 12 months)</th></tr><tr><th>Month</th><th>Amount</th><th>Month</th><th>Amount</th></tr></thead><tbody>${Array.from({length:half},(_,i)=>`<tr>${cell(rows[i])}${cell(rows[i+half])}</tr>`).join('')}<tr class="b"><td>Total</td><td class="r">${a(tot)}</td><td></td><td></td></tr></tbody></table>`;
   return det+mbm}
-function renderSlip(){try{renderSlip0();fitSlip()}catch(e){try{console.error(e)}catch(x){}$('slip').innerHTML='<p style="padding:12px">Could not build the payslip: '+esc(e&&e.message||e)+'</p>'}}
+/* Phone view of the payslip: same figures as the A4 page, laid out to read on a phone without zooming.
+   The A4 page is still what prints or saves as PDF. */
+const slipV=()=>(S.slip&&S.slip.view)||(innerWidth<700?'m':'a4');
+function renderSlipM(){const el=$('slipM');if(!el)return;const emp=isEmp(),q=Object.assign({},EMP,S.slip),p=P(),L=calcPay(),[y,m]=p.month.split('-').map(Number),Y=ytd(p.month);
+  const sec={};let cur='';L.forEach(r=>{if(r.length===1){cur=r[0];sec[cur]=[]}else sec[cur].push(r)});
+  const nz=r=>numV(r[1])!==0,E=(sec['Earnings']||[]).filter(r=>!['Monthly salary (full)','Gross pay'].includes(r[0])&&nz(r)),Dd=(sec['Deductions']||[]).filter(r=>!['Total deductions','Net pay (take home)'].includes(r[0])&&nz(r));
+  const get=(s,l)=>((sec[s]||[]).find(r=>r[0]===l)||[,'₹0'])[1],at=l=>((sec['Attendance']||[]).find(r=>r[0]===l)||[,''])[1];
+  const yv=l=>Y[l]!==undefined?'YTD '+f2(Y[l]):'',line=r=>`<div class="ml"><span>${esc(r[0])}<small>${yv(r[0])}</small></span><b>${esc(r[1])}</b></div>`;
+  const net=get('Deductions','Net pay (take home)'),nn=numV(net),jd=S.join?fd(S.join):'—';
+  let lb='';try{const ls=lvStats(),cs=coStats();lb=LT.filter(([t])=>t!=='LOP').map(([t,n])=>[t,ls[t]?ls[t].b:0]).concat([['Comp off',cs.b]]).filter(x=>x[1]!==null).map(([t,b])=>`<span class="chip"><i></i>${esc(t)}<b>${fN(b)}</b></span>`).join('')}catch(e){}
+  const calcOn=!emp&&!(S.slip&&S.slip.calc===0);
+  el.innerHTML=`<div class="mh">${window.__lh?__lh(1):''}<div class="mt">Salary slip · ${MN[m-1]} ${y}</div></div>
+<div class="mnet"><span>Net pay</span><b>${esc(net)}</b><small>${inWords(Math.floor(Math.abs(nn)))} Rupees${Math.round(Math.abs(nn)*100)%100?' and '+_two(Math.round(Math.abs(nn)*100)%100)+' Paise':''} Only${nn<0?' (minus)':''}</small></div>
+<div class="kv"><span>Employee</span><b>${esc(q.name)}</b></div><div class="kv"><span>Employee ID</span><b>${esc(q.eid)}</b></div><div class="kv"><span>Designation</span><b>${esc(q.desg)}</b></div><div class="kv"><span>Date of joining</span><b>${jd}</b></div>
+${emp?'':`<div class="kv"><span>Paid days (PD)</span><b>${esc(at('Payable days'))}</b></div><div class="kv"><span>LOP days</span><b>${esc(at('LOP days'))}</b></div>`}
+<h3 class="hh">Earnings</h3>${E.map(line).join('')||'<p class="sub">No earnings this month.</p>'}<div class="ml t"><span>Gross earnings<small>${yv('Gross pay')}</small></span><b>${esc(get('Earnings','Gross pay'))}</b></div>
+<h3 class="hh">Deductions</h3>${Dd.map(line).join('')||'<p class="sub">No deductions this month.</p>'}<div class="ml t"><span>Total deductions<small>${yv('Total deductions')}</small></span><b>${esc(get('Deductions','Total deductions'))}</b></div>
+<div class="ml t big"><span>Net pay<small>${yv('Net pay (take home)')}</small></span><b>${esc(net)}</b></div>
+${lb?`<h3 class="hh">Leave balance</h3><div class="chips">${lb}</div>`:''}
+${calcOn?`<details class="mc"><summary>How it's calculated</summary>${calcHtml(L.calc)}</details>`:''}
+<p class="sub" style="margin-top:12px">YTD = ${fyName(p.month)}, April to ${MN[m-1]} ${y}. Tap Print / Save as PDF for the A4 payslip.</p>`}
+function slipViewSet(){const v=slipV();$('slipM').hidden=v!=='m';$('slipA4').classList.toggle('scr-hide',v==='m');document.querySelectorAll('#slipView button').forEach(b=>b.classList.toggle('on',b.dataset.sv===v))}
+$('slipView').onclick=e=>{const b=e.target.closest('[data-sv]');if(!b)return;S.slip=Object.assign({},S.slip,{view:b.dataset.sv});save();slipViewSet();if(b.dataset.sv==='a4')fitSlip()};
+function renderSlip(){try{renderSlip0();slipViewSet();fitSlip();try{renderSlipM()}catch(x){try{console.error(x)}catch(y){}$('slipM').innerHTML='<p class="sub">Could not build the phone view.</p>'}}catch(e){try{console.error(e)}catch(x){}$('slip').innerHTML='<p style="padding:12px">Could not build the payslip: '+esc(e&&e.message||e)+'</p>'}}
 function renderSlip0(){
   const emp=isEmp(),q=Object.assign({},EMP,S.slip),p=P(),L=calcPay(),[y,m]=p.month.split('-').map(Number),st=new Date(y,m-1,1),en=new Date(y,m,0);
   const ord=d=>{const n=d.getDate(),t=n%10,h=n%100;return n+(t===1&&h!==11?'st':t===2&&h!==12?'nd':t===3&&h!==13?'rd':'th')},mn=d=>d.toLocaleDateString('en-US',{month:'long'});

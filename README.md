@@ -177,3 +177,6 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v4.8
 - Payslip and attendance report: letterhead shows only the logo and company name (no address, phone or CIN). The offer letter keeps the full letterhead.
+
+## Changes in v4.9
+- Payslip "Phone view" (default on phones): logo and name, net pay in large type with amount in words, employee details, earnings and deductions with YTD under each line, totals, leave balance, and (admin) the calculation in a fold-out. "A4 page" switches to the full A4 payslip. Print / Save as PDF always gives the A4 payslip.
