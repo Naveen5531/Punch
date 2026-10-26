@@ -186,3 +186,6 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v5.1
 - Company name on the letterhead (payslip, attendance report, offer letter) is Movana Logistics by default; the workplace name ("Office") is no longer used as the company name. A name typed in Employees > Company details still takes priority.
+
+## Changes in v5.2
+- Login screen: removed the description line under "Sign in to continue" for both Employee and Admin.
