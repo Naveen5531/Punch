@@ -114,3 +114,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - Salary page: new "How it's calculated" card showing every step: days in month, before joining, days worked, week offs, LOP, paid days (PD), pay factor, each earning (full amount x PD / days), PF, professional tax, total deductions, net pay, per-day rate and full-month take-home.
 - Payslip: header shows Total Days, Paid Days (PD), Days Worked, Week off / Paid holiday and LOP; net pay in words includes paise; a "How it's calculated" table (can be turned off on the Payslip page). Still one A4 page.
 - Salary CSV includes the calculation steps.
+
+## Changes in v3.5
+- Employee login: Salary shows only the month picker and the final figures (earnings, deductions, net pay). Salary settings, days, paid days (PD), LOP and the "How it's calculated" card are hidden. Payslip shows no PD/days rows and no calculation table. Salary CSV has final figures only.
+- Admin login: everything as in v3.4 (all settings, days, PD and full calculation).

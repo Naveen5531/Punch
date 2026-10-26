@@ -944,14 +944,17 @@ function calcPay(){
   C.push(['Loss per LOP day',`Gross per day ${f2(rate)}${pct&&base?` (PF also drops by ${f2(p.basicAmt/base*pp/100)})`:''}`,f2(rate)]);
   L.calc=C;return L;
 }
+const isEmp=()=>window.PunchRole==='employee';
+/* Employee sees only the final figures: earnings, deductions, net pay. Admin sees days, PD and the full working. */
+const finalOnly=L=>{const o=[];let sec='';L.forEach(r=>{if(r.length===1){sec=r[0];if(sec==='Earnings'||sec==='Deductions')o.push(r);return}if(r[1]==='₹0.00'&&!/Gross|Total|Net/.test(r[0]))return;if((sec==='Earnings'&&r[0]!=='Monthly salary (full)')||sec==='Deductions')o.push(r)});o.calc=[];return o};
 function calcHtml(C){return C.map(([l,f,v,c])=>f===undefined?`<div class="cc h"><b style="text-align:left">${l}</b></div>`:`<div class="cc ${c||''}"><span>${l}</span><b>${v}</b><small>${f}</small></div>`).join('')}
-function renderPay(){payExM();const L=calcPay();$('payCalc').innerHTML='<h2>How it\'s calculated</h2><p class="sub">Every figure above, step by step. PD = paid days.</p>'+calcHtml(L.calc);$('payOut').innerHTML=L.map(([l,v,c])=>v===undefined?`<div class="kv h"><b>${l}</b></div>`:`<div class="kv ${c||''}"><span>${l}</span><b>${v}</b></div>`).join('')}
+function renderPay(){payExM();const emp=isEmp(),L=emp?finalOnly(calcPay()):calcPay();$('payCalc').hidden=emp;$('payCalc').innerHTML=emp?'':'<h2>How it\'s calculated</h2><p class="sub">Every figure above, step by step. PD = paid days.</p>'+calcHtml(L.calc);$('payOut').innerHTML=L.map(([l,v,c])=>v===undefined?`<div class="kv h"><b>${l}</b></div>`:`<div class="kv ${c||''}"><span>${l}</span><b>${v}</b></div>`).join('')}
 function payExM(){const el=$('payExM');if(!el)return;const cur=P().month,o=cycOpts().slice().reverse();
   const rows=o.map(([k,n])=>{const L=exOcc(k+'-01',k+'-31'),t=L.reduce((s,e)=>s+e.a,0);return{k,n,t,c:L.length}}),tot=rows.reduce((s,r)=>s+r.t,0);
   el.innerHTML=`<h2>Expenses month by month</h2><p class="sub">Last 12 months, deducted from that month's take-home. Tap a month to see its salary.</p><div class="hbox">${rows.reverse().map(r=>`<div class="hrow" data-m="${r.k}" style="cursor:pointer${r.k===cur?';outline:2px solid var(--in);border-radius:10px':''}"><div><b>${r.n}</b><small>${r.c?r.c+' entr'+(r.c===1?'y':'ies'):'No expenses'}</small></div><b>${inr(r.t)}</b></div>`).join('')}</div><div class="kv tot"><span>Total, 12 months</span><b>${inr(tot)}</b></div>`}
 $('payExM').onclick=e=>{const r=e.target.closest('[data-m]');if(!r)return;S.pay=Object.assign({},S.pay,{v2:1,month:r.dataset.m});save();typeof renderPayForm==='function'&&renderPayForm();const sm=document.querySelector('#p-pay select[id$="month"]');if(sm)sm.value=r.dataset.m;renderPay();window.scrollTo(0,0)};
 $('payCsv').onclick=()=>{const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\ufeff'+(L=>L.map(([l,v])=>`"${l}"${v===undefined?'':`,"${v}"`}`).concat(['','"How it\'s calculated"'],L.calc.map(([l,f,v])=>f===undefined?`"${l}"`:`"${l}","${v}","${String(f).replace(/"/g,'""')}"`)).join('\n'))(calcPay())],{type:'text/csv'}));
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+(L=>L.map(([l,v])=>`"${l}"${v===undefined?'':`,"${v}"`}`).concat(L.calc.length?['','"How it\'s calculated"']:[],L.calc.map(([l,f,v])=>f===undefined?`"${l}"`:`"${l}","${v}","${String(f).replace(/"/g,'""')}"`)).join('\n'))(isEmp()?finalOnly(calcPay()):calcPay())],{type:'text/csv'}));
   a.download=fname(`Salary_Statement_${P().month}`,'csv');document.body.appendChild(a);a.click();a.remove()};
 $('join').onchange=()=>{S.join=$('join').value;save();render()};
 let cal={y:new Date().getFullYear(),m:new Date().getMonth()};const sel=new Set(),cal0=cal.y*12+cal.m;
@@ -1035,7 +1038,7 @@ function slipExp(mo){const[y,m]=mo.split('-').map(Number),ks=[];for(let i=11;i>=
   return det+mbm}
 function renderSlip(){try{renderSlip0();fitSlip()}catch(e){try{console.error(e)}catch(x){}$('slip').innerHTML='<p style="padding:12px">Could not build the payslip: '+esc(e&&e.message||e)+'</p>'}}
 function renderSlip0(){
-  const q=Object.assign({},EMP,S.slip),p=P(),L=calcPay(),[y,m]=p.month.split('-').map(Number),st=new Date(y,m-1,1),en=new Date(y,m,0);
+  const emp=isEmp(),q=Object.assign({},EMP,S.slip),p=P(),L=calcPay(),[y,m]=p.month.split('-').map(Number),st=new Date(y,m-1,1),en=new Date(y,m,0);
   const ord=d=>{const n=d.getDate(),t=n%10,h=n%100;return n+(t===1&&h!==11?'st':t===2&&h!==12?'nd':t===3&&h!==13?'rd':'th')},mn=d=>d.toLocaleDateString('en-US',{month:'long'});
   const dur=`${ord(st)} ${mn(st)}, ${st.getFullYear()} to ${ord(en)} ${mn(en)}, ${en.getFullYear()}`;
   const num=v=>Number(String(v).replace(/[^\d.-]/g,'')),amt=v=>String(v).replace('\u20b9','');
@@ -1052,12 +1055,12 @@ function renderSlip0(){
   const cv=n=>{const r=(L.calc||[]).find(x=>x[0]===n);return r?r[2]:''};
   const pr=(a,b,c,d)=>`<tr><td class="l">${a}</td><td class="v">: ${b}</td><td class="l">${c}</td><td class="v">${d===''?'':': '+d}</td></tr>`;
   $('slip').innerHTML=`<div class="band">${q.logo?`<img src="${q.logo}" alt="Company logo">`:''}<b>${esc(S.wp&&S.wp.name)||'Company'}</b><div class="ttl">Salary Slip for the Month of ${mn(en)} - ${en.getFullYear()}</div></div>
-<table class="emp">${pr('Employee Name',esc(q.name).toUpperCase(),'Employee ID',esc(q.eid))}${pr('Designation',esc(q.desg),'Date of Joining',jd)}${gradeOf(q)||q.cat?pr('Grade',esc(gradeName(gradeOf(q))||'N.A'),'Category',esc(q.cat||'N.A')):''}${pr('Duration',dur,'Current Office location',esc(S.wp&&S.wp.name)||'N.A')}${pr('Total Days (basis)',base,'Paid Days (PD)',pay)}${pr('Days Worked',(cv('Days worked')||0),'Week off / Paid holiday',(+cv('Week offs')||0)+(+cv('Holidays')||0))}${pr('LOP Days',((sec['Attendance']||[]).find(r=>r[0]==='LOP days')||[,0])[1],'Tenure',S.join?tenureYM(S.join):'N.A')}</table>
+<table class="emp">${pr('Employee Name',esc(q.name).toUpperCase(),'Employee ID',esc(q.eid))}${pr('Designation',esc(q.desg),'Date of Joining',jd)}${gradeOf(q)||q.cat?pr('Grade',esc(gradeName(gradeOf(q))||'N.A'),'Category',esc(q.cat||'N.A')):''}${pr('Duration',dur,'Current Office location',esc(S.wp&&S.wp.name)||'N.A')}${emp?'':pr('Total Days (basis)',base,'Paid Days (PD)',pay)+pr('Days Worked',(cv('Days worked')||0),'Week off / Paid holiday',(+cv('Week offs')||0)+(+cv('Holidays')||0))+pr('LOP Days',((sec['Attendance']||[]).find(r=>r[0]==='LOP days')||[,0])[1],'Tenure',S.join?tenureYM(S.join):'N.A')}${emp?pr('Tenure',S.join?tenureYM(S.join):'N.A','',''):''}</table>
 <table class="st"><thead><tr class="h1"><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr><tr><th>Description</th><th>Amount</th><th>Description</th><th>Amount</th></tr></thead><tbody>${rows}
 <tr class="b"><td>Gross Earnings</td><td class="r">${gross?amt(gross[1]):''}</td><td>Gross Deductions</td><td class="r">${tded?amt(tded[1]):''}</td></tr>
 <tr class="b"><td>Net Pay</td><td class="r">${netS}</td><td></td><td></td></tr><tr class="b"><td>Total Pay</td><td class="r">${netS}</td><td></td><td></td></tr></tbody></table>
 <p class="wd2"><b>In words :</b> ${inWords(Math.floor(netNum))} Rupees${Math.round(netNum*100)%100?' and '+_two(Math.round(netNum*100)%100)+' Paise':''} Only.</p>
-${S.slip&&S.slip.calc===0?'':`<table class="st xp"><thead><tr class="h1"><th colspan="3">How it's calculated (PD = paid days)</th></tr></thead><tbody>${(L.calc||[]).filter(r=>r[1]!==undefined&&!/^(Days in month|Before joining|Pending days|Gross per day|Full month take-home|Loss per LOP day)/.test(r[0])).map(([l,f,v,c])=>`<tr${c?' class="b"':''}><td>${l}</td><td class="f">${f}</td><td class="r">${v}</td></tr>`).join('')}</tbody></table>`}
+${emp||(S.slip&&S.slip.calc===0)?'':`<table class="st xp"><thead><tr class="h1"><th colspan="3">How it's calculated (PD = paid days)</th></tr></thead><tbody>${(L.calc||[]).filter(r=>r[1]!==undefined&&!/^(Days in month|Before joining|Pending days|Gross per day|Full month take-home|Loss per LOP day)/.test(r[0])).map(([l,f,v,c])=>`<tr${c?' class="b"':''}><td>${l}</td><td class="f">${f}</td><td class="r">${v}</td></tr>`).join('')}</tbody></table>`}
 <p class="ft">** This is a system generated payslip, hence signature not required.</p>`;
 }
 $('sf_month').onchange=e=>{S.pay=Object.assign({},S.pay,{v2:1,month:e.target.value});save();renderSlip()};
@@ -2403,8 +2406,8 @@ function apply(){
 const block=e=>{if(!emp())return;const el=e.target.closest&&e.target.closest('input,select,textarea,button,label,[data-x],[data-e],[data-k]');
   if(el&&locked(el)){e.preventDefault();e.stopImmediatePropagation();try{say('Only the admin can change this. Log in as Admin to edit.',true)}catch(x){}}};
 ['click','change','input'].forEach(ev=>document.addEventListener(ev,block,true));
-document.head.insertAdjacentHTML('beforeend','<style>body.emp [data-roff]{opacity:.55}body.emp #exAdd,body.emp #lvForm,body.emp #admHol{display:none!important}</style>');
-window.addEventListener('punchrole',()=>{apply();try{render()}catch(e){}});
+document.head.insertAdjacentHTML('beforeend','<style>body.emp [data-roff]{opacity:.55}body.emp #exAdd,body.emp #lvForm,body.emp #admHol,body.emp #payCalc,body.emp #payForm .row:not(:has(#pf_month)),body.emp #payForm~.sub,body.emp .row:has(>#sf_calc){display:none!important}</style>');
+window.addEventListener('punchrole',()=>{apply();try{render()}catch(e){}try{if(!g('p-pay').hidden)renderPay();if(!g('p-slip').hidden)renderSlip()}catch(e){}});
 let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;requestAnimationFrame(()=>{apply();busy=false})}).observe(document.querySelector('main'),{childList:true,subtree:true});
 apply();try{render()}catch(e){}
 })();
