@@ -1975,7 +1975,7 @@ B.insertAdjacentHTML('beforeend',`<div id="swd" hidden><div class="box"><h2 id="
 <div class="er" id="swe"></div><div class="sbtn"><button type="button" class="lk" id="swc">Cancel</button><button type="button" class="b" id="swo">Switch</button></div></div></div>`);
 $('lgout').onclick=()=>{try{window.PunchCloud&&PunchCloud.signOut()}catch(e){}try{sessionStorage.removeItem('att_in');sessionStorage.removeItem('att_role')}catch(e){}keepSet(null);window.PunchRole='';$('u').value=$('p').value='';show(1);B.classList.add('locked');window.dispatchEvent(new CustomEvent('punchrole',{detail:''}))};
 let lr='employee';const pickRole=r=>{lr=r;{const b=$('lgAdm');if(b){b.textContent=r==='admin'?'Employee':'Admin';b.setAttribute('aria-label',r==='admin'?'Switch to employee login':'Switch to admin login')}}document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
-  $('uL').textContent=r==='admin'?'Username':'Login Name';{const gb=$('lgG');if(gb)gb.hidden=r!=='admin'}$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=false;
+  $('uL').textContent=r==='admin'?'Username or Gmail':'Login Name';{const gb=$('lgG');if(gb)gb.hidden=r!=='admin'}$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=false;
   $('lgNote').textContent=r==='admin'?'Full access: change settings, salary, attendance, expenses and approve requests.':'View attendance, salary and payslips, send requests and download.';err('e1','')};
 $('lgRole').hidden=true;
 {const bx=document.querySelector('#lg .box');bx.style.position='relative';bx.insertAdjacentHTML('afterbegin','<button type="button" id="lgAdm" aria-label="Switch to admin login">Admin</button>')}
@@ -2001,6 +2001,8 @@ setTimeout(()=>{try{swLbl()}catch(e){}},0);
 const togglePassword=(inputId,buttonId,label)=>{$(buttonId).onclick=()=>{const visible=$(inputId).type==='text';$(inputId).type=visible?'password':'text';$(buttonId).textContent=visible?'Show':'Hide';$(buttonId).setAttribute('aria-label',visible?'Show '+label:'Hide '+label)}};
 togglePassword('p','vp','password');togglePassword('n1','vn1','new password');togglePassword('n2','vn2','confirm password');
 $('li').onclick=async()=>{
+  /* a Gmail typed as the username on the Admin login: sign in with that Google account instead of a password */
+  if(lr==='admin'&&/@/.test($('u').value.trim())&&!$('p').value){$('lgG').click();return}
   /* Portal login first (same username and password as the Movana portal); if that does not work,
      the logins kept on this phone still work, so Punch is usable offline or before the portal is set up. */
   const PC=window.PunchCloud;let cloudErr='';
