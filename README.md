@@ -170,3 +170,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v4.6
 - Login screen has both Employee and Admin again (Employee selected first). "Keep me logged in" works for both. The quick switch in the top bar stays Admin-only.
+
+## Changes in v4.7
+- Company ML logo (black and gold route mark: an M drawn as one route from a pickup point, running into the foot of an L and ending in an arrow). Default on the letterhead of offer letters, payslips and the attendance report; letterhead colour now gold. Logo design can be switched to initials in Employees > Company details. Logo files are in the brand/ folder.
+- Fixed: on the phone the payslip was not shrinking to fit the screen (it measured the offer letter's area instead of its own).

@@ -1094,7 +1094,7 @@ const CATS=['Foods (Staples, Groceries, Dairy, F&V)','Non-Foods (FMCG)','General
 const gradeOf=q=>q.grade!==undefined?q.grade:((String(q.desg||'').match(/\b([FSMG][1-4])\b/i)||[,''])[1].toUpperCase());
 const gradeName=gr=>{const x=GRADES.find(r=>r[0]===String(gr||'')[0]);return x?`${gr} · ${x[1]}`:''};
 const EMP={name:'Madas Naveen',eid:'10044289',desg:'Assistant Manager S2'};
-function fitSlip(){const w=document.querySelector('.slipwrap'),el=$('slip');if(!w||!el)return;el.style.transform='';w.style.height='';const k=Math.min(1,(w.clientWidth||794)/794);el.style.transformOrigin='top left';el.style.transform=k<1?`scale(${k})`:'';w.style.height=k<1?Math.ceil(el.offsetHeight*k)+'px':''}
+function fitSlip(){const w=document.querySelector('#p-slip .slipwrap'),el=$('slip');if(!w||!el)return;el.style.transform='';w.style.height='';const k=Math.min(1,(w.clientWidth||794)/794);el.style.transformOrigin='top left';el.style.transform=k<1?`scale(${k})`:'';w.style.height=k<1?Math.ceil(el.offsetHeight*k)+'px':''}
 addEventListener('resize',()=>{if(!$('p-slip').hidden)fitSlip()});
 function slipExp(mo){const[y,m]=mo.split('-').map(Number),ks=[];for(let i=11;i>=0;i--){const t=y*12+m-1-i;ks.push(Math.floor(t/12)+'-'+String(t%12+1).padStart(2,'0'))}
   const MN3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],nm=k=>MN3[+k.slice(5,7)-1]+' '+k.slice(0,4);
@@ -2634,7 +2634,7 @@ apply();try{render()}catch(e){}
    work on other phones once online sync (Firebase) is switched on. */
 (()=>{const g=id=>document.getElementById(id),D=864e5;
 S.emps=S.emps||[];S.co=S.co||{};
-const CO=()=>Object.assign({name:(S.wp&&S.wp.name)||'',addr:'',sig:'',sigD:'HR Manager',ref:'HR/OFFER',jur:'',ret:'58',col:'#0f6e56',web:'',phone:'',cin:''},S.co);
+const CO=()=>Object.assign({name:(S.wp&&S.wp.name)||'',addr:'',sig:'',sigD:'HR Manager',ref:'HR/OFFER',jur:'',ret:'58',col:'#a87a1e',logo:'ml',web:'',phone:'',cin:''},S.co);
 window.__co=CO;
 /* Company logo, drawn from the company name: a monogram mark plus the name. Used on offer letters,
    payslips and reports unless the admin adds their own logo image on the Payslip page. */
@@ -2643,7 +2643,11 @@ function initials(n){const w=String(n||'').replace(/[^A-Za-z0-9& ]/g,' ').split(
 function shade(hex,f){const n=parseInt(String(hex).replace('#',''),16)||0x0f6e56,c=[n>>16,n>>8&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(f<0?v*(1+f):v+(255-v)*f))));return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('')}
 function logoSvg(){const c=CO(),col=/^#[0-9a-f]{6}$/i.test(c.col)?c.col:'#0f6e56',ini=initials(c.name),dk=shade(col,-.35),lt=shade(col,.35);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset="1" stop-color="${dk}"/></linearGradient></defs><rect x="4" y="4" width="112" height="112" rx="28" fill="url(#lg)"/><path d="M20 88 C 46 70, 78 70, 102 52" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="5" stroke-linecap="round"/><text x="60" y="${ini.length>1?71:74}" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="${ini.length>1?50:60}" fill="#fff" letter-spacing="1">${ini.replace(/&/g,'&amp;')}</text></svg>`}
-const logoUri=()=>(S.slip&&S.slip.logo)||('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSvg()));
+/* The company's own ML mark: an "M" drawn as one route line whose last stroke runs on into the foot of
+   an "L" and ends in an arrow, starting from a pickup point. Black tile with gold, for a logistics company. */
+function mlSvg(){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3d27a"/><stop offset=".55" stop-color="#d4a640"/><stop offset="1" stop-color="#a87a1e"/></linearGradient><linearGradient id="bk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26262b"/><stop offset="1" stop-color="#0d0d10"/></linearGradient></defs><rect x="3" y="3" width="114" height="114" rx="28" fill="url(#bk)"/><rect x="6.5" y="6.5" width="107" height="107" rx="25" fill="none" stroke="url(#gd)" stroke-opacity=".55" stroke-width="1.5"/><path d="M27 86 V35 L50 62 L73 35 V86 H91" fill="none" stroke="url(#gd)" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M88 76.5 L100 86 L88 95.5 Z" fill="url(#gd)" stroke="url(#gd)" stroke-width="3" stroke-linejoin="round"/><circle cx="27" cy="86" r="7.5" fill="#0d0d10" stroke="url(#gd)" stroke-width="4"/></svg>`}
+window.__mlSvg=mlSvg;
+const logoUri=()=>(S.slip&&S.slip.logo)||('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(CO().logo==='mono'?logoSvg():mlSvg()));
 window.__logo=logoUri;
 /* Letterhead used on every printed page: logo, company name, address and contact, and a brand-colour rule. */
 window.__lh=()=>{const c=CO(),col=/^#[0-9a-f]{6}$/i.test(c.col)?c.col:'#0f6e56',ct=[c.phone&&'Tel: '+esc(c.phone),c.web&&esc(c.web)].filter(Boolean).join(' · ');
@@ -2680,14 +2684,15 @@ function form(){const e=edit;if(!e){g('empForm').hidden=true;return}const isNew=
 <p class="er" id="empErr" style="color:var(--out)"></p>
 <div class="row"><button id="empSave">${isNew?'Add employee':'Save'}</button><button class="ghost" id="empCancel">Cancel</button></div>${isNew?'':'<div class="row"><button class="ghost" id="empDel" style="color:var(--out)">Remove employee</button></div>'}`}
 function coForm(){const c=CO();g('coForm').innerHTML=`<h2>Company details for letters</h2>
-<div class="lgp"><img id="coLogo" src="${logoUri()}" alt="Company logo"><div><b>Company logo</b><p class="sub">${S.slip&&S.slip.logo?'Using the logo image added on the Payslip page.':'Made from the company name and brand colour. Used on offer letters, payslips and reports.'}</p></div></div>
+<div class="lgp"><img id="coLogo" src="${logoUri()}" alt="Company logo"><div><b>Company logo</b><p class="sub">${S.slip&&S.slip.logo?'Using the logo image added on the Payslip page.':'Your company logo, used on offer letters, payslips and reports.'}</p></div></div>
 ${[['name','Company name'],['addr','Registered address'],['phone','Phone'],['web','Website or email'],['cin','CIN (optional)'],['sig','Signing authority name'],['sigD','Signing authority designation'],['ref','Letter reference prefix'],['jur','Courts at (city, for disputes)'],['ret','Retirement age']].map(([k,l])=>`<div class="row"><label for="cf_${k}">${l}</label><input class="in2" id="cf_${k}" data-ck="${k}" value="${esc(c[k])}"></div>`).join('')}
+<div class="row"><label for="cf_logo">Logo design</label><select class="in2" id="cf_logo" data-ck="logo"><option value="ml"${c.logo!=='mono'?' selected':''}>ML company mark (black and gold)</option><option value="mono"${c.logo==='mono'?' selected':''}>Initials of the company name</option></select></div>
 <div class="row"><label for="cf_col">Brand colour</label><input id="cf_col" data-ck="col" type="color" value="${esc(c.col)}" style="width:64px;height:40px;padding:0;border:0;background:none"></div>
 <p class="sub">Used on offer letters, payslips and the attendance report.</p>`}
 function render(){list();form();coForm()}
 window.__emps=render;
 g('p-emps').addEventListener('input',e=>{const t=e.target;
-  if(t.dataset.ck){S.co=Object.assign({},S.co,{[t.dataset.ck]:t.value.trim()});save();const lg=g('coLogo');if(lg&&(t.dataset.ck==='name'||t.dataset.ck==='col'))lg.src=logoUri();return}
+  if(t.dataset.ck){S.co=Object.assign({},S.co,{[t.dataset.ck]:t.value.trim()});save();const lg=g('coLogo');if(lg&&['name','col','logo'].includes(t.dataset.ck))lg.src=logoUri();return}
   if(t.dataset.ek&&edit){const k=t.dataset.ek,f=F.find(x=>x[0]===k)||[];edit[k]=t.type==='checkbox'?(t.checked?1:0):f[2]==='number'?(t.value===''?'':+t.value):t.value.trim();
     const er=g('empErr');if(er)er.textContent='';if(k==='eid'){const lb=g('empLid');if(lb)lb.textContent=edit.eid||'—'}
     if(f[2]==='number'||f[2]==='check'){const c=ctc(edit),kv=g('empForm').querySelectorAll('.kv b');if(kv.length>=3){kv[0].textContent='₹'+money(c.gross);kv[1].textContent='₹'+money(c.net);kv[2].textContent='₹'+money(c.y)}}}});
