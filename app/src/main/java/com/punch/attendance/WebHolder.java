@@ -369,6 +369,11 @@ public class WebHolder {
             if (a == null) return;
             a.runOnUiThread(() -> CloudSync.signIn(a));
         }
+        /** Google sign-in for the Movana portal (Admin login): uses the Google account of Google sync. */
+        @JavascriptInterface public void googleToken() {
+            final Activity a = current;
+            CloudSync.portalToken(app, a);
+        }
         @JavascriptInterface public void cloudSignOut() { CloudSync.signOut(app); }
         @JavascriptInterface public void cloudPush(String json) { CloudSync.push(app, json); }
         @JavascriptInterface public void cloudPull() { CloudSync.pull(app); }

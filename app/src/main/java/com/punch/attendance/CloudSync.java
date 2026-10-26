@@ -76,6 +76,7 @@ final class CloudSync {
     /** Back from Google's screen. Google also closes it without a reason when the one-time setup is missing. */
     static void result(Context c, int code, Intent data) {
         if (code != Activity.RESULT_OK || data == null) {
+            if (portalPending) { portalPending = false; portal(c, null, null, "Google sign-in was closed."); }
             if (data != null) {
                 try { Identity.getAuthorizationClient(c).getAuthorizationResultFromIntent(data); }
                 catch (ApiException e) { if (e.getStatusCode() != 16 && e.getStatusCode() != 12501) { fail(c, e, "signin"); return; } }
@@ -100,8 +101,39 @@ final class CloudSync {
                 if (email.isEmpty()) throw new IOException("Google did not give the account's email.");
                 p(c).edit().putString("email", email).remove("fileId").apply();
                 state(c, "in", email, null);
+                if (portalPending) { portalPending = false; portal(c, token, email, null); }
             } catch (Exception e) { fail(c, e, "signin"); }
         });
+    }
+
+    // ---------- Google sign-in for the Movana portal ----------
+    private static boolean portalPending = false;
+
+    /** Gives the page a Google access token for the Google sync account; asks the user to pick an account first if none. */
+    static void portalToken(final Context c, final Activity a) {
+        final String email = p(c).getString("email", null);
+        if (email == null) {
+            if (a == null) { portal(c, null, null, "Open Punch and try again."); return; }
+            portalPending = true;
+            a.runOnUiThread(() -> signIn(a));
+            return;
+        }
+        io.execute(() -> {
+            try { portal(c, token(c, email), email, null); }
+            catch (NeedSignIn e) {
+                if (a == null) { portal(c, null, null, "Google needs you to sign in again."); return; }
+                portalPending = true; p(c).edit().remove("email").apply();
+                a.runOnUiThread(() -> signIn(a));
+            } catch (Exception e) { portal(c, null, null, String.valueOf(e.getMessage())); }
+        });
+    }
+
+    private static void portal(Context c, String token, String email, String err) {
+        try {
+            JSONObject o = new JSONObject();
+            if (token != null) o.put("token", token).put("email", email); else o.put("error", err == null ? "Google sign-in failed." : err);
+            WebHolder.js("window.onGoogleToken&&onGoogleToken(" + WebHolder.quote(o.toString()) + ")");
+        } catch (Exception ignored) {}
     }
 
     static void signOut(Context c) {
