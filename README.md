@@ -157,3 +157,9 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - Offer letter: auto-generated on one A4 page with reference number, joining details, compensation table (monthly and yearly, CTC, deductions, take-home), terms, and signature lines for the company and the employee. Print / Save as PDF, and "Share details" sends the offer summary and login ID and password by WhatsApp or mail.
 - Company details for letters: company name, address, signing authority and reference prefix.
 - Employee logins on other phones need online sync (next step: Firebase).
+
+## Changes in v4.4
+- Company logo made automatically from the company name and a brand colour (monogram mark), shown in Employees › Company details. An uploaded logo image still takes its place.
+- Letterhead (logo, company name, address, phone, website, CIN, brand-colour rule) on the offer letter, payslip and attendance report.
+- Offer letter redone as a formal two-page letter: reference and date, Private & Confidential, key details table, numbered terms, signature block, page footer; page 2 is Annexure A – Compensation Structure (earnings, employer contributions, CTC, deductions, take-home, notes) with signature and employee acceptance.
+- Employee login: the logo buttons on the Payslip page are hidden.
