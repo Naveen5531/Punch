@@ -151,3 +151,9 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 ## Changes in v4.2
 - Comp off is used up as soon as it is applied: a pending comp off request (Leave or Attendance) is taken out of the balance straight away, and comp off booked for a future date counts as used (before, future days were not counted until the day passed). Cancel or reject gives it back.
 - Apply for leave: new "CO · Comp off" type, checked against the comp off balance; approving it marks those days as Comp off.
+
+## Changes in v4.3
+- Employees (Admin, under More): add, edit and remove employees with job details, monthly salary (Basic, HRA, Conveyance, Special, PF %, professional tax, gratuity), terms (probation, notice, hours, days) and status (Offered / Accepted / Joined / Left). Each gets a login ID and a generated starting password. Live gross, take-home and yearly CTC while typing.
+- Offer letter: auto-generated on one A4 page with reference number, joining details, compensation table (monthly and yearly, CTC, deductions, take-home), terms, and signature lines for the company and the employee. Print / Save as PDF, and "Share details" sends the offer summary and login ID and password by WhatsApp or mail.
+- Company details for letters: company name, address, signing authority and reference prefix.
+- Employee logins on other phones need online sync (next step: Firebase).

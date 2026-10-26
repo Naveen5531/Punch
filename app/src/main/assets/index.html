@@ -392,6 +392,20 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
     </div>
   </section>
 
+  <section class="pane" id="p-emps" hidden>
+    <h2 class="ph">Employees</h2>
+    <div class="card" id="empList"></div>
+    <div class="card" id="empForm" hidden></div>
+    <div class="card" id="coForm"></div>
+  </section>
+
+  <section class="pane" id="p-offer" hidden>
+    <h2 class="ph noprint">Offer letter</h2>
+    <div class="slipwrap" id="offWrap"><div class="slip a4 off" id="offSheet"></div></div>
+    <div class="row noprint"><button class="ghost" id="offBack">Back to Employees</button><button class="ghost" id="offShare">Share details</button></div>
+    <div class="row noprint"><button id="offPrint" style="background:var(--in);font-size:16px;padding:12px">Print / Save as PDF</button></div>
+  </section>
+
   <section class="pane" id="p-report" hidden>
     <h2 class="ph">Reports</h2>
     <div class="card">
@@ -568,6 +582,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
   <button class="tab" data-t="exp" aria-current="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Expenses</span></button>
   <button class="tab" data-t="leave" aria-current="false"><svg viewBox="0 0 24 24"><path d="M4 20c0-9 6-15 16-16 0 10-6 16-16 16z"/><path d="M4 20l9-9"/></svg><span>Leave</span></button>
   <button class="tab" data-t="admin" aria-current="false"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><span>Admin</span></button>
+  <button class="tab" data-t="emps" aria-current="false"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.6 3-5.5 6-5.5s5.4 1.9 6 5.5"/><path d="M17 8v6M14 11h6"/></svg><span>Employees</span></button>
   <button class="tab" data-t="report" aria-current="false"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M9 9h3M9 13h6M9 17h6"/></svg><span>Reports</span></button>
   <button class="tab" data-t="history" aria-current="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>History</span></button>
   <button class="tab" data-t="trips" aria-current="false"><svg viewBox="0 0 24 24"><path d="M4 19V5h16v14H4z"/><path d="M7 16l4-4 3 3 3-5"/><circle cx="7" cy="16" r="1"/><circle cx="11" cy="12" r="1"/><circle cx="14" cy="15" r="1"/><circle cx="17" cy="10" r="1"/></svg><span>Home &amp; Trips</span></button>
@@ -880,7 +895,7 @@ $('clear').onclick=()=>{if(confirm('Delete all attendance records?')){S.logs=[];
 function show(t){
   document.querySelectorAll('.pane').forEach(p=>{p.hidden=p.id!=='p-'+t});
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-current',b.dataset.t===(t==='slip'?'pay':t)?'page':'false'));
-  window.scrollTo(0,0);setTimeout(()=>window.__beat&&__beat(),0);if(t==='report')renderRep();if(t==='attendance')renderCal();if(t==='leave')try{coCard()}catch(e){try{console.error(e)}catch(x){}}if(t==='pay')renderPay();if(t==='slip'){fillSlip();renderSlip()}if(t==='attpdf')renderAttPdf();if(t==='maps')openMaps();if(t==='lib')renderLib();if(t==='leave')renderLeave();if(t==='admin')renderAdmin();if(t==='exp')renderExp();if(t==='trips'){renderTrip();renderLib();}const ac=document.querySelector('.tab[aria-current="page"]');if(ac){const b=ac.parentElement;b.scrollLeft=ac.offsetLeft-(b.clientWidth-ac.clientWidth)/2}
+  window.scrollTo(0,0);setTimeout(()=>window.__beat&&__beat(),0);if(t==='report')renderRep();if(t==='attendance')renderCal();if(t==='leave')try{coCard()}catch(e){try{console.error(e)}catch(x){}}if(t==='pay')renderPay();if(t==='slip'){fillSlip();renderSlip()}if(t==='attpdf')renderAttPdf();if((t==='emps'||t==='offer')&&window.PunchRole==='employee'){show('dash');return}if(t==='emps')window.__emps&&__emps();if(t==='offer')window.__offer&&__offer();if(t==='maps')openMaps();if(t==='lib')renderLib();if(t==='leave')renderLeave();if(t==='admin')renderAdmin();if(t==='exp')renderExp();if(t==='trips'){renderTrip();renderLib();}const ac=document.querySelector('.tab[aria-current="page"]');if(ac){const b=ac.parentElement;b.scrollLeft=ac.offsetLeft-(b.clientWidth-ac.clientWidth)/2}
 }
 document.querySelectorAll('.tab').forEach(b=>{b.onclick=()=>show(b.dataset.t)});
 $('grace_m').onchange=()=>{const v=parseInt($('grace_m').value);S.grace=isNaN(v)?30:Math.min(240,Math.max(0,v));save();render()};
@@ -2611,6 +2626,111 @@ document.head.insertAdjacentHTML('beforeend','<style>body.emp [data-roff]{opacit
 window.addEventListener('punchrole',()=>{apply();try{render()}catch(e){}try{if(!g('p-pay').hidden)renderPay();if(!g('p-slip').hidden)renderSlip()}catch(e){}});
 let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;requestAnimationFrame(()=>{apply();busy=false})}).observe(document.querySelector('main'),{childList:true,subtree:true});
 apply();try{render()}catch(e){}
+})();
+</script>
+<script>
+/* ===== Employees (Admin): enrol new employees and auto-generate their offer letter =====
+   Saved on this phone in S.emps. Each employee gets a login ID and a starting password; those logins
+   work on other phones once online sync (Firebase) is switched on. */
+(()=>{const g=id=>document.getElementById(id),D=864e5;
+S.emps=S.emps||[];S.co=S.co||{};
+const CO=()=>Object.assign({name:(S.wp&&S.wp.name)||'',addr:'',sig:'',sigD:'HR Manager',ref:'HR/OFFER'},S.co);
+const F=[['name','Full name','text'],['eid','Employee ID (login ID)','text'],['desg','Designation','text'],['grade','Grade','grade'],['cat','Department / category','text'],['loc','Work location','text'],
+  ['join','Date of joining','date'],['mgr','Reporting manager','text'],['mob','Mobile','tel'],['email','Email','email'],['addr','Address','text'],
+  ['basic','Basic per month (₹)','number'],['hra','HRA per month (₹)','number'],['conv','Conveyance per month (₹)','number'],['spl','Special allowance per month (₹)','number'],
+  ['pfPct','PF % of Basic','number'],['pt','Professional tax per month (₹)','number'],['grat','Include gratuity in CTC (4.81% of Basic)','check'],
+  ['prob','Probation (months)','number'],['notice','Notice period (days)','number'],['hrs','Working hours per day','number'],['wdays','Working days per week','number']];
+const DEF={pfPct:12,pt:200,grat:1,prob:6,notice:30,hrs:9,wdays:6,status:'Offered'};
+const genPw=()=>{const c='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';let o='';const a=new Uint32Array(8);crypto.getRandomValues(a);a.forEach(x=>o+=c[x%c.length]);return o};
+const money=v=>(+v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const R2=v=>Math.round((+v||0)*100)/100;
+/* Salary breakup used on the offer letter, worked out the same way as Punch's payslip. */
+function ctc(e){const b=+e.basic||0,h=+e.hra||0,c=+e.conv||0,sp=+e.spl||0,gross=R2(b+h+c+sp),pfE=Math.round(b*(+e.pfPct||0)/100),pfR=pfE,gr=e.grat?R2(b*0.0481):0,
+  m=R2(gross+pfR+gr),pt=+e.pt||0,net=R2(gross-pfE-pt);return{b,h,c,sp,gross,pfE,pfR,gr,m,pt,net,y:R2(m*12)}}
+let edit=null,curOff=null;
+function list(){const L=S.emps;g('empList').innerHTML=`<h2>Employees · ${L.length}</h2><p class="sub">Add a new employee to create their login and offer letter.</p>
+${L.length?`<div class="hbox">${L.map((e,i)=>`<div class="hrow"><div><b>${esc(e.name)||'—'}</b><small>${esc(e.eid)} · ${esc(e.desg)}${e.grade?' · '+esc(e.grade):''} · joins ${e.join?fd(e.join):'—'} · ${esc(e.status||'Offered')}</small><small>CTC ₹${money(ctc(e).y)} a year</small></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="ghost" data-eo="${i}" style="width:auto;padding:7px 12px">Offer letter</button><button class="ghost" data-ee="${i}" style="width:auto;padding:7px 12px">Edit</button></div></div>`).join('')}</div>`:'<p class="empty">No employees yet.</p>'}
+<div class="row"><button id="empAdd">Add employee</button></div>`}
+function form(){const e=edit;if(!e){g('empForm').hidden=true;return}const isNew=!S.emps.includes(e.__ref);
+  const inp=([k,l,t])=>t==='check'?`<div class="row"><input type="checkbox" data-ek="${k}" id="ef_${k}"${e[k]?' checked':''} style="width:22px;height:22px"><label for="ef_${k}" style="color:var(--ink);white-space:normal">${l}</label></div>`
+    :t==='grade'?`<div class="row"><label for="ef_${k}">${l}</label><select class="in2" id="ef_${k}" data-ek="${k}"><option value="">Not set</option>${GRADES.map(([x,n])=>`<optgroup label="${x} · ${n}">${[1,2,3,4].map(i=>`<option${e[k]===x+i?' selected':''}>${x}${i}</option>`).join('')}</optgroup>`).join('')}</select></div>`
+    :`<div class="row"><label for="ef_${k}">${l}</label><input class="in2" id="ef_${k}" data-ek="${k}" type="${t}" value="${esc(e[k]===undefined?'':e[k])}"></div>`;
+  const c=ctc(e);
+  g('empForm').hidden=false;g('empForm').innerHTML=`<h2>${isNew?'New employee':'Edit '+esc(e.name)}</h2>
+<h3 class="hh">Job</h3>${F.slice(0,11).map(inp).join('')}
+<h3 class="hh">Salary per month</h3>${F.slice(11,18).map(inp).join('')}
+<div class="kv"><span>Gross per month</span><b>₹${money(c.gross)}</b></div><div class="kv"><span>Take-home per month</span><b>₹${money(c.net)}</b></div><div class="kv tot"><span>CTC per year</span><b>₹${money(c.y)}</b></div>
+<h3 class="hh">Terms</h3>${F.slice(18).map(inp).join('')}
+<div class="row"><label for="ef_status">Status</label><select class="in2" id="ef_status" data-ek="status">${['Offered','Accepted','Joined','Left'].map(x=>`<option${(e.status||'Offered')===x?' selected':''}>${x}</option>`).join('')}</select></div>
+<h3 class="hh">Login</h3><div class="kv"><span>Login ID</span><b id="empLid">${esc(e.eid)||'—'}</b></div><div class="kv"><span>Starting password</span><b style="font-family:monospace">${esc(e.tp)}</b></div>
+<div class="row"><button class="ghost" id="empPw">New password</button></div><p class="sub">The employee logs in on their own phone with this ID and password once online sync is on.</p>
+<p class="er" id="empErr" style="color:var(--out)"></p>
+<div class="row"><button id="empSave">${isNew?'Add employee':'Save'}</button><button class="ghost" id="empCancel">Cancel</button></div>${isNew?'':'<div class="row"><button class="ghost" id="empDel" style="color:var(--out)">Remove employee</button></div>'}`}
+function coForm(){const c=CO();g('coForm').innerHTML=`<h2>Company details for letters</h2>
+${[['name','Company name'],['addr','Company address'],['sig','Signing authority name'],['sigD','Signing authority designation'],['ref','Letter reference prefix']].map(([k,l])=>`<div class="row"><label for="cf_${k}">${l}</label><input class="in2" id="cf_${k}" data-ck="${k}" value="${esc(c[k])}"></div>`).join('')}
+<p class="sub">Used on every offer letter. The company logo is the one added on the Payslip page.</p>`}
+function render(){list();form();coForm()}
+window.__emps=render;
+g('p-emps').addEventListener('input',e=>{const t=e.target;
+  if(t.dataset.ck){S.co=Object.assign({},S.co,{[t.dataset.ck]:t.value.trim()});save();return}
+  if(t.dataset.ek&&edit){const k=t.dataset.ek,f=F.find(x=>x[0]===k)||[];edit[k]=t.type==='checkbox'?(t.checked?1:0):f[2]==='number'?(t.value===''?'':+t.value):t.value.trim();
+    const er=g('empErr');if(er)er.textContent='';if(k==='eid'){const lb=g('empLid');if(lb)lb.textContent=edit.eid||'—'}
+    if(f[2]==='number'||f[2]==='check'){const c=ctc(edit),kv=g('empForm').querySelectorAll('.kv b');if(kv.length>=3){kv[0].textContent='₹'+money(c.gross);kv[1].textContent='₹'+money(c.net);kv[2].textContent='₹'+money(c.y)}}}});
+g('p-emps').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+  if(t.id==='empAdd'){edit=Object.assign({},DEF,{tp:genPw(),__ref:null});form();g('empForm').scrollIntoView({behavior:'smooth'});return}
+  if(t.dataset.ee!==undefined){const o=S.emps[+t.dataset.ee];edit=Object.assign({},o,{__ref:o});form();g('empForm').scrollIntoView({behavior:'smooth'});return}
+  if(t.dataset.eo!==undefined){curOff=+t.dataset.eo;show('offer');return}
+  if(t.id==='empCancel'){edit=null;form();return}
+  if(t.id==='empPw'){edit.tp=genPw();form();return}
+  if(t.id==='empDel'){if(!confirm('Remove '+(edit.name||'this employee')+'?'))return;S.emps=S.emps.filter(x=>x!==edit.__ref);save();edit=null;render();say('Employee removed.');return}
+  if(t.id==='empSave'){const er=g('empErr'),x=edit;
+    if(!x.name)return er.textContent='Enter the full name.';if(!x.eid)return er.textContent='Enter the employee ID.';
+    if(S.emps.some(o=>o!==x.__ref&&String(o.eid).toLowerCase()===String(x.eid).toLowerCase()))return er.textContent='That employee ID is already used.';
+    if(!x.desg)return er.textContent='Enter the designation.';if(!x.join)return er.textContent='Enter the date of joining.';if(!(+x.basic>0))return er.textContent='Enter the Basic salary.';
+    const o=Object.assign({},x);delete o.__ref;o.upd=Date.now();if(!o.created)o.created=Date.now();
+    if(x.__ref){const i=S.emps.indexOf(x.__ref);S.emps[i]=o}else S.emps.unshift(o);save();
+    const i=S.emps.indexOf(o);edit=null;render();say(x.__ref?'Employee saved.':'Employee added. Their offer letter is ready.');if(!x.__ref){curOff=i;show('offer')}}});
+/* Offer letter */
+function letter(e){const c=CO(),k=ctc(e),n=new Date(),first=String(e.name||'').split(/\s+/)[0],today=fd(dayKey(n.getTime())),lv=(()=>{try{const L=lvCfg();return L}catch(x){return null}})();
+  const ref=`${esc(c.ref)}/${n.getFullYear()}/${esc(e.eid)}`,row=(l,m,b)=>`<tr${b?' class="b"':''}><td>${l}</td><td class="r">${money(m)}</td><td class="r">${money(m*12)}</td></tr>`;
+  return `<div class="band">${S.slip&&S.slip.logo?`<img src="${S.slip.logo}" alt="Company logo">`:''}<b>${esc(c.name)||'Company name'}</b>${c.addr?`<div class="ttl">${esc(c.addr)}</div>`:''}</div>
+<div class="ol"><div class="olh"><span>Ref: ${ref}</span><span>Date: ${today}</span></div>
+<p>To,<br><b>${esc(e.name)}</b>${e.addr?'<br>'+esc(e.addr):''}${e.mob?'<br>Mobile: '+esc(e.mob):''}${e.email?'<br>Email: '+esc(e.email):''}</p>
+<p><b>Subject: Offer of employment – ${esc(e.desg)}</b></p>
+<p>Dear ${esc(first)},</p>
+<p>We are pleased to offer you the position of <b>${esc(e.desg)}</b>${e.grade?` (Grade ${esc(e.grade)})`:''}${e.cat?` in ${esc(e.cat)}`:''} at <b>${esc(c.name)||'the company'}</b>${e.loc?`, ${esc(e.loc)}`:''}. Your date of joining will be <b>${e.join?fd(e.join):'—'}</b>${e.mgr?` and you will report to <b>${esc(e.mgr)}</b>`:''}. Your total cost to company (CTC) will be <b>₹${money(k.y)} per year</b>, as set out below.</p>
+<table class="st oct"><thead><tr class="h1"><th colspan="3">Compensation (Annexure A)</th></tr><tr><th>Component</th><th>Per month (₹)</th><th>Per year (₹)</th></tr></thead><tbody>
+${row('Basic',k.b)}${k.h?row('House Rent Allowance',k.h):''}${k.c?row('Conveyance Allowance',k.c):''}${k.sp?row('Special Allowance',k.sp):''}${row('Gross salary',k.gross,1)}
+${k.pfR?row(`Employer PF (${fN(e.pfPct)}% of Basic)`,k.pfR):''}${k.gr?row('Gratuity (4.81% of Basic)',k.gr):''}${row('Cost to company (CTC)',k.m,1)}
+<tr class="h2"><td colspan="3">Deductions from gross salary</td></tr>${k.pfE?row(`Employee PF (${fN(e.pfPct)}% of Basic)`,k.pfE):''}${k.pt?row('Professional tax',k.pt):''}${row('Estimated take-home',k.net,1)}</tbody></table>
+<p class="tt"><b>Terms of employment</b></p><ol class="trm">
+<li>You will be on probation for ${fN(e.prob||0)} month${+e.prob===1?'':'s'} from your date of joining. On successful completion your employment will be confirmed in writing.</li>
+<li>Either side may end the employment by giving ${fN(e.notice||0)} days' written notice, or salary in place of notice.</li>
+<li>Working hours are ${fN(e.hrs||9)} hours a day, ${fN(e.wdays||6)} days a week, with weekly offs as per the roster. Attendance is recorded in the Punch app.</li>
+<li>Leave: ${lv?`Privilege leave ${fN(lv.PL.r)}, Sick leave ${fN(lv.SL.r)} and Casual leave ${fN(lv.CL.r)} day${lv.CL.r===1?'':'s'} credited each month`:'as per company leave policy'}, plus paid holidays as per the company holiday list. Work on a holiday earns a comp off.</li>
+<li>PF, professional tax and income tax will be deducted from your salary as per law. Salary is paid monthly by bank transfer.</li>
+<li>This offer depends on verification of your documents and references, and on you joining on the date above.</li></ol>
+<p>Please sign and return a copy of this letter as your acceptance. We look forward to welcoming you.</p>
+<div class="sg"><div><p>For <b>${esc(c.name)||'the company'}</b></p><div class="sl"></div><p><b>${esc(c.sig)||'Authorised signatory'}</b><br>${esc(c.sigD)}</p></div>
+<div><p><b>Acceptance</b><br>I accept this offer on the terms above.</p><div class="sl"></div><p><b>${esc(e.name)}</b><br>Date: ____________</p></div></div></div>`}
+function fit(){const w=g('offWrap'),el=g('offSheet');el.style.transform='';w.style.height='';const k=Math.min(1,(w.clientWidth||794)/794);el.style.transformOrigin='top left';el.style.transform=k<1?`scale(${k})`:'';w.style.height=k<1?Math.ceil(el.offsetHeight*k)+'px':''}
+window.__offer=()=>{const e=S.emps[curOff];if(!e){show('emps');return}g('offSheet').innerHTML=letter(e);fit()};
+addEventListener('resize',()=>{if(!g('p-offer').hidden)fit()});
+g('offBack').onclick=()=>show('emps');
+g('offPrint').onclick=()=>{const e=S.emps[curOff];if(!e)return;const nm='Offer_Letter_'+String(e.name||'').replace(/\s+/g,'_');if(window.PunchNative&&PunchNative.printPage){PunchNative.printPage(fname(nm,'pdf').replace(/\.pdf$/,''));return}const t=document.title;document.title=nm;window.onafterprint=()=>{document.title=t;window.onafterprint=null};window.print()};
+g('offShare').onclick=()=>{const e=S.emps[curOff];if(!e)return;const c=CO(),k=ctc(e);
+  const txt=`Dear ${e.name},\n\nWe are pleased to offer you the position of ${e.desg}${e.grade?' (Grade '+e.grade+')':''} at ${c.name||'our company'}${e.loc?', '+e.loc:''}.\nDate of joining: ${e.join?fd(e.join):'—'}${e.mgr?'\nReporting to: '+e.mgr:''}\nCTC: ₹${money(k.y)} per year (gross ₹${money(k.gross)} a month, take-home about ₹${money(k.net)} a month).\n\nYour offer letter is attached. Please sign and send back a copy.\n\nPunch app login\nLogin ID: ${e.eid}\nStarting password: ${e.tp}\nPlease change your password after your first login.\n\n${c.sig?c.sig+'\n':''}${c.sigD||''}\n${c.name||''}`;
+  if(window.PunchNative&&PunchNative.share){PunchNative.share('Offer letter – '+e.name,txt);return}
+  if(navigator.share){navigator.share({title:'Offer letter',text:txt}).catch(()=>{});return}
+  try{navigator.clipboard.writeText(txt).then(()=>say('Offer details copied. Paste them into WhatsApp or mail.')).catch(()=>say('Could not share or copy here.',true))}catch(x){say('Could not share.',true)}};
+const roleTabs=()=>document.querySelectorAll('.tab[data-t="emps"]').forEach(b=>b.hidden=window.PunchRole==='employee');
+window.addEventListener('punchrole',roleTabs);roleTabs();
+document.head.insertAdjacentHTML('beforeend',`<style>
+.slip.off{font-size:12.5px;line-height:1.45}.slip.off .ol p{margin:7px 0}.slip.off .olh{display:flex;justify-content:space-between;margin:10px 0 4px;color:#4b5563}
+.slip.off .oct{margin:8px 0}.slip.off .oct tr.h2 td{font-weight:700;background:#f5f6f8}.slip.off .tt{margin:10px 0 2px}.slip.off .trm{margin:2px 0 6px;padding-left:20px}.slip.off .trm li{margin:2px 0}
+.slip.off .sg{display:flex;gap:40px;margin-top:22px}.slip.off .sg>div{flex:1}.slip.off .sl{border-bottom:1px solid #333;height:38px;margin:6px 0}
+@media print{.slip.off{font-size:9pt;line-height:1.35}.slip.off .ol p{margin:4px 0}.slip.off .sg{margin-top:12px}.slip.off .sl{height:30px}}
+</style>`);
 })();
 </script>
 </body>
