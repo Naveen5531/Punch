@@ -2017,7 +2017,7 @@ $('lgG').onclick=()=>{const PC=window.PunchCloud,N=window.PunchNative;
   if(!N||!N.googleToken){err('e1','Update Punch to use Google sign-in.');return}
   if(!(PC&&PC.ready)){err('e1','Connect to the internet, then try again.');return}
   const b=$('lgG');b.disabled=true;err('e1','Opening Google…',1);
-  window.onGoogleToken=async o=>{try{if(!o||o.error){err('e1',(o&&o.error)||'Google sign-in failed.');return}
+  window.onGoogleToken=async o=>{try{if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=null}}if(!o||o.error||!o.token){err('e1',(o&&o.error)||'Google sign-in failed.');return}
       err('e1','Signing in as '+o.email+'…',1);const r=await PC.signInGoogle(o.token);
       if(!r.hr){await PC.signOut();err('e1','This Gmail has no HR or admin access. Use the Employee login.');return}
       err('e1','');unlock($('kp').checked,'admin')}catch(x){err('e1',x.code==='no-gmail'||x.code==='no-access'?(x.message.includes('@')?x.message:'This Gmail has no access to Punch.'):PC.msg(x))}finally{b.disabled=false}};
