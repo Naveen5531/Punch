@@ -126,3 +126,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 ## Changes in v3.7
 - Worked holiday is paid once: by default it earns a comp off (no extra double-pay day). Turn on "Pay double for a worked holiday (instead of a comp off)" to get double pay instead; then no comp off is earned. Before, both were given, so paid days could go above the days in the month.
 - Home dashboard "Net pay" now always shows the current month (it used the month picked on the Salary page) and counts Conveyance.
+
+## Changes in v3.8
+- Home dashboard tiles open their data. Attendance and Streak: the month day by day (status, in/out time) with counts. Overtime: each day's overtime and the month total. Last 7 days: the month's hours, or tap a day bar for that day. Today's tile and Recent activity: that day's check-in/out, worked time, overtime, sessions, trips and expenses. Net pay: Salary for the current month.
+- In the sheet: arrows change the month, tabs switch Attendance / Hours / Overtime, tap a date for its details, and "Open in Attendance" jumps to that day.
