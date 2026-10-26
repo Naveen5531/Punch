@@ -130,3 +130,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 ## Changes in v3.8
 - Home dashboard tiles open their data. Attendance and Streak: the month day by day (status, in/out time) with counts. Overtime: each day's overtime and the month total. Last 7 days: the month's hours, or tap a day bar for that day. Today's tile and Recent activity: that day's check-in/out, worked time, overtime, sessions, trips and expenses. Net pay: Salary for the current month.
 - In the sheet: arrows change the month, tabs switch Attendance / Hours / Overtime, tap a date for its details, and "Open in Attendance" jumps to that day.
+
+## Changes in v3.9
+- Quick switch is admin-only: the "⇄ Employee" button shows only in the Admin login. The Employee login has no switch; use Logout and log in as Admin.
+- Payslip: "Total Pay" row removed; only Net Pay is shown.
