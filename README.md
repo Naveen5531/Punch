@@ -180,3 +180,6 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v4.9
 - Payslip "Phone view" (default on phones): logo and name, net pay in large type with amount in words, employee details, earnings and deductions with YTD under each line, totals, leave balance, and (admin) the calculation in a fold-out. "A4 page" switches to the full A4 payslip. Print / Save as PDF always gives the A4 payslip.
+
+## Changes in v5.0
+- Login screen is one simple form (Employee login by default). A small green "Admin" button at the top right of the card switches it to the Admin login; tap it again ("Employee") to go back.

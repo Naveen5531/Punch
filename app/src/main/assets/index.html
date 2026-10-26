@@ -1954,6 +1954,7 @@ body.locked #rsw,body.locked #swd,html[data-role="employee"] #rsw{display:none!i
 #swd .pwrow{display:flex;gap:8px}#swd .pwrow input{flex:1;min-width:0}#swd .pwview{width:auto;margin:0;padding:10px 12px;background:var(--bg);color:var(--in);border:1px solid var(--line);font-size:13px}
 #swd .er{color:var(--out);font-size:13px;min-height:18px;margin-top:8px}
 #swd .sbtn{display:flex;gap:10px;margin-top:10px}#swd .sbtn button{flex:1;margin:0}#swd .b{background:var(--in);color:#fff}#swd .lk{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+#lg #lgAdm{position:absolute;top:14px;right:14px;width:auto;margin:0;padding:7px 14px;border-radius:99px;font-size:13px;font-weight:700;background:var(--in);color:#fff;border:0;box-shadow:0 6px 14px -8px var(--in);z-index:2}
 #roleTag{margin-left:8px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--bg);border:1px solid var(--line);color:var(--in)}
 `+'</style>');
 const hd=document.querySelector('header.top');hd.style.position='relative';
@@ -1964,9 +1965,12 @@ B.insertAdjacentHTML('beforeend',`<div id="swd" hidden><div class="box"><h2 id="
 <label>Password</label><div class="pwrow"><input id="swp" type="password" autocomplete="current-password"><button type="button" class="pwview" id="swv" aria-label="Show password">Show</button></div>
 <div class="er" id="swe"></div><div class="sbtn"><button type="button" class="lk" id="swc">Cancel</button><button type="button" class="b" id="swo">Switch</button></div></div></div>`);
 $('lgout').onclick=()=>{try{sessionStorage.removeItem('att_in');sessionStorage.removeItem('att_role')}catch(e){}keepSet(null);window.PunchRole='';$('u').value=$('p').value='';show(1);B.classList.add('locked');window.dispatchEvent(new CustomEvent('punchrole',{detail:''}))};
-let lr='employee';const pickRole=r=>{lr=r;document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
+let lr='employee';const pickRole=r=>{lr=r;{const b=$('lgAdm');if(b){b.textContent=r==='admin'?'Employee':'Admin';b.setAttribute('aria-label',r==='admin'?'Switch to employee login':'Switch to admin login')}}document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
   $('uL').textContent=r==='admin'?'Username':'Login Name';$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=false;
   $('lgNote').textContent=r==='admin'?'Full access: change settings, salary, attendance, expenses and approve requests.':'View attendance, salary and payslips, send requests and download.';err('e1','')};
+$('lgRole').hidden=true;
+{const bx=document.querySelector('#lg .box');bx.style.position='relative';bx.insertAdjacentHTML('afterbegin','<button type="button" id="lgAdm" aria-label="Switch to admin login">Admin</button>')}
+$('lgAdm').onclick=()=>pickRole(lr==='admin'?'employee':'admin');
 pickRole('employee');
 $('lgRole').onclick=e=>{const b=e.target.closest('[data-r]');if(b)pickRole(b.dataset.r)};
 let swTo='admin';
