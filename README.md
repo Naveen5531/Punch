@@ -134,3 +134,6 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 ## Changes in v3.9
 - Quick switch is admin-only: the "⇄ Employee" button shows only in the Admin login. The Employee login has no switch; use Logout and log in as Admin.
 - Payslip: "Total Pay" row removed; only Net Pay is shown.
+
+## Changes in v4.0
+- Login screen is Admin only (the Employee choice is removed). The Employee view is opened from inside Admin with "⇄ Employee" (employee ID and password). A kept Employee login from before asks for the Admin login again.

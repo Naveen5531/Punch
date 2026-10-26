@@ -1765,7 +1765,7 @@ let role='employee';
 const setRole=r=>{role=r;window.PunchRole=r;try{sessionStorage.setItem('att_role',r)}catch(e){}document.documentElement.dataset.role=r;window.dispatchEvent(new CustomEvent('punchrole',{detail:r}))};
 const unlock=(keep,r)=>{B.classList.remove('locked');try{sessionStorage.setItem('att_in','1')}catch(e){}setRole(r);keepSet(keep?ktok(r):null);setTimeout(()=>window.dispatchEvent(new Event('resize')),50)};
 let a='',ar='';try{a=sessionStorage.getItem('att_in');ar=sessionStorage.getItem('att_role')||''}catch(e){}
-if(!(a&&ar)){a='';const k=keepGet();if(k&&k===ktok('admin')){a='1';ar='admin'}else if(k&&k===ktok('employee')){a='1';ar='employee'}}
+if(!(a&&ar)){a='';const k=keepGet();if(k&&k===ktok('admin')){a='1';ar='admin'}}
 if(a)setRole(ar);else{window.PunchRole='';B.classList.add('locked')}
 B.insertAdjacentHTML('afterbegin',`<div id="lg"><div class="box">
 <h1>Attendance Management</h1><p class="s" id="lgs">Sign in to continue</p>
@@ -1833,6 +1833,7 @@ $('lgout').onclick=()=>{try{sessionStorage.removeItem('att_in');sessionStorage.r
 let lr='employee';const pickRole=r=>{lr=r;document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
   $('uL').textContent=r==='admin'?'Username':'Login Name';$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=r==='admin';
   $('lgNote').textContent=r==='admin'?'Full access: change settings, salary, attendance, expenses and approve requests.':'View attendance, salary and payslips, send requests and download.';err('e1','')};
+$('lgRole').hidden=true;pickRole('admin');
 $('lgRole').onclick=e=>{const b=e.target.closest('[data-r]');if(b)pickRole(b.dataset.r)};
 let swTo='admin';
 const swLbl=()=>{const r=window.PunchRole;$('rsw').textContent=r==='admin'?'⇄ Employee':'⇄ Admin';$('rsw').setAttribute('aria-label',r==='admin'?'Switch to Employee':'Switch to Admin');$('rsw').style.right=($('lgout').offsetWidth+20)+'px'};
