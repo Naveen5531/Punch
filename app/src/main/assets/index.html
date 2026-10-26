@@ -177,6 +177,8 @@ body:has(#statusCard.on) .hero-clock::after{content:'● ON DUTY';background:#ff
 .slip .wd2{margin:10px 0 0}
 .slip .ft{margin-top:10px;color:#6a7686}
 .slip .xp{margin-top:12px}
+.slip .xp td.f{color:#4b5563;font-size:.92em}
+.cc{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-bottom:1px dashed var(--line,#d9dee5)}.cc small{grid-column:1/3;color:var(--mut,#6a7686);font-variant-numeric:tabular-nums}.cc b{text-align:right;font-variant-numeric:tabular-nums}.cc.h{border:0;padding-top:12px}.cc.t b,.cc.t span{font-weight:800}
 .slip.a4{width:794px;min-height:1123px;padding:45px;font-size:13px;box-sizing:border-box;margin:0 auto 14px}
 .slipwrap{overflow:hidden;-webkit-overflow-scrolling:touch;margin-bottom:14px}
 .slipwrap .slip{margin-bottom:0}
@@ -400,6 +402,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
     <h2 class="ph">Salary</h2>
     <div class="card"><div id="payForm"></div><p class="sub">Salary is for the calendar month, 1st to last day. Today and upcoming days count as paid until you are marked absent. Mark days in Attendance.</p></div>
     <div class="card"><div id="payOut"></div></div>
+    <div class="card" id="payCalc"></div>
     <div class="card" id="payExM"></div>
     <div class="row"><button class="ghost" id="slipBtn">View payslip</button></div>
     <div class="row"><button class="ghost" id="payCsv">Download salary CSV</button></div>
@@ -410,6 +413,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
     <div class="card noprint">
       <div class="row"><label for="sf_month">Month</label><select class="in2" id="sf_month"></select></div>
       <input type="file" id="slogo" accept="image/*" hidden>
+      <div class="row"><input type="checkbox" id="sf_calc" style="width:22px;height:22px"><label for="sf_calc" style="color:var(--ink);white-space:normal">Show calculation on payslip</label></div>
       <div class="row"><button class="ghost" id="slogoBtn">Add company logo</button><button class="ghost" id="slogoDel">Remove logo</button></div>
       <p class="sub">Choose your company logo image (for example the DMart logo) from your phone. It is saved on this phone only. Everything else is filled in automatically from Settings and Salary.</p>
     </div>
@@ -863,11 +867,12 @@ $('wo').innerHTML=['Su','Mo','Tu','We','Th','Fr','Sa'].map((n,i)=>`<label><input
 $('wo').onchange=e=>{const s=new Set(S.wo||[]),d=+e.target.dataset.d;if(e.target.checked)s.add(d);else s.delete(d);if(!S.woH||!S.woH.length)S.woH=[{f:'0000-00-00',w:[...(S.wo||[])]}];S.wo=[...s];const tk=dayKey(Date.now());S.woH=S.woH.filter(e=>e.f!==tk).concat({f:tk,w:[...s]}).sort((a,b)=>a.f<b.f?-1:1);save();render()};
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function cycOpts(){const n=new Date(),o=[];let y=n.getFullYear(),m=n.getMonth();for(let i=0;i<12;i++){o.push([`${y}-${pad(m+1)}`,`${MN[m]} ${y}`]);m--;if(m<0){m=11;y--}}return o}
-const PD={month:'',basicAmt:0,hraAmt:0,splAmt:0,basis:'cal',ot:1.5,hpd:9,vpf:0,pt:0,oth:0,leavePaid:1,holPaid:1,holDbl:1,pf:0,pfEr:0,esi:0};
-const PF=[['month','Salary month','select',cycOpts()],['basicAmt','Basic per month (₹)','number'],['hraAmt','HRA per month (₹)','number'],['splAmt','Special allowance per month (₹)','number'],['basis','Days basis','select',[['cal','Calendar days in month'],['work','Working days (no week offs)'],['26','Fixed 26 days'],['30','Fixed 30 days']]],['ot','Overtime pay','select',[[0,'Off'],[1,'1x'],[1.5,'1.5x'],[2,'2x']]],['hpd','Hours in a day','number'],['pf','PF employee (₹)','number'],['pfEr','PF employer (₹)','number'],['vpf','VPF (₹)','number'],['esi','ESI (₹)','number'],['pt','Professional tax (₹)','number'],['oth','Other deduction (₹)','number']];
+const PD={month:'',basicAmt:0,hraAmt:0,convAmt:0,splAmt:0,pfMode:'',pfPct:12,basis:'cal',ot:1.5,hpd:9,vpf:0,pt:0,oth:0,leavePaid:1,holPaid:1,holDbl:1,pf:0,pfEr:0,esi:0};
+const PF=[['month','Salary month','select',cycOpts()],['basicAmt','Basic per month (₹)','number'],['hraAmt','HRA per month (₹)','number'],['convAmt','Conveyance per month (₹)','number'],['splAmt','Special allowance per month (₹)','number'],['basis','Days basis','select',[['cal','Calendar days in month'],['work','Working days (no week offs)'],['26','Fixed 26 days'],['30','Fixed 30 days']]],['ot','Overtime pay','select',[[0,'Off'],[1,'1x'],[1.5,'1.5x'],[2,'2x']]],['hpd','Hours in a day','number'],['pfMode','PF calculation','select',[['pct','% of earned Basic (as on payslip)'],['fix','Fixed amount (₹)']]],['pfPct','PF % of Basic','number'],['pf','PF employee, fixed (₹)','number'],['pfEr','PF employer, fixed (₹)','number'],['vpf','VPF (₹)','number'],['esi','ESI (₹)','number'],['pt','Professional tax (₹)','number'],['oth','Other deduction (₹)','number']];
 const PT=[['leavePaid','Leave is paid'],['holPaid','Holidays are paid'],['holDbl','Double pay if worked on a holiday']];
-const P=()=>{const q=Object.assign({},S.pay);if(!q.v2)['pf','pfEr','vpf','esi'].forEach(k=>delete q[k]);const p=Object.assign({},PD,q);const o=cycOpts();if(!o.some(x=>x[0]===p.month))p.month=o[0][0];return p};
+const P=()=>{const q=Object.assign({},S.pay);if(!q.v2)['pf','pfEr','vpf','esi'].forEach(k=>delete q[k]);const p=Object.assign({},PD,q);if(!p.pfMode)p.pfMode=(p.pf||p.pfEr)?'fix':'pct';const o=cycOpts();if(!o.some(x=>x[0]===p.month))p.month=o[0][0];return p};
 const inr=v=>'₹'+Math.round(v).toLocaleString('en-IN');
+const f2=v=>(+v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}),inr2=v=>'₹'+f2(v),fN=v=>(+v||0).toLocaleString('en-IN',{maximumFractionDigits:2});
 function buildPay(){const p=P();
   $('payForm').innerHTML=PF.map(([k,l,t,o])=>`<div class="row"><label for="pf_${k}">${l}</label>${t==='select'?`<select class="in2" id="pf_${k}" data-k="${k}">${o.map(([v,n])=>`<option value="${v}"${String(p[k])===String(v)?' selected':''}>${n}</option>`).join('')}</select>`:`<input class="in2" id="pf_${k}" data-k="${k}" type="${t}" value="${p[k]}">`}</div>`).join('')+PT.map(([k,l])=>`<div class="row"><input type="checkbox" id="pf_${k}" data-k="${k}"${p[k]?' checked':''} style="width:22px;height:22px"><label for="pf_${k}" style="color:var(--ink);white-space:normal">${l}</label></div>`).join('');
 }
@@ -889,28 +894,64 @@ function calcPay(){
   const all=dayRows(Array.from({length:dim},(_,i)=>new Date(y,m-1,1+i))),r=all,c=s=>r.filter(x=>x.st===s).length;
   const full=c('Full day')+c('Shift completed')+c('Marked present'),nj=c('Not joined'),pj=r.filter(x=>x.d>=t0&&['No check-in','Absent','Half day'].includes(x.st)),up=pj.length,half=c('Half day')-pj.filter(x=>x.st==='Half day').length,wo=c('Week off'),hol=c('Holiday'),lv=c('Leave')-r.filter(x=>x.st==='Leave'&&S.lt&&S.lt[x.k]==='LOP').length,co=c('Comp off'),ab=r.length-full-half-wo-hol-lv-co-nj-up;
   const base=p.basis==='cal'?dim:p.basis==='work'?dim-all.filter(x=>x.st==='Week off').length:+p.basis;
-  const sal=p.basicAmt+p.hraAmt+p.splAmt,rate=base?sal/base:0,cnt=p.basis==='cal'||p.basis==='30';
+  const sal=p.basicAmt+p.hraAmt+p.convAmt+p.splAmt,rate=base?sal/base:0,cnt=p.basis==='cal'||p.basis==='30';
   let pay=full+half/2+co+(p.leavePaid?lv:0)+(p.holPaid?hol:0)+(cnt?wo:0);
   if(p.basis==='26'||p.basis==='30')pay=Math.min(pay,base);
   const hx=p.holDbl?r.filter(x=>x.hol).reduce((s,x)=>s+(x.st==='Half day'?.5:x.st==='Absent'?0:1),0):0;pay+=hx;
-  const k=base?pay/base:0,earned=sal*k,basic=p.basicAmt*k,hra=p.hraAmt*k,spl=p.splAmt*k;
-  const oh=r.reduce((s,x)=>s+(x.ot||0),0)/H,ota=p.ot?oh*(rate/(p.hpd||9))*p.ot:0,gross=earned+ota;
-  const pf=p.pf,pfEr=p.pfEr,vpf=p.vpf,esi=p.esi,exL=exOcc(p.month+'-01',p.month+'-31'),ex=exL.reduce((q,o)=>q+o.a,0),net=gross-pf-vpf-esi-p.pt-p.oth-ex;
-  const L=[['Attendance'],['Full days',full],['Half days',half],['Week offs',wo],['Holidays',hol],['Holiday double pay days',hx],['Leave',lv],['Comp off (paid)',co],['Absent / no check-in',ab],['Today and upcoming days (pending, not paid)',up],['LOP days',ab+half/2],['Before joining',nj],['Payable days',`${pay} of ${base}`],['Rate per day',inr(rate)],['Earnings'],['Monthly salary (full)',inr(sal)],['Basic',inr(basic)],['HRA',inr(hra)],['Special allowance',inr(spl)]];
-  if(p.ot)L.push([`Overtime (${oh.toFixed(1)} h)`,inr(ota)]);
-  L.push(['Gross pay',inr(gross)],['Deductions']);
-  L.push(['PF (employee)',inr(pf)],['VPF',inr(vpf)],['ESI',inr(esi)],['Professional tax',inr(p.pt)],['Other deduction',inr(p.oth)]);
-  {const g={};exL.forEach(o=>{const k=String((o.c&&o.c!=='Other'?o.c:'')||o.n||o.c||'Expenses').trim().replace(/[<>&"]/g,'');g[k]=(g[k]||0)+o.a});const ge=Object.entries(g);(ge.length?ge.map(([k,v])=>[k,inr(v)]):[['Expenses',inr(0)]]).forEach(r=>L.push(r))}
-  L.push(['Total deductions',inr(pf+vpf+esi+p.pt+p.oth+ex)]);
-  L.push(['Net pay (take home)',inr(net),'tot']);L.push(['Employer contribution'],['PF (employer)',inr(pfEr)]);return L;
+  const k=base?pay/base:0,basic=r2(p.basicAmt*k),hra=r2(p.hraAmt*k),conv=r2(p.convAmt*k),spl=r2(p.splAmt*k);
+  const oh=r.reduce((s,x)=>s+(x.ot||0),0)/H,ota=r2(p.ot?oh*(rate/(p.hpd||9))*p.ot:0),gross=r2(basic+hra+conv+spl+ota);
+  const pct=p.pfMode==='pct',pp=+p.pfPct||0,pf=pct?Math.round(basic*pp/100):+p.pf||0,pfEr=pct?Math.round(basic*pp/100):+p.pfEr||0,vpf=p.vpf,esi=p.esi,exL=exOcc(p.month+'-01',p.month+'-31'),ex=exL.reduce((q,o)=>q+o.a,0);
+  const tded=r2(pf+vpf+esi+p.pt+p.oth+ex),net=r2(gross-tded);
+  const L=[['Attendance'],['Full days',full],['Half days',half],['Week offs',wo],['Holidays',hol],['Holiday double pay days',hx],['Leave',lv],['Comp off (paid)',co],['Absent / no check-in',ab],['Today and upcoming days (pending, not paid)',up],['LOP days',ab+half/2],['Before joining',nj],['Payable days',`${pay} of ${base}`],['Rate per day',inr2(rate)],['Earnings'],['Monthly salary (full)',inr2(sal)],['Basic',inr2(basic)],['HRA',inr2(hra)],['Conveyance',inr2(conv)],['Special allowance',inr2(spl)]];
+  if(p.ot)L.push([`Overtime (${oh.toFixed(1)} h)`,inr2(ota)]);
+  L.push(['Gross pay',inr2(gross)],['Deductions']);
+  L.push(['PF (employee)',inr2(pf)],['VPF',inr2(vpf)],['ESI',inr2(esi)],['Professional tax',inr2(p.pt)],['Other deduction',inr2(p.oth)]);
+  {const g={};exL.forEach(o=>{const k=String((o.c&&o.c!=='Other'?o.c:'')||o.n||o.c||'Expenses').trim().replace(/[<>&"]/g,'');g[k]=(g[k]||0)+o.a});const ge=Object.entries(g);(ge.length?ge.map(([k,v])=>[k,inr2(v)]):[['Expenses',inr2(0)]]).forEach(r=>L.push(r))}
+  L.push(['Total deductions',inr2(tded)]);
+  L.push(['Net pay (take home)',inr2(net),'tot']);L.push(['Employer contribution'],['PF (employer)',inr2(pfEr)]);
+  // Step-by-step working for every figure: [label, how it is worked out, result]
+  const worked=full+half/2,bLbl=p.basis==='cal'?'calendar days in the month':p.basis==='work'?'working days (month minus week offs)':'fixed '+p.basis+'-day month';
+  const pd=[[fN(worked),'worked']];if(cnt&&wo)pd.push([wo,'week off']);if(p.holPaid&&hol)pd.push([hol,'holiday']);if(p.leavePaid&&lv)pd.push([lv,'paid leave']);if(co)pd.push([co,'comp off']);if(hx)pd.push([hx,'holiday double pay']);
+  const C=[['Days'],
+    ['Days in month',`${MN[m-1]} ${y} has ${dim} days`,dim],
+    ['Day basis (divide by)',`Salary is divided by ${bLbl}`,base]];
+  if(nj)C.push(['Before joining (not paid)',`Days before your joining date`,nj]);
+  C.push(['Days worked',`${full} full day${full===1?'':'s'}${half?` + ${half} half day${half===1?'':'s'} × ½`:''}`,fN(worked)]);
+  if(wo)C.push(['Week offs',cnt?'Paid, because salary is on '+bLbl:'Not paid separately on this day basis',wo]);
+  if(hol)C.push(['Holidays',p.holPaid?'Paid':'Not paid',hol]);
+  if(lv)C.push(['Leave',p.leavePaid?'Paid leave':'Unpaid leave',lv]);
+  C.push(['LOP days (loss of pay)',`${ab} absent / no check-in${half?` + ${half} half day${half===1?'':'s'} × ½`:''}`,fN(ab+half/2)]);
+  if(up)C.push(['Pending days',`Today and upcoming days, paid once marked`,up]);
+  C.push(['Paid days (PD)',pd.map(x=>x[0]+' '+x[1]).join(' + ')+(p.basis==='26'||p.basis==='30'?` (max ${base})`:''),fN(pay),'t']);
+  C.push(['Pay factor',`PD ÷ day basis = ${fN(pay)} ÷ ${base}`,base?(pay/base).toFixed(4):'0','t']);
+  C.push(['Earnings']);
+  const ln=(n,full,v)=>{if(full)C.push([n,`${f2(full)} × ${fN(pay)} ÷ ${base}`,f2(v)])};
+  ln('Basic',p.basicAmt,basic);ln('HRA',p.hraAmt,hra);ln('Conveyance',p.convAmt,conv);ln('Special allowance',p.splAmt,spl);
+  if(p.ot)C.push(['Overtime',`${oh.toFixed(2)} h × (${f2(rate)} ÷ ${p.hpd||9} h) × ${p.ot}`,f2(ota)]);
+  C.push(['Gross earnings',[basic,hra,conv,spl,p.ot?ota:0].filter(Boolean).map(f2).join(' + ')||'0',f2(gross),'t']);
+  C.push(['Deductions']);
+  C.push(['PF (employee)',pct?`${pp}% × Basic ${f2(basic)} = ${f2(basic*pp/100)}, rounded to rupee`:'Fixed amount from settings',f2(pf)]);
+  if(vpf)C.push(['VPF','Fixed amount from settings',f2(vpf)]);if(esi)C.push(['ESI','Fixed amount from settings',f2(esi)]);
+  if(p.pt)C.push(['Professional tax','Fixed per month, not cut for part months',f2(p.pt)]);
+  if(p.oth)C.push(['Other deduction','Fixed amount from settings',f2(p.oth)]);
+  if(ex)C.push(['Expenses',`${exL.length} expense entr${exL.length===1?'y':'ies'} this month`,f2(ex)]);
+  C.push(['Total deductions',[pf,vpf,esi,p.pt,p.oth,ex].filter(Boolean).map(f2).join(' + ')||'0',f2(tded),'t']);
+  C.push(['Net pay (take home)',`${f2(gross)} − ${f2(tded)}`,f2(net),'t']);
+  C.push(['Per day and full month']);
+  C.push(['Gross per day',`${f2(sal)} ÷ ${base}`,f2(rate)]);
+  const fpf=pct?Math.round(p.basicAmt*pp/100):+p.pf||0,fnet=r2(sal-fpf-vpf-esi-p.pt-p.oth);
+  C.push(['Full month take-home (no LOP)',`${f2(sal)} − PF ${f2(fpf)}${vpf?` − VPF ${f2(vpf)}`:''}${esi?` − ESI ${f2(esi)}`:''}${p.pt?` − PT ${f2(p.pt)}`:''}${p.oth?` − other ${f2(p.oth)}`:''}`,f2(fnet)]);
+  C.push(['Loss per LOP day',`Gross per day ${f2(rate)}${pct&&base?` (PF also drops by ${f2(p.basicAmt/base*pp/100)})`:''}`,f2(rate)]);
+  L.calc=C;return L;
 }
-function renderPay(){payExM();$('payOut').innerHTML=calcPay().map(([l,v,c])=>v===undefined?`<div class="kv h"><b>${l}</b></div>`:`<div class="kv ${c||''}"><span>${l}</span><b>${v}</b></div>`).join('')}
+function calcHtml(C){return C.map(([l,f,v,c])=>f===undefined?`<div class="cc h"><b style="text-align:left">${l}</b></div>`:`<div class="cc ${c||''}"><span>${l}</span><b>${v}</b><small>${f}</small></div>`).join('')}
+function renderPay(){payExM();const L=calcPay();$('payCalc').innerHTML='<h2>How it\'s calculated</h2><p class="sub">Every figure above, step by step. PD = paid days.</p>'+calcHtml(L.calc);$('payOut').innerHTML=L.map(([l,v,c])=>v===undefined?`<div class="kv h"><b>${l}</b></div>`:`<div class="kv ${c||''}"><span>${l}</span><b>${v}</b></div>`).join('')}
 function payExM(){const el=$('payExM');if(!el)return;const cur=P().month,o=cycOpts().slice().reverse();
   const rows=o.map(([k,n])=>{const L=exOcc(k+'-01',k+'-31'),t=L.reduce((s,e)=>s+e.a,0);return{k,n,t,c:L.length}}),tot=rows.reduce((s,r)=>s+r.t,0);
   el.innerHTML=`<h2>Expenses month by month</h2><p class="sub">Last 12 months, deducted from that month's take-home. Tap a month to see its salary.</p><div class="hbox">${rows.reverse().map(r=>`<div class="hrow" data-m="${r.k}" style="cursor:pointer${r.k===cur?';outline:2px solid var(--in);border-radius:10px':''}"><div><b>${r.n}</b><small>${r.c?r.c+' entr'+(r.c===1?'y':'ies'):'No expenses'}</small></div><b>${inr(r.t)}</b></div>`).join('')}</div><div class="kv tot"><span>Total, 12 months</span><b>${inr(tot)}</b></div>`}
 $('payExM').onclick=e=>{const r=e.target.closest('[data-m]');if(!r)return;S.pay=Object.assign({},S.pay,{v2:1,month:r.dataset.m});save();typeof renderPayForm==='function'&&renderPayForm();const sm=document.querySelector('#p-pay select[id$="month"]');if(sm)sm.value=r.dataset.m;renderPay();window.scrollTo(0,0)};
 $('payCsv').onclick=()=>{const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\ufeff'+calcPay().map(([l,v])=>`"${l}"${v===undefined?'':`,"${v}"`}`).join('\n')],{type:'text/csv'}));
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+(L=>L.map(([l,v])=>`"${l}"${v===undefined?'':`,"${v}"`}`).concat(['','"How it\'s calculated"'],L.calc.map(([l,f,v])=>f===undefined?`"${l}"`:`"${l}","${v}","${String(f).replace(/"/g,'""')}"`)).join('\n'))(calcPay())],{type:'text/csv'}));
   a.download=fname(`Salary_Statement_${P().month}`,'csv');document.body.appendChild(a);a.click();a.remove()};
 $('join').onchange=()=>{S.join=$('join').value;save();render()};
 let cal={y:new Date().getFullYear(),m:new Date().getMonth()};const sel=new Set(),cal0=cal.y*12+cal.m;
@@ -976,7 +1017,7 @@ const _three=n=>n>99?_a[Math.floor(n/100)]+' Hundred'+(n%100?' '+_two(n%100):'')
 function inWords(n){n=Math.round(n);if(n<0)return 'Minus '+inWords(-n);if(n===0)return 'Zero';
   const cr=Math.floor(n/1e7),l=Math.floor(n%1e7/1e5),t=Math.floor(n%1e5/1e3),r=n%1000,p=[];
   if(cr)p.push(inWords(cr)+' Crore');if(l)p.push(_two(l)+' Lakh');if(t)p.push(_two(t)+' Thousand');if(r)p.push(_three(r));return p.join(' ')}
-function fillSlip(){const p=P();$('sf_month').innerHTML=cycOpts().map(([v,n])=>`<option value="${v}"${v===p.month?' selected':''}>${n}</option>`).join('')}
+function fillSlip(){const p=P();$('sf_calc').checked=!(S.slip&&S.slip.calc===0);$('sf_month').innerHTML=cycOpts().map(([v,n])=>`<option value="${v}"${v===p.month?' selected':''}>${n}</option>`).join('')}
 const GRADES=[['F','Frontline','Customer Service Associate, Cashier, Packer, Receiving staff'],['S','Supervisor','Team Leader, Senior Associate, Section in-charge, Assistant Manager'],['M','Manager','Department Manager, Assistant Store Manager, Store Manager, HO Manager'],['G','General Manager','Cluster / Regional Head, Category Head, GM, AVP, VP']];
 const CATS=['Foods (Staples, Groceries, Dairy, F&V)','Non-Foods (FMCG)','General Merchandise','Apparel','Store Operations','Head Office'];
 const gradeOf=q=>q.grade!==undefined?q.grade:((String(q.desg||'').match(/\b([FSMG][1-4])\b/i)||[,''])[1].toUpperCase());
@@ -997,7 +1038,7 @@ function renderSlip0(){
   const q=Object.assign({},EMP,S.slip),p=P(),L=calcPay(),[y,m]=p.month.split('-').map(Number),st=new Date(y,m-1,1),en=new Date(y,m,0);
   const ord=d=>{const n=d.getDate(),t=n%10,h=n%100;return n+(t===1&&h!==11?'st':t===2&&h!==12?'nd':t===3&&h!==13?'rd':'th')},mn=d=>d.toLocaleDateString('en-US',{month:'long'});
   const dur=`${ord(st)} ${mn(st)}, ${st.getFullYear()} to ${ord(en)} ${mn(en)}, ${en.getFullYear()}`;
-  const num=v=>Number(String(v).replace(/[^\d-]/g,'')),amt=v=>String(v).replace('\u20b9','');
+  const num=v=>Number(String(v).replace(/[^\d.-]/g,'')),amt=v=>String(v).replace('\u20b9','');
   const sec={};let cur='';L.forEach(r=>{if(r.length===1){cur=r[0];sec[cur]=[]}else sec[cur].push(r)});
   const keep=a=>{const f=a.filter(r=>num(r[1])!==0);return f.length?f:a.slice(0,1)};
   const E=sec['Earnings']||[],D=sec['Deductions']||[];
@@ -1008,16 +1049,19 @@ function renderSlip0(){
   const rows=Array.from({length:n},(_,i)=>`<tr>${cell(earn,i)}${cell(ded,i)}</tr>`).join('');
   const jd=S.join?new Date(S.join+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/ /g,'-'):'N.A';
   const netNum=net?num(net[1]):0,netS=net?amt(net[1]):'';
+  const cv=n=>{const r=(L.calc||[]).find(x=>x[0]===n);return r?r[2]:''};
   const pr=(a,b,c,d)=>`<tr><td class="l">${a}</td><td class="v">: ${b}</td><td class="l">${c}</td><td class="v">${d===''?'':': '+d}</td></tr>`;
   $('slip').innerHTML=`<div class="band">${q.logo?`<img src="${q.logo}" alt="Company logo">`:''}<b>${esc(S.wp&&S.wp.name)||'Company'}</b><div class="ttl">Salary Slip for the Month of ${mn(en)} - ${en.getFullYear()}</div></div>
-<table class="emp">${pr('Employee Name',esc(q.name).toUpperCase(),'Employee ID',esc(q.eid))}${pr('Designation',esc(q.desg),'Date of Joining',jd)}${gradeOf(q)||q.cat?pr('Grade',esc(gradeName(gradeOf(q))||'N.A'),'Category',esc(q.cat||'N.A')):''}${pr('Duration',dur,'Current Office location',esc(S.wp&&S.wp.name)||'N.A')}${pr('No of Working Days',base,'No of Days Worked',pay)}${pr('LOP Days',((sec['Attendance']||[]).find(r=>r[0]==='LOP days')||[,0])[1],'Tenure',S.join?tenureYM(S.join):'N.A')}</table>
+<table class="emp">${pr('Employee Name',esc(q.name).toUpperCase(),'Employee ID',esc(q.eid))}${pr('Designation',esc(q.desg),'Date of Joining',jd)}${gradeOf(q)||q.cat?pr('Grade',esc(gradeName(gradeOf(q))||'N.A'),'Category',esc(q.cat||'N.A')):''}${pr('Duration',dur,'Current Office location',esc(S.wp&&S.wp.name)||'N.A')}${pr('Total Days (basis)',base,'Paid Days (PD)',pay)}${pr('Days Worked',(cv('Days worked')||0),'Week off / Paid holiday',(+cv('Week offs')||0)+(+cv('Holidays')||0))}${pr('LOP Days',((sec['Attendance']||[]).find(r=>r[0]==='LOP days')||[,0])[1],'Tenure',S.join?tenureYM(S.join):'N.A')}</table>
 <table class="st"><thead><tr class="h1"><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr><tr><th>Description</th><th>Amount</th><th>Description</th><th>Amount</th></tr></thead><tbody>${rows}
 <tr class="b"><td>Gross Earnings</td><td class="r">${gross?amt(gross[1]):''}</td><td>Gross Deductions</td><td class="r">${tded?amt(tded[1]):''}</td></tr>
 <tr class="b"><td>Net Pay</td><td class="r">${netS}</td><td></td><td></td></tr><tr class="b"><td>Total Pay</td><td class="r">${netS}</td><td></td><td></td></tr></tbody></table>
-<p class="wd2"><b>In words :</b> ${inWords(netNum)} Rupees Only.</p>
+<p class="wd2"><b>In words :</b> ${inWords(Math.floor(netNum))} Rupees${Math.round(netNum*100)%100?' and '+_two(Math.round(netNum*100)%100)+' Paise':''} Only.</p>
+${S.slip&&S.slip.calc===0?'':`<table class="st xp"><thead><tr class="h1"><th colspan="3">How it's calculated (PD = paid days)</th></tr></thead><tbody>${(L.calc||[]).filter(r=>r[1]!==undefined&&!/^(Days in month|Before joining|Pending days|Gross per day|Full month take-home|Loss per LOP day)/.test(r[0])).map(([l,f,v,c])=>`<tr${c?' class="b"':''}><td>${l}</td><td class="f">${f}</td><td class="r">${v}</td></tr>`).join('')}</tbody></table>`}
 <p class="ft">** This is a system generated payslip, hence signature not required.</p>`;
 }
 $('sf_month').onchange=e=>{S.pay=Object.assign({},S.pay,{v2:1,month:e.target.value});save();renderSlip()};
+$('sf_calc').onchange=e=>{S.slip=Object.assign({},S.slip,{calc:e.target.checked?1:0});save();renderSlip()};
 $('slogoBtn').onclick=()=>$('slogo').click();
 $('slogoDel').onclick=()=>{S.slip=Object.assign({},S.slip,{logo:''});save();renderSlip();say('Logo removed.')};
 $('slogo').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();

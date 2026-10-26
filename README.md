@@ -108,3 +108,9 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v2.5
 - Tracking check: Autostart is now read from the phone on Xiaomi / Poco / Redmi (HyperOS, MIUI) and shows green when it is on. On phones that do not share it, a "Done" button marks it as set.
+
+## Changes in v3.4
+- Salary: new Conveyance field, and PF can be set as a % of earned Basic (12% by default), rounded to the rupee like a DMart payslip. Amounts now keep paise (e.g. 18,544.40).
+- Salary page: new "How it's calculated" card showing every step: days in month, before joining, days worked, week offs, LOP, paid days (PD), pay factor, each earning (full amount x PD / days), PF, professional tax, total deductions, net pay, per-day rate and full-month take-home.
+- Payslip: header shows Total Days, Paid Days (PD), Days Worked, Week off / Paid holiday and LOP; net pay in words includes paise; a "How it's calculated" table (can be turned off on the Payslip page). Still one A4 page.
+- Salary CSV includes the calculation steps.
