@@ -1943,7 +1943,7 @@ body.locked #lg{display:flex}
 #lg label.kp{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:14px;margin:14px 0 0}
 #lg label.kp input{width:20px;height:20px;padding:0;flex:none}
 #lg .lk{background:none;color:var(--in);font-size:14px;padding:8px;margin-top:8px}
-#lg .er{color:var(--out);font-size:13px;min-height:18px;margin-top:8px}
+#lg .er{color:var(--out);font-size:13px;min-height:18px;margin-top:8px;word-break:break-all;user-select:text;-webkit-user-select:text}
 #lg .ok{color:var(--in)}
 #lg .mail{background:var(--bg);border:1.5px dashed var(--in);border-radius:12px;padding:12px;font-size:13px;margin-bottom:8px}
 #lg .mail b{font-size:22px;letter-spacing:4px;display:block;margin-top:4px}
@@ -2022,7 +2022,11 @@ $('lgG').onclick=()=>{const PC=window.PunchCloud,N=window.PunchNative;
   window.onGoogleToken=async o=>{try{if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=null}}if(!o||o.error||!o.token){err('e1',(o&&o.error)||'Google sign-in failed.');return}
       err('e1','Signing in as '+o.email+'…',1);const r=await PC.signInGoogle(o.token);
       if(!r.hr){await PC.signOut();err('e1','This Gmail has no HR or admin access. Use the Employee login.');return}
-      err('e1','');unlock($('kp').checked,'admin')}catch(x){err('e1',x.code==='no-gmail'||x.code==='no-access'?(x.message.includes('@')?x.message:'This Gmail has no access to Punch.'):PC.msg(x))}finally{b.disabled=false}};
+      err('e1','');unlock($('kp').checked,'admin')}catch(x){
+        if(x.code==='no-gmail'||x.code==='no-access'){err('e1',x.message.includes('@')?x.message:'This Gmail has no access to Punch.');return}
+        /* Firebase did not accept the Google sign-in: show which Google app made it, so the admin can trust it in Firebase */
+        let cid='';try{const ti=await fetch('https://oauth2.googleapis.com/tokeninfo?access_token='+encodeURIComponent(o.token)).then(r=>r.json());cid=ti.azp||ti.aud||ti.issued_to||''}catch(e){}
+        err('e1','Google sign-in was not accepted ('+(x.code||'error')+').'+(cid?' Google app ID: '+cid:''))}finally{b.disabled=false}};
   try{N.googleToken()}catch(e){b.disabled=false;err('e1','Google sign-in failed.')}};
 ['u','p'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')$('li').click()});
 $('fg').onclick=()=>show(2);
