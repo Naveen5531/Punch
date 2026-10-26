@@ -118,3 +118,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 ## Changes in v3.5
 - Employee login: Salary shows only the month picker and the final figures (earnings, deductions, net pay). Salary settings, days, paid days (PD), LOP and the "How it's calculated" card are hidden. Payslip shows no PD/days rows and no calculation table. Salary CSV has final figures only.
 - Admin login: everything as in v3.4 (all settings, days, PD and full calculation).
+
+## Changes in v3.6
+- Quick switch: a "⇄ Admin" / "⇄ Employee" button in the top bar switches login without logging out. It always asks for that login's user ID and password.
+- Hike %: admin sets "Hike %" and "Hike from month" on the Salary page. From that month on, Basic, HRA, Conveyance and Special allowance go up by the %, and PF follows the new Basic. The calculation shows each step; employees see a "Hike x% from <month>" line with the final figures.

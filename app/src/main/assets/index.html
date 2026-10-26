@@ -866,9 +866,10 @@ $('grace_m').onchange=()=>{const v=parseInt($('grace_m').value);S.grace=isNaN(v)
 $('wo').innerHTML=['Su','Mo','Tu','We','Th','Fr','Sa'].map((n,i)=>`<label><input type="checkbox" data-d="${i}">${n}</label>`).join('');
 $('wo').onchange=e=>{const s=new Set(S.wo||[]),d=+e.target.dataset.d;if(e.target.checked)s.add(d);else s.delete(d);if(!S.woH||!S.woH.length)S.woH=[{f:'0000-00-00',w:[...(S.wo||[])]}];S.wo=[...s];const tk=dayKey(Date.now());S.woH=S.woH.filter(e=>e.f!==tk).concat({f:tk,w:[...s]}).sort((a,b)=>a.f<b.f?-1:1);save();render()};
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function hikeOpts(){const n=new Date(),o=[['','Not set']];for(let i=-12;i<=12;i++){const d=new Date(n.getFullYear(),n.getMonth()+i,1);o.push([`${d.getFullYear()}-${pad(d.getMonth()+1)}`,`${MN[d.getMonth()]} ${d.getFullYear()}`])}return o}
 function cycOpts(){const n=new Date(),o=[];let y=n.getFullYear(),m=n.getMonth();for(let i=0;i<12;i++){o.push([`${y}-${pad(m+1)}`,`${MN[m]} ${y}`]);m--;if(m<0){m=11;y--}}return o}
-const PD={month:'',basicAmt:0,hraAmt:0,convAmt:0,splAmt:0,pfMode:'',pfPct:12,basis:'cal',ot:1.5,hpd:9,vpf:0,pt:0,oth:0,leavePaid:1,holPaid:1,holDbl:1,pf:0,pfEr:0,esi:0};
-const PF=[['month','Salary month','select',cycOpts()],['basicAmt','Basic per month (₹)','number'],['hraAmt','HRA per month (₹)','number'],['convAmt','Conveyance per month (₹)','number'],['splAmt','Special allowance per month (₹)','number'],['basis','Days basis','select',[['cal','Calendar days in month'],['work','Working days (no week offs)'],['26','Fixed 26 days'],['30','Fixed 30 days']]],['ot','Overtime pay','select',[[0,'Off'],[1,'1x'],[1.5,'1.5x'],[2,'2x']]],['hpd','Hours in a day','number'],['pfMode','PF calculation','select',[['pct','% of earned Basic (as on payslip)'],['fix','Fixed amount (₹)']]],['pfPct','PF % of Basic','number'],['pf','PF employee, fixed (₹)','number'],['pfEr','PF employer, fixed (₹)','number'],['vpf','VPF (₹)','number'],['esi','ESI (₹)','number'],['pt','Professional tax (₹)','number'],['oth','Other deduction (₹)','number']];
+const PD={month:'',hike:0,hikeFrom:'',basicAmt:0,hraAmt:0,convAmt:0,splAmt:0,pfMode:'',pfPct:12,basis:'cal',ot:1.5,hpd:9,vpf:0,pt:0,oth:0,leavePaid:1,holPaid:1,holDbl:1,pf:0,pfEr:0,esi:0};
+const PF=[['month','Salary month','select',cycOpts()],['hike','Hike % (on full salary)','number'],['hikeFrom','Hike from month','select',hikeOpts()],['basicAmt','Basic per month (₹), before hike','number'],['hraAmt','HRA per month (₹)','number'],['convAmt','Conveyance per month (₹)','number'],['splAmt','Special allowance per month (₹)','number'],['basis','Days basis','select',[['cal','Calendar days in month'],['work','Working days (no week offs)'],['26','Fixed 26 days'],['30','Fixed 30 days']]],['ot','Overtime pay','select',[[0,'Off'],[1,'1x'],[1.5,'1.5x'],[2,'2x']]],['hpd','Hours in a day','number'],['pfMode','PF calculation','select',[['pct','% of earned Basic (as on payslip)'],['fix','Fixed amount (₹)']]],['pfPct','PF % of Basic','number'],['pf','PF employee, fixed (₹)','number'],['pfEr','PF employer, fixed (₹)','number'],['vpf','VPF (₹)','number'],['esi','ESI (₹)','number'],['pt','Professional tax (₹)','number'],['oth','Other deduction (₹)','number']];
 const PT=[['leavePaid','Leave is paid'],['holPaid','Holidays are paid'],['holDbl','Double pay if worked on a holiday']];
 const P=()=>{const q=Object.assign({},S.pay);if(!q.v2)['pf','pfEr','vpf','esi'].forEach(k=>delete q[k]);const p=Object.assign({},PD,q);if(!p.pfMode)p.pfMode=(p.pf||p.pfEr)?'fix':'pct';const o=cycOpts();if(!o.some(x=>x[0]===p.month))p.month=o[0][0];return p};
 const inr=v=>'₹'+Math.round(v).toLocaleString('en-IN');
@@ -890,7 +891,11 @@ function exOcc(a,z){const out=[],idx=k=>(+k.slice(0,4))*12+(+k.slice(5,7))-1;
       if(o>=a&&o<=z)out.push(Object.assign({},e,{o}))}});
   return out}
 function calcPay(){
-  const p=P();p.ot=+p.ot||0;const[y,m]=p.month.split('-').map(Number),dim=new Date(y,m,0).getDate(),t0=new Date();t0.setHours(0,0,0,0);
+  const p=P();p.ot=+p.ot||0;
+  /* Hike: from the chosen month on, every full-month amount (Basic, HRA, Conveyance, Special) goes up by the %. */
+  const hk=(+p.hike&&p.hikeFrom&&p.month>=p.hikeFrom)?+p.hike:0,hf=1+hk/100,pre={b:p.basicAmt,h:p.hraAmt,c:p.convAmt,s:p.splAmt};
+  if(hk){p.basicAmt=r2(p.basicAmt*hf);p.hraAmt=r2(p.hraAmt*hf);p.convAmt=r2(p.convAmt*hf);p.splAmt=r2(p.splAmt*hf)}
+  const[y,m]=p.month.split('-').map(Number),dim=new Date(y,m,0).getDate(),t0=new Date();t0.setHours(0,0,0,0);
   const all=dayRows(Array.from({length:dim},(_,i)=>new Date(y,m-1,1+i))),r=all,c=s=>r.filter(x=>x.st===s).length;
   const full=c('Full day')+c('Shift completed')+c('Marked present'),nj=c('Not joined'),pj=r.filter(x=>x.d>=t0&&['No check-in','Absent','Half day'].includes(x.st)),up=pj.length,half=c('Half day')-pj.filter(x=>x.st==='Half day').length,wo=c('Week off'),hol=c('Holiday'),lv=c('Leave')-r.filter(x=>x.st==='Leave'&&S.lt&&S.lt[x.k]==='LOP').length,co=c('Comp off'),ab=r.length-full-half-wo-hol-lv-co-nj-up;
   const base=p.basis==='cal'?dim:p.basis==='work'?dim-all.filter(x=>x.st==='Week off').length:+p.basis;
@@ -925,6 +930,9 @@ function calcPay(){
   C.push(['Paid days (PD)',pd.map(x=>x[0]+' '+x[1]).join(' + ')+(p.basis==='26'||p.basis==='30'?` (max ${base})`:''),fN(pay),'t']);
   C.push(['Pay factor',`PD ÷ day basis = ${fN(pay)} ÷ ${base}`,base?(pay/base).toFixed(4):'0','t']);
   C.push(['Earnings']);
+  if(hk){const hn=x=>MN[+x.slice(5,7)-1]+' '+x.slice(0,4);C.push(['Hike',`${fN(hk)}% from ${hn(p.hikeFrom)}: full salary ${f2(pre.b+pre.h+pre.c+pre.s)} × ${hf.toFixed(4)}`,f2(sal),'t']);
+    [['Basic',pre.b,p.basicAmt],['HRA',pre.h,p.hraAmt],['Conveyance',pre.c,p.convAmt],['Special allowance',pre.s,p.splAmt]].forEach(([n,a,b])=>{if(a)C.push([n+' after hike',`${f2(a)} + ${fN(hk)}% = ${f2(a)} × ${hf.toFixed(4)}`,f2(b)])})}
+  else if(+p.hike&&p.hikeFrom)C.push(['Hike',`${fN(p.hike)}% starts from ${MN[+p.hikeFrom.slice(5,7)-1]} ${p.hikeFrom.slice(0,4)}, not this month`,'0.00']);
   const ln=(n,full,v)=>{if(full)C.push([n,`${f2(full)} × ${fN(pay)} ÷ ${base}`,f2(v)])};
   ln('Basic',p.basicAmt,basic);ln('HRA',p.hraAmt,hra);ln('Conveyance',p.convAmt,conv);ln('Special allowance',p.splAmt,spl);
   if(p.ot)C.push(['Overtime',`${oh.toFixed(2)} h × (${f2(rate)} ÷ ${p.hpd||9} h) × ${p.ot}`,f2(ota)]);
@@ -946,7 +954,7 @@ function calcPay(){
 }
 const isEmp=()=>window.PunchRole==='employee';
 /* Employee sees only the final figures: earnings, deductions, net pay. Admin sees days, PD and the full working. */
-const finalOnly=L=>{const o=[];let sec='';L.forEach(r=>{if(r.length===1){sec=r[0];if(sec==='Earnings'||sec==='Deductions')o.push(r);return}if(r[1]==='₹0.00'&&!/Gross|Total|Net/.test(r[0]))return;if((sec==='Earnings'&&r[0]!=='Monthly salary (full)')||sec==='Deductions')o.push(r)});o.calc=[];return o};
+const finalOnly=L=>{const o=[];const hl=(L.calc||[]).find(r=>r[0]==='Hike'&&r[3]);let sec='';L.forEach(r=>{if(r.length===1){sec=r[0];if(sec==='Earnings'||sec==='Deductions')o.push(r);return}if(r[1]==='₹0.00'&&!/Gross|Total|Net/.test(r[0]))return;if((sec==='Earnings'&&r[0]!=='Monthly salary (full)')||sec==='Deductions')o.push(r)});if(hl){const i=o.findIndex(r=>r[0]==='Earnings');o.splice(i+1,0,['Hike '+hl[1].split(':')[0],'Included'])}o.calc=[];return o};
 function calcHtml(C){return C.map(([l,f,v,c])=>f===undefined?`<div class="cc h"><b style="text-align:left">${l}</b></div>`:`<div class="cc ${c||''}"><span>${l}</span><b>${v}</b><small>${f}</small></div>`).join('')}
 function renderPay(){payExM();const emp=isEmp(),L=emp?finalOnly(calcPay()):calcPay();$('payCalc').hidden=emp;$('payCalc').innerHTML=emp?'':'<h2>How it\'s calculated</h2><p class="sub">Every figure above, step by step. PD = paid days.</p>'+calcHtml(L.calc);$('payOut').innerHTML=L.map(([l,v,c])=>v===undefined?`<div class="kv h"><b>${l}</b></div>`:`<div class="kv ${c||''}"><span>${l}</span><b>${v}</b></div>`).join('')}
 function payExM(){const el=$('payExM');if(!el)return;const cur=P().month,o=cycOpts().slice().reverse();
@@ -1801,15 +1809,47 @@ body.locked #lg{display:flex}
 #lg .rseg button{flex:1;margin:0;padding:10px;border-radius:9px;background:none;color:var(--mute);font-weight:700;font-size:15px}
 #lg .rseg button.on{background:var(--in);color:#fff}
 #lg .rnote{color:var(--mute);font-size:13px;margin:10px 0 0;text-align:center}
+#rsw{position:absolute;right:92px;top:50%;transform:translateY(-50%);z-index:2;width:auto;padding:6px 10px;font-size:12px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.08);background:var(--bg);color:var(--in);border:1px solid var(--line)}
+body.locked #rsw,body.locked #swd{display:none!important}
+#swd{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+#swd[hidden]{display:none}
+#swd .box{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+#swd h2{margin:0 0 4px;color:var(--ink);font-size:21px}#swd p.s{color:var(--mute);font-size:13px;margin:0 0 6px}
+#swd label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
+#swd input{font:inherit;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);box-sizing:border-box}
+#swd .pwrow{display:flex;gap:8px}#swd .pwrow input{flex:1;min-width:0}#swd .pwview{width:auto;margin:0;padding:10px 12px;background:var(--bg);color:var(--in);border:1px solid var(--line);font-size:13px}
+#swd .er{color:var(--out);font-size:13px;min-height:18px;margin-top:8px}
+#swd .sbtn{display:flex;gap:10px;margin-top:10px}#swd .sbtn button{flex:1;margin:0}#swd .b{background:var(--in);color:#fff}#swd .lk{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
 #roleTag{margin-left:8px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--bg);border:1px solid var(--line);color:var(--in)}
 `+'</style>');
 const hd=document.querySelector('header.top');hd.style.position='relative';
-hd.insertAdjacentHTML('beforeend','<button id="lgout">Logout</button>');
+hd.insertAdjacentHTML('beforeend','<button id="lgout">Logout</button><button id="rsw" type="button">Switch</button>');
+/* Quick switch between Employee and Admin without logging out; always asks for the other login's user ID and password. */
+B.insertAdjacentHTML('beforeend',`<div id="swd" hidden><div class="box"><h2 id="swt">Switch</h2><p class="s" id="sws"></p>
+<label id="swuL">User ID</label><input id="swu" autocomplete="username">
+<label>Password</label><div class="pwrow"><input id="swp" type="password" autocomplete="current-password"><button type="button" class="pwview" id="swv" aria-label="Show password">Show</button></div>
+<div class="er" id="swe"></div><div class="sbtn"><button type="button" class="lk" id="swc">Cancel</button><button type="button" class="b" id="swo">Switch</button></div></div></div>`);
 $('lgout').onclick=()=>{try{sessionStorage.removeItem('att_in');sessionStorage.removeItem('att_role')}catch(e){}keepSet(null);window.PunchRole='';$('u').value=$('p').value='';show(1);B.classList.add('locked');window.dispatchEvent(new CustomEvent('punchrole',{detail:''}))};
 let lr='employee';const pickRole=r=>{lr=r;document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
   $('uL').textContent=r==='admin'?'Username':'Login Name';$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=r==='admin';
   $('lgNote').textContent=r==='admin'?'Full access: change settings, salary, attendance, expenses and approve requests.':'View attendance, salary and payslips, send requests and download.';err('e1','')};
 $('lgRole').onclick=e=>{const b=e.target.closest('[data-r]');if(b)pickRole(b.dataset.r)};
+let swTo='admin';
+const swLbl=()=>{const r=window.PunchRole;$('rsw').textContent=r==='admin'?'⇄ Employee':'⇄ Admin';$('rsw').setAttribute('aria-label',r==='admin'?'Switch to Employee':'Switch to Admin');$('rsw').style.right=($('lgout').offsetWidth+20)+'px'};
+window.addEventListener('punchrole',()=>{try{swLbl()}catch(e){}});
+$('rsw').onclick=()=>{swTo=window.PunchRole==='admin'?'employee':'admin';$('swt').textContent='Switch to '+(swTo==='admin'?'Admin':'Employee');
+  $('sws').textContent=swTo==='admin'?'Enter the admin user ID and password.':'Enter the employee user ID and password.';
+  $('swuL').textContent=swTo==='admin'?'Admin user ID':'Employee user ID';$('swu').inputMode=swTo==='admin'?'text':'numeric';
+  $('swu').value=$('swp').value='';$('swp').type='password';$('swv').textContent='Show';$('swe').textContent='';$('swd').hidden=false;setTimeout(()=>$('swu').focus(),50)};
+$('swc').onclick=()=>{$('swd').hidden=true};
+$('swd').onclick=e=>{if(e.target.id==='swd')$('swd').hidden=true};
+$('swv').onclick=()=>{const v=$('swp').type==='text';$('swp').type=v?'password':'text';$('swv').textContent=v?'Show':'Hide'};
+$('swo').onclick=async()=>{const u=$('swu').value.trim(),pw=$('swp').value;let ok=false;
+  try{ok=swTo==='admin'?(u.toLowerCase()==='admin'&&await sha(pw)===ADMH):(u===ID&&await pwOK(pw))}catch(e){}
+  if(!ok){$('swe').textContent='Wrong user ID or password.';return}
+  const keep=!!keepGet();$('swd').hidden=true;unlock(keep,swTo);try{say('Switched to '+(swTo==='admin'?'Admin':'Employee')+'.')}catch(e){}};
+['swu','swp'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')$('swo').click()});
+setTimeout(()=>{try{swLbl()}catch(e){}},0);
 const togglePassword=(inputId,buttonId,label)=>{$(buttonId).onclick=()=>{const visible=$(inputId).type==='text';$(inputId).type=visible?'password':'text';$(buttonId).textContent=visible?'Show':'Hide';$(buttonId).setAttribute('aria-label',visible?'Show '+label:'Hide '+label)}};
 togglePassword('p','vp','password');togglePassword('n1','vn1','new password');togglePassword('n2','vn2','confirm password');
 $('li').onclick=async()=>{
