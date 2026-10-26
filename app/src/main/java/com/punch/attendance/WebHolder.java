@@ -228,6 +228,11 @@ public class WebHolder {
             AlarmReceiver.schedule(app, (long) at, t, b);
         }
 
+        /** Missed check-out reminder (epoch ms; 0 cancels). */
+        @JavascriptInterface public void setReminder(double at, String t, String b) {
+            AlarmReceiver.scheduleReminder(app, (long) at, t, b);
+        }
+
         /** Notification from the page. loud = alarm sound + vibration until opened. */
         @JavascriptInterface public void notify(String t, String b, boolean loud) { AlarmReceiver.notify(app, t, b, loud); }
 

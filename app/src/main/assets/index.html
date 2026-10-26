@@ -178,6 +178,9 @@ body:has(#statusCard.on) .hero-clock::after{content:'● ON DUTY';background:#ff
 .slip .ft{margin-top:10px;color:#6a7686}
 .slip .xp{margin-top:12px}
 .slip .xp td.f{color:#4b5563;font-size:.92em}
+.slip .st td.y{color:#4b5563}.slip .st td.ys{font-weight:400;color:#6a7686;font-size:.85em;text-align:center}.slip .lb th{font-size:.9em}
+.slip .at th,.slip .at td{padding:3px 6px;font-size:.92em}.slip .at tr.wo td{background:#f1f3f6;color:#4b5563}
+.ytbl{overflow-x:auto}.ytbl table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13.5px}.ytbl th,.ytbl td{padding:7px 4px;text-align:right;border-bottom:1px solid var(--line)}.ytbl th:first-child,.ytbl td:first-child{text-align:left}.ytbl th{color:var(--mute);font-size:12px;font-weight:700}.ytbl tr.on td{font-weight:800;color:var(--in)}.ytbl tr.t td{font-weight:800;border-bottom:0}.ytbl tr[data-m]{cursor:pointer}
 .cc{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-bottom:1px dashed var(--line,#d9dee5)}.cc small{grid-column:1/3;color:var(--mut,#6a7686);font-variant-numeric:tabular-nums}.cc b{text-align:right;font-variant-numeric:tabular-nums}.cc.h{border:0;padding-top:12px}.cc.t b,.cc.t span{font-weight:800}
 .slip.a4{width:794px;min-height:1123px;padding:45px;font-size:13px;box-sizing:border-box;margin:0 auto 14px}
 .slipwrap{overflow:hidden;-webkit-overflow-scrolling:touch;margin-bottom:14px}
@@ -192,6 +195,7 @@ body #lg .pwview{min-width:62px;border-radius:12px}
 body #lg .b{border-radius:14px;min-height:50px;font-size:16px;background:linear-gradient(145deg,var(--in2),var(--in));box-shadow:0 10px 20px -10px var(--in)}
 body #lg .lk{background:none;box-shadow:none}
 @page{size:A4 portrait;margin:12mm}
+@media print{.slip .xp th,.slip .xp td{padding:2.5px 5px!important;font-size:8pt}.slip .at th,.slip .at td{padding:2px 5px!important;font-size:8pt}.slip .emp td{padding:2.5px 3px}.slip .band{padding-top:4px;padding-bottom:4px}.slip .xp{margin-top:5px!important}.slip .wd2,.slip .ft{margin-top:5px!important;margin-bottom:0}.slip .st td,.slip .st th{padding-top:2.5px!important;padding-bottom:2.5px!important}.slip .emp{margin:6px 0!important}}
 @media print{html,body{background:#fff!important;background-image:none!important}body{max-width:none!important;margin:0!important;padding:0!important}#festFx{display:none!important}.slipwrap{overflow:visible;height:auto!important}.slip.a4{min-height:0;padding:0;transform:none!important}.top,.bar,#msg,#perm,#lg,.noprint{display:none!important}main{padding:0!important;margin:0!important;max-width:none!important}main>.pane{max-width:none!important}.slip{border:0;border-radius:0;padding:0;width:186mm;max-width:186mm;margin:0 auto;font-size:9pt;overflow:visible}.slip .st tr{break-inside:avoid}.slip .st th,.slip .st td{padding:3.5px 6px}.slip .st .h1 th{padding:5px}.slip .emp td{padding:3px}.slip .emp{margin:8px 0}.slip .band{padding:8px}.slip .xp{margin-top:8px;break-inside:avoid}.slip .wd2{margin:6px 0 0}}
 @media (prefers-reduced-motion:reduce){*,::before,::after{animation:none!important;transition:none!important}}
 :root{--b1:#dcf5b8;--b2:#e3dcff;--b3:#ffe0cc;--b4:#cfeaff;--bt:#16231d}
@@ -317,6 +321,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
       <div class="cal" id="cal"></div>
       <p class="sub" id="cdet"></p>
       <div id="cSum"></div>
+      <div class="row"><button class="ghost" id="attPdfBtn">Monthly attendance PDF</button></div>
     </div>
     <div class="card">
       <h2>Request attendance</h2>
@@ -358,6 +363,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
       <h2>Holiday calendar</h2>
       <div id="lvHols"></div>
     </div>
+    <div class="card" id="coCard"></div>
     <div class="card"><h2>Leave taken</h2><div id="lvHist"></div></div>
   </section>
 
@@ -401,7 +407,9 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
   <section class="pane" id="p-pay" hidden>
     <h2 class="ph">Salary</h2>
     <div class="card"><div id="payForm"></div><p class="sub">Salary is for the calendar month, 1st to last day. Today and upcoming days count as paid until you are marked absent. Mark days in Attendance.</p></div>
+    <div class="card" id="payHike"></div>
     <div class="card"><div id="payOut"></div></div>
+    <div class="card" id="payYear"></div>
     <div class="card" id="payCalc"></div>
     <div class="card" id="payExM"></div>
     <div class="row"><button class="ghost" id="slipBtn">View payslip</button></div>
@@ -419,6 +427,13 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
     </div>
     <div class="slipwrap"><div class="slip a4" id="slip"></div></div>
     <div class="row noprint"><button class="ghost" id="slipBack">Back to Salary</button><button id="slipPrint" style="background:var(--in);font-size:16px;padding:12px">Print / Save as PDF</button></div>
+  </section>
+
+  <section class="pane" id="p-attpdf" hidden>
+    <h2 class="ph noprint">Attendance report</h2>
+    <div class="card noprint"><p class="sub">One A4 page for the month on the Attendance calendar. Tap Print / Save as PDF to send it to HR.</p></div>
+    <div class="slipwrap" id="attWrap"><div class="slip a4" id="attSheet"></div></div>
+    <div class="row noprint"><button class="ghost" id="attBack">Back to Attendance</button><button id="attPrint" style="background:var(--in);font-size:16px;padding:12px">Print / Save as PDF</button></div>
   </section>
 
   <section class="pane" id="p-maps" hidden>
@@ -488,6 +503,12 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
       <div id="hlist"></div>
       <div id="hgaps"></div>
       <div class="row"><button class="ghost" id="hre">Check again</button></div>
+    </div>
+    <div class="card">
+      <h2>Missed check-out reminder</h2>
+      <div class="row"><label for="remOn">Remind me if I'm still checked in</label><input type="checkbox" id="remOn"></div>
+      <div class="row"><label for="remAt">Remind at</label><input id="remAt" type="time" value="21:00"></div>
+      <p class="sub">A notification at this time if you forgot to check out, even when the app is closed.</p>
     </div>
     <div class="card">
       <h2>Shift alarm</h2>
@@ -859,19 +880,19 @@ $('clear').onclick=()=>{if(confirm('Delete all attendance records?')){S.logs=[];
 function show(t){
   document.querySelectorAll('.pane').forEach(p=>{p.hidden=p.id!=='p-'+t});
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-current',b.dataset.t===(t==='slip'?'pay':t)?'page':'false'));
-  window.scrollTo(0,0);setTimeout(()=>window.__beat&&__beat(),0);if(t==='report')renderRep();if(t==='attendance')renderCal();if(t==='pay')renderPay();if(t==='slip'){fillSlip();renderSlip()}if(t==='maps')openMaps();if(t==='lib')renderLib();if(t==='leave')renderLeave();if(t==='admin')renderAdmin();if(t==='exp')renderExp();if(t==='trips'){renderTrip();renderLib();}const ac=document.querySelector('.tab[aria-current="page"]');if(ac){const b=ac.parentElement;b.scrollLeft=ac.offsetLeft-(b.clientWidth-ac.clientWidth)/2}
+  window.scrollTo(0,0);setTimeout(()=>window.__beat&&__beat(),0);if(t==='report')renderRep();if(t==='attendance')renderCal();if(t==='leave')try{coCard()}catch(e){try{console.error(e)}catch(x){}}if(t==='pay')renderPay();if(t==='slip'){fillSlip();renderSlip()}if(t==='attpdf')renderAttPdf();if(t==='maps')openMaps();if(t==='lib')renderLib();if(t==='leave')renderLeave();if(t==='admin')renderAdmin();if(t==='exp')renderExp();if(t==='trips'){renderTrip();renderLib();}const ac=document.querySelector('.tab[aria-current="page"]');if(ac){const b=ac.parentElement;b.scrollLeft=ac.offsetLeft-(b.clientWidth-ac.clientWidth)/2}
 }
 document.querySelectorAll('.tab').forEach(b=>{b.onclick=()=>show(b.dataset.t)});
 $('grace_m').onchange=()=>{const v=parseInt($('grace_m').value);S.grace=isNaN(v)?30:Math.min(240,Math.max(0,v));save();render()};
 $('wo').innerHTML=['Su','Mo','Tu','We','Th','Fr','Sa'].map((n,i)=>`<label><input type="checkbox" data-d="${i}">${n}</label>`).join('');
 $('wo').onchange=e=>{const s=new Set(S.wo||[]),d=+e.target.dataset.d;if(e.target.checked)s.add(d);else s.delete(d);if(!S.woH||!S.woH.length)S.woH=[{f:'0000-00-00',w:[...(S.wo||[])]}];S.wo=[...s];const tk=dayKey(Date.now());S.woH=S.woH.filter(e=>e.f!==tk).concat({f:tk,w:[...s]}).sort((a,b)=>a.f<b.f?-1:1);save();render()};
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function hikeOpts(){const n=new Date(),o=[['','Not set']];for(let i=-12;i<=12;i++){const d=new Date(n.getFullYear(),n.getMonth()+i,1);o.push([`${d.getFullYear()}-${pad(d.getMonth()+1)}`,`${MN[d.getMonth()]} ${d.getFullYear()}`])}return o}
+function hikeOpts(){const n=new Date(),o=[['','Pick month']];for(let i=-36;i<=24;i++){const d=new Date(n.getFullYear(),n.getMonth()+i,1);o.push([`${d.getFullYear()}-${pad(d.getMonth()+1)}`,`${MN[d.getMonth()]} ${d.getFullYear()}`])}return o}
 function cycOpts(){const n=new Date(),o=[];let y=n.getFullYear(),m=n.getMonth();for(let i=0;i<12;i++){o.push([`${y}-${pad(m+1)}`,`${MN[m]} ${y}`]);m--;if(m<0){m=11;y--}}return o}
 const PD={month:'',hike:0,hikeFrom:'',basicAmt:0,hraAmt:0,convAmt:0,splAmt:0,pfMode:'',pfPct:12,basis:'cal',ot:1.5,hpd:9,vpf:0,pt:0,oth:0,leavePaid:1,holPaid:1,holDbl:0,pf:0,pfEr:0,esi:0};
-const PF=[['month','Salary month','select',cycOpts()],['hike','Hike % (on full salary)','number'],['hikeFrom','Hike from month','select',hikeOpts()],['basicAmt','Basic per month (₹), before hike','number'],['hraAmt','HRA per month (₹)','number'],['convAmt','Conveyance per month (₹)','number'],['splAmt','Special allowance per month (₹)','number'],['basis','Days basis','select',[['cal','Calendar days in month'],['work','Working days (no week offs)'],['26','Fixed 26 days'],['30','Fixed 30 days']]],['ot','Overtime pay','select',[[0,'Off'],[1,'1x'],[1.5,'1.5x'],[2,'2x']]],['hpd','Hours in a day','number'],['pfMode','PF calculation','select',[['pct','% of earned Basic (as on payslip)'],['fix','Fixed amount (₹)']]],['pfPct','PF % of Basic','number'],['pf','PF employee, fixed (₹)','number'],['pfEr','PF employer, fixed (₹)','number'],['vpf','VPF (₹)','number'],['esi','ESI (₹)','number'],['pt','Professional tax (₹)','number'],['oth','Other deduction (₹)','number']];
+const PF=[['month','Salary month','select',cycOpts()],['basicAmt','Basic per month (₹), before hike','number'],['hraAmt','HRA per month (₹)','number'],['convAmt','Conveyance per month (₹)','number'],['splAmt','Special allowance per month (₹)','number'],['basis','Days basis','select',[['cal','Calendar days in month'],['work','Working days (no week offs)'],['26','Fixed 26 days'],['30','Fixed 30 days']]],['ot','Overtime pay','select',[[0,'Off'],[1,'1x'],[1.5,'1.5x'],[2,'2x']]],['hpd','Hours in a day','number'],['pfMode','PF calculation','select',[['pct','% of earned Basic (as on payslip)'],['fix','Fixed amount (₹)']]],['pfPct','PF % of Basic','number'],['pf','PF employee, fixed (₹)','number'],['pfEr','PF employer, fixed (₹)','number'],['vpf','VPF (₹)','number'],['esi','ESI (₹)','number'],['pt','Professional tax (₹)','number'],['oth','Other deduction (₹)','number']];
 const PT=[['leavePaid','Leave is paid'],['holPaid','Holidays are paid'],['holDbl','Pay double for a worked holiday (instead of a comp off)']];
-const P=()=>{const q=Object.assign({},S.pay);if(!q.v2)['pf','pfEr','vpf','esi'].forEach(k=>delete q[k]);const p=Object.assign({},PD,q);if(!p.pfMode)p.pfMode=(p.pf||p.pfEr)?'fix':'pct';const o=cycOpts();if(!o.some(x=>x[0]===p.month))p.month=o[0][0];return p};
+const P=()=>{const q=Object.assign({},S.pay);if(!q.v2)['pf','pfEr','vpf','esi'].forEach(k=>delete q[k]);const p=Object.assign({},PD,q);if(!p.pfMode)p.pfMode=(p.pf||p.pfEr)?'fix':'pct';if(!Array.isArray(p.hikes))p.hikes=(+p.hike&&p.hikeFrom)?[{p:+p.hike,f:p.hikeFrom}]:[];const o=cycOpts();if(!o.some(x=>x[0]===p.month))p.month=o[0][0];return p};
 const inr=v=>'₹'+Math.round(v).toLocaleString('en-IN');
 const f2=v=>(+v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}),inr2=v=>'₹'+f2(v),fN=v=>(+v||0).toLocaleString('en-IN',{maximumFractionDigits:2});
 function buildPay(){const p=P();
@@ -893,7 +914,7 @@ function exOcc(a,z){const out=[],idx=k=>(+k.slice(0,4))*12+(+k.slice(5,7))-1;
 function calcPay(mo){
   const p=P();if(mo)p.month=mo;p.ot=+p.ot||0;
   /* Hike: from the chosen month on, every full-month amount (Basic, HRA, Conveyance, Special) goes up by the %. */
-  const hk=(+p.hike&&p.hikeFrom&&p.month>=p.hikeFrom)?+p.hike:0,hf=1+hk/100,pre={b:p.basicAmt,h:p.hraAmt,c:p.convAmt,s:p.splAmt};
+  const hks=p.hikes.filter(h=>+h.p&&h.f&&p.month>=h.f).sort((a,b)=>a.f<b.f?-1:1),hf=hks.reduce((f,h)=>f*(1+h.p/100),1),hk=hks.length?r2((hf-1)*100):0,pre={b:p.basicAmt,h:p.hraAmt,c:p.convAmt,s:p.splAmt};
   if(hk){p.basicAmt=r2(p.basicAmt*hf);p.hraAmt=r2(p.hraAmt*hf);p.convAmt=r2(p.convAmt*hf);p.splAmt=r2(p.splAmt*hf)}
   const[y,m]=p.month.split('-').map(Number),dim=new Date(y,m,0).getDate(),t0=new Date();t0.setHours(0,0,0,0);
   const all=dayRows(Array.from({length:dim},(_,i)=>new Date(y,m-1,1+i))),r=all,c=s=>r.filter(x=>x.st===s).length;
@@ -930,9 +951,10 @@ function calcPay(mo){
   C.push(['Paid days (PD)',pd.map(x=>x[0]+' '+x[1]).join(' + ')+(p.basis==='26'||p.basis==='30'?` (max ${base})`:''),fN(pay),'t']);
   C.push(['Pay factor',`PD ÷ day basis = ${fN(pay)} ÷ ${base}`,base?(pay/base).toFixed(4):'0','t']);
   C.push(['Earnings']);
-  if(hk){const hn=x=>MN[+x.slice(5,7)-1]+' '+x.slice(0,4);C.push(['Hike',`${fN(hk)}% from ${hn(p.hikeFrom)}: full salary ${f2(pre.b+pre.h+pre.c+pre.s)} × ${hf.toFixed(4)}`,f2(sal),'t']);
-    [['Basic',pre.b,p.basicAmt],['HRA',pre.h,p.hraAmt],['Conveyance',pre.c,p.convAmt],['Special allowance',pre.s,p.splAmt]].forEach(([n,a,b])=>{if(a)C.push([n+' after hike',`${f2(a)} + ${fN(hk)}% = ${f2(a)} × ${hf.toFixed(4)}`,f2(b)])})}
-  else if(+p.hike&&p.hikeFrom)C.push(['Hike',`${fN(p.hike)}% starts from ${MN[+p.hikeFrom.slice(5,7)-1]} ${p.hikeFrom.slice(0,4)}, not this month`,'0.00']);
+  const hn=x=>MN[+x.slice(5,7)-1]+' '+x.slice(0,4);
+  if(hk){C.push(['Hike',`${hks.map(h=>fN(h.p)+'% from '+hn(h.f)).join(' + ')}: full salary ${f2(pre.b+pre.h+pre.c+pre.s)} × ${hf.toFixed(4)}`+(hks.length>1?` (${fN(hk)}% in all)`:''),f2(sal),'t']);
+    [['Basic',pre.b,p.basicAmt],['HRA',pre.h,p.hraAmt],['Conveyance',pre.c,p.convAmt],['Special allowance',pre.s,p.splAmt]].forEach(([n,a,b])=>{if(a)C.push([n+' after hike',`${f2(a)} × ${hf.toFixed(4)}`,f2(b)])})}
+  {const nx=p.hikes.filter(h=>+h.p&&h.f&&h.f>p.month).sort((a,b)=>a.f<b.f?-1:1)[0];if(nx)C.push(['Next hike',`${fN(nx.p)}% from ${hn(nx.f)}, not in this month`,'0.00'])}
   const ln=(n,full,v)=>{if(full)C.push([n,`${f2(full)} × ${fN(pay)} ÷ ${base}`,f2(v)])};
   ln('Basic',p.basicAmt,basic);ln('HRA',p.hraAmt,hra);ln('Conveyance',p.convAmt,conv);ln('Special allowance',p.splAmt,spl);
   if(p.ot)C.push(['Overtime',`${oh.toFixed(2)} h × (${f2(rate)} ÷ ${p.hpd||9} h) × ${p.ot}`,f2(ota)]);
@@ -955,12 +977,35 @@ function calcPay(mo){
 const isEmp=()=>window.PunchRole==='employee';
 /* Employee sees only the final figures: earnings, deductions, net pay. Admin sees days, PD and the full working. */
 const finalOnly=L=>{const o=[];const hl=(L.calc||[]).find(r=>r[0]==='Hike'&&r[3]);let sec='';L.forEach(r=>{if(r.length===1){sec=r[0];if(sec==='Earnings'||sec==='Deductions')o.push(r);return}if(r[1]==='₹0.00'&&!/Gross|Total|Net/.test(r[0]))return;if((sec==='Earnings'&&r[0]!=='Monthly salary (full)')||sec==='Deductions')o.push(r)});if(hl){const i=o.findIndex(r=>r[0]==='Earnings');o.splice(i+1,0,['Hike '+hl[1].split(':')[0],'Included'])}o.calc=[];return o};
+function payHike(){const el=$('payHike');if(!el)return;const p=P(),H=p.hikes,o=hikeOpts();
+  el.innerHTML=`<h2>Hikes</h2><p class="sub">Each hike raises Basic, HRA, Conveyance and Special allowance from its month on. Hikes add up one on top of the other. Keep the amounts above as your salary before any hike.</p>${H.length?H.map((h,i)=>`<div class="row hk"><input class="in2" type="number" step="0.01" data-hp="${i}" value="${h.p}" aria-label="Hike %" style="max-width:90px"><span style="white-space:nowrap">% from</span><select class="in2" data-hf="${i}">${o.map(([v,n])=>`<option value="${v}"${v===h.f?' selected':''}>${n}</option>`).join('')}</select><button class="ghost" data-hd="${i}" aria-label="Remove hike" style="width:auto;padding:8px 12px">✕</button></div>`).join(''):'<p class="sub">No hikes yet.</p>'}<div class="row"><button class="ghost" id="hkAdd">Add hike</button></div>`}
+$('payHike').oninput=$('payHike').onchange=e=>{const t=e.target,p=P(),H=p.hikes.map(h=>Object.assign({},h));
+  if(t.dataset.hp!==undefined)H[+t.dataset.hp].p=+t.value||0;else if(t.dataset.hf!==undefined)H[+t.dataset.hf].f=t.value;else return;
+  S.pay=Object.assign({},S.pay,{v2:1,hikes:H});delete S.pay.hike;delete S.pay.hikeFrom;save();if(e.type==='change')payHike();renderPay(1)};
+$('payHike').onclick=e=>{const p=P(),H=p.hikes.slice();
+  if(e.target.id==='hkAdd'){const d=new Date();H.push({p:0,f:`${d.getFullYear()}-${pad(d.getMonth()+1)}`})}
+  else if(e.target.dataset.hd!==undefined){if(!confirm('Remove this hike?'))return;H.splice(+e.target.dataset.hd,1)}else return;
+  S.pay=Object.assign({},S.pay,{v2:1,hikes:H});delete S.pay.hike;delete S.pay.hikeFrom;save();payHike();renderPay(1)};
+/* Financial year (April to March) up to a month: each salary line added up, plus the per-month totals. Months before joining or with no paid days are left out. */
+const fyStart=mo=>{const y=+mo.slice(0,4),m=+mo.slice(5,7);return (m>=4?y:y-1)+'-04'};
+const fyName=mo=>{const y=+fyStart(mo).slice(0,4);return `FY ${y}-${String(y+1).slice(2)}`};
+const numV=v=>Number(String(v).replace(/[^\d.-]/g,''))||0;
+function ytd(mo){const out={},months=[],jm=S.join?S.join.slice(0,7):'';let k=fyStart(mo);
+  while(k<=mo){if(!(jm&&k<jm)){const L=calcPay(k),pd=L.find(r=>r[0]==='Payable days');if(pd&&parseFloat(pd[1])>0){let sec='';
+      L.forEach(r=>{if(r.length===1){sec=r[0];return}if(sec==='Earnings'||sec==='Deductions')out[r[0]]=r2((out[r[0]]||0)+numV(r[1]))});
+      months.push({k,g:numV((L.find(r=>r[0]==='Gross pay')||[])[1]),d:numV((L.find(r=>r[0]==='Total deductions')||[])[1]),n:numV((L.find(r=>r[0]==='Net pay (take home)')||[])[1]),pd:parseFloat(pd[1])})}}
+    const[y,m]=k.split('-').map(Number),d=new Date(y,m,1);k=`${d.getFullYear()}-${pad(d.getMonth()+1)}`}
+  out.months=months;return out}
+function payYear(){const el=$('payYear');if(!el)return;const mo=P().month,cur=cycOpts()[0][0],Y=ytd(mo>cur?cur:mo),M=Y.months,t=k=>M.reduce((s,x)=>s+x[k],0);
+  el.innerHTML=`<h2>Year summary · ${fyName(mo)}</h2><p class="sub">April to ${MN[+mo.slice(5,7)-1]} ${mo.slice(0,4)}. Useful for income tax and Form 16 checks.</p>${M.length?`<div class="ytbl"><table><thead><tr><th>Month</th><th>Gross</th><th>Deductions</th><th>Net pay</th></tr></thead><tbody>${M.map(x=>`<tr data-m="${x.k}"${x.k===mo?' class="on"':''}><td>${MN[+x.k.slice(5,7)-1]} ${x.k.slice(2,4)}</td><td>${f2(x.g)}</td><td>${f2(x.d)}</td><td>${f2(x.n)}</td></tr>`).join('')}<tr class="t"><td>Total</td><td>${f2(t('g'))}</td><td>${f2(t('d'))}</td><td>${f2(t('n'))}</td></tr></tbody></table></div>${(Y['PF (employee)']||Y['Professional tax'])?`<div class="kv"><span>PF (employee) so far</span><b>${inr2(Y['PF (employee)']||0)}</b></div><div class="kv"><span>Professional tax so far</span><b>${inr2(Y['Professional tax']||0)}</b></div>`:''}`:'<p class="sub">No paid months yet in this year.</p>'}`}
 function calcHtml(C){return C.map(([l,f,v,c])=>f===undefined?`<div class="cc h"><b style="text-align:left">${l}</b></div>`:`<div class="cc ${c||''}"><span>${l}</span><b>${v}</b><small>${f}</small></div>`).join('')}
-function renderPay(){payExM();const emp=isEmp(),L=emp?finalOnly(calcPay()):calcPay();$('payCalc').hidden=emp;$('payCalc').innerHTML=emp?'':'<h2>How it\'s calculated</h2><p class="sub">Every figure above, step by step. PD = paid days.</p>'+calcHtml(L.calc);$('payOut').innerHTML=L.map(([l,v,c])=>v===undefined?`<div class="kv h"><b>${l}</b></div>`:`<div class="kv ${c||''}"><span>${l}</span><b>${v}</b></div>`).join('')}
+function renderPay(keep){payExM();if(!keep)payHike();try{payYear()}catch(e){try{console.error(e)}catch(x){}}const emp=isEmp(),L=emp?finalOnly(calcPay()):calcPay();$('payCalc').hidden=emp;$('payCalc').innerHTML=emp?'':'<h2>How it\'s calculated</h2><p class="sub">Every figure above, step by step. PD = paid days.</p>'+calcHtml(L.calc);$('payOut').innerHTML=L.map(([l,v,c])=>v===undefined?`<div class="kv h"><b>${l}</b></div>`:`<div class="kv ${c||''}"><span>${l}</span><b>${v}</b></div>`).join('')}
 function payExM(){const el=$('payExM');if(!el)return;const cur=P().month,o=cycOpts().slice().reverse();
   const rows=o.map(([k,n])=>{const L=exOcc(k+'-01',k+'-31'),t=L.reduce((s,e)=>s+e.a,0);return{k,n,t,c:L.length}}),tot=rows.reduce((s,r)=>s+r.t,0);
   el.innerHTML=`<h2>Expenses month by month</h2><p class="sub">Last 12 months, deducted from that month's take-home. Tap a month to see its salary.</p><div class="hbox">${rows.reverse().map(r=>`<div class="hrow" data-m="${r.k}" style="cursor:pointer${r.k===cur?';outline:2px solid var(--in);border-radius:10px':''}"><div><b>${r.n}</b><small>${r.c?r.c+' entr'+(r.c===1?'y':'ies'):'No expenses'}</small></div><b>${inr(r.t)}</b></div>`).join('')}</div><div class="kv tot"><span>Total, 12 months</span><b>${inr(tot)}</b></div>`}
 $('payExM').onclick=e=>{const r=e.target.closest('[data-m]');if(!r)return;S.pay=Object.assign({},S.pay,{v2:1,month:r.dataset.m});save();typeof renderPayForm==='function'&&renderPayForm();const sm=document.querySelector('#p-pay select[id$="month"]');if(sm)sm.value=r.dataset.m;renderPay();window.scrollTo(0,0)};
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='coDays'&&!(window.PunchRole==='employee')){S.coDays=Math.max(0,Math.min(365,parseInt(e.target.value)||0));save();coCard();try{renderLeave()}catch(x){}}});
+$('payYear').onclick=e=>{const r=e.target.closest('[data-m]');if(!r)return;S.pay=Object.assign({},S.pay,{v2:1,month:r.dataset.m});save();const sm=document.querySelector('#p-pay select[id$="month"]');if(sm)sm.value=r.dataset.m;renderPay();window.scrollTo(0,0)};
 $('payCsv').onclick=()=>{const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\ufeff'+(L=>L.map(([l,v])=>`"${l}"${v===undefined?'':`,"${v}"`}`).concat(L.calc.length?['','"How it\'s calculated"']:[],L.calc.map(([l,f,v])=>f===undefined?`"${l}"`:`"${l}","${v}","${String(f).replace(/"/g,'""')}"`)).join('\n'))(isEmp()?finalOnly(calcPay()):calcPay())],{type:'text/csv'}));
   a.download=fname(`Salary_Statement_${P().month}`,'csv');document.body.appendChild(a);a.click();a.remove()};
@@ -1056,7 +1101,7 @@ function renderSlip0(){
   const earn=keep(E.filter(r=>!['Monthly salary (full)','Gross pay'].includes(r[0]))),gross=E.find(r=>r[0]==='Gross pay'),
     ded=keep(D.filter(r=>!['Total deductions','Net pay (take home)'].includes(r[0]))),tded=D.find(r=>r[0]==='Total deductions'),net=D.find(r=>r[0]==='Net pay (take home)');
   const pd=((sec['Attendance']||[]).find(r=>r[0]==='Payable days')||[,'0 of 0'])[1].split(' of '),pay=parseFloat(pd[0])||0,base=parseFloat(pd[1])||0;
-  const n=Math.max(earn.length,ded.length),cell=(r,i)=>r[i]?`<td>${r[i][0]}</td><td class="r">${amt(r[i][1])}</td>`:'<td></td><td></td>';
+  const Y=ytd(p.month),yv=l=>Y[l]!==undefined?f2(Y[l]):'',n=Math.max(earn.length,ded.length),cell=(r,i)=>r[i]?`<td>${r[i][0]}</td><td class="r">${amt(r[i][1])}</td><td class="r y">${yv(r[i][0])}</td>`:'<td></td><td></td><td></td>';
   const rows=Array.from({length:n},(_,i)=>`<tr>${cell(earn,i)}${cell(ded,i)}</tr>`).join('');
   const jd=S.join?new Date(S.join+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/ /g,'-'):'N.A';
   const netNum=net?num(net[1]):0,netS=net?amt(net[1]):'';
@@ -1064,11 +1109,12 @@ function renderSlip0(){
   const pr=(a,b,c,d)=>`<tr><td class="l">${a}</td><td class="v">: ${b}</td><td class="l">${c}</td><td class="v">${d===''?'':': '+d}</td></tr>`;
   $('slip').innerHTML=`<div class="band">${q.logo?`<img src="${q.logo}" alt="Company logo">`:''}<b>${esc(S.wp&&S.wp.name)||'Company'}</b><div class="ttl">Salary Slip for the Month of ${mn(en)} - ${en.getFullYear()}</div></div>
 <table class="emp">${pr('Employee Name',esc(q.name).toUpperCase(),'Employee ID',esc(q.eid))}${pr('Designation',esc(q.desg),'Date of Joining',jd)}${gradeOf(q)||q.cat?pr('Grade',esc(gradeName(gradeOf(q))||'N.A'),'Category',esc(q.cat||'N.A')):''}${pr('Duration',dur,'Current Office location',esc(S.wp&&S.wp.name)||'N.A')}${emp?'':pr('Total Days (basis)',base,'Paid Days (PD)',pay)+pr('Days Worked',(cv('Days worked')||0),'Week off / Paid holiday',(+cv('Week offs')||0)+(+cv('Holidays')||0))+pr('LOP Days',((sec['Attendance']||[]).find(r=>r[0]==='LOP days')||[,0])[1],'Tenure',S.join?tenureYM(S.join):'N.A')}${emp?pr('Tenure',S.join?tenureYM(S.join):'N.A','',''):''}</table>
-<table class="st"><thead><tr class="h1"><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr><tr><th>Description</th><th>Amount</th><th>Description</th><th>Amount</th></tr></thead><tbody>${rows}
-<tr class="b"><td>Gross Earnings</td><td class="r">${gross?amt(gross[1]):''}</td><td>Gross Deductions</td><td class="r">${tded?amt(tded[1]):''}</td></tr>
-<tr class="b"><td>Net Pay</td><td class="r">${netS}</td><td></td><td></td></tr></tbody></table>
+<table class="st"><thead><tr class="h1"><th colspan="3">Earnings</th><th colspan="3">Deductions</th></tr><tr><th>Description</th><th>Amount</th><th>YTD</th><th>Description</th><th>Amount</th><th>YTD</th></tr></thead><tbody>${rows}
+<tr class="b"><td>Gross Earnings</td><td class="r">${gross?amt(gross[1]):''}</td><td class="r y">${yv('Gross pay')}</td><td>Gross Deductions</td><td class="r">${tded?amt(tded[1]):''}</td><td class="r y">${yv('Total deductions')}</td></tr>
+<tr class="b"><td>Net Pay</td><td class="r">${netS}</td><td class="r y">${yv('Net pay (take home)')}</td><td colspan="3" class="ys">YTD = ${fyName(p.month)}, April to ${mn(en)}</td></tr></tbody></table>
 <p class="wd2"><b>In words :</b> ${inWords(Math.floor(netNum))} Rupees${Math.round(netNum*100)%100?' and '+_two(Math.round(netNum*100)%100)+' Paise':''} Only.</p>
-${emp||(S.slip&&S.slip.calc===0)?'':`<table class="st xp"><thead><tr class="h1"><th colspan="3">How it's calculated (PD = paid days)</th></tr></thead><tbody>${(L.calc||[]).filter(r=>r[1]!==undefined&&!/^(Days in month|Before joining|Pending days|Gross per day|Full month take-home|Loss per LOP day)/.test(r[0])).map(([l,f,v,c])=>`<tr${c?' class="b"':''}><td>${l}</td><td class="f">${f}</td><td class="r">${v}</td></tr>`).join('')}</tbody></table>`}
+${(()=>{let ls={},cs={b:0};try{ls=lvStats()}catch(e){}try{cs=coStats()}catch(e){}const cells=LT.map(([t,n])=>[n+' ('+t+')',ls[t]?ls[t].b:0]).concat([['Comp off',cs.b]]);return `<table class="st xp lb"><thead><tr class="h1"><th colspan="${cells.length}">Leave balance as on ${fd(dayKey(Date.now()))}</th></tr><tr>${cells.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody><tr>${cells.map(c=>`<td class="r" style="text-align:center">${fN(c[1])}</td>`).join('')}</tr></tbody></table>`})()}
+${emp||(S.slip&&S.slip.calc===0)?'':`<table class="st xp"><thead><tr class="h1"><th colspan="3">How it's calculated (PD = paid days)</th></tr></thead><tbody>${(L.calc||[]).filter(r=>r[1]!==undefined&&!/^(Days in month|Before joining|Pending days|Gross per day|Full month take-home|Loss per LOP day|Next hike)/.test(r[0])&&!/ after hike$/.test(r[0])).map(([l,f,v,c])=>`<tr${c?' class="b"':''}><td>${l}</td><td class="f">${f}</td><td class="r">${v}</td></tr>`).join('')}</tbody></table>`}
 <p class="ft">** This is a system generated payslip, hence signature not required.</p>`;
 }
 $('sf_month').onchange=e=>{S.pay=Object.assign({},S.pay,{v2:1,month:e.target.value});save();renderSlip()};
@@ -1083,6 +1129,22 @@ $('slogo').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileR
   r.onerror=()=>say('Could not read that file.',true);r.readAsDataURL(f);e.target.value=''};
 $('slipBtn').onclick=()=>show('slip');
 $('slipBack').onclick=()=>show('pay');
+/* Monthly attendance report: one A4 page (date, status, in, out, hours, overtime) to print or save as PDF. */
+function renderAttPdf(){const{y,m}=cal,dim=new Date(y,m+1,0).getDate(),q=Object.assign({},EMP,S.slip),mname=new Date(y,m,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const R=dayRows(Array.from({length:dim},(_,i)=>new Date(y,m,i+1))),today=dayKey(Date.now()),c=a=>R.filter(x=>a.includes(x.st)).length;
+  const tot=R.reduce((s,x)=>s+(x.ms||0),0),ot=R.reduce((s,x)=>s+(x.ot||0),0);
+  const sum=[['Present',c(['Full day','Shift completed','Marked present'])],['Half day',c(['Half day'])],['Absent',R.filter(x=>['Absent','Marked absent','No check-in'].includes(x.st)&&x.k<today).length],['Week off',c(['Week off'])],['Holiday',c(['Holiday'])],['Leave',c(['Leave'])],['Comp off',c(['Comp off'])]];
+  $('attSheet').innerHTML=`<div class="band">${q.logo?`<img src="${q.logo}" alt="Company logo">`:''}<b>${esc(S.wp&&S.wp.name)||'Company'}</b><div class="ttl">Attendance Report for ${mname}</div></div>
+<table class="emp"><tr><td class="l">Employee Name</td><td class="v">: ${esc(q.name).toUpperCase()}</td><td class="l">Employee ID</td><td class="v">: ${esc(q.eid)}</td></tr><tr><td class="l">Designation</td><td class="v">: ${esc(q.desg)}</td><td class="l">Location</td><td class="v">: ${esc(S.wp&&S.wp.name)||'N.A'}</td></tr></table>
+<table class="st at"><thead><tr><th>Date</th><th>Day</th><th>Status</th><th>In</th><th>Out</th><th>Hours</th><th>OT</th></tr></thead><tbody>${R.map(x=>`<tr${['Week off','Holiday'].includes(x.st)?' class="wo"':''}><td>${String(x.d.getDate()).padStart(2,'0')}-${MN[m]}</td><td>${x.d.toLocaleDateString('en-GB',{weekday:'short'})}</td><td>${esc(x.k>today?'':x.st==='Leave'&&S.lt&&S.lt[x.k]?'Leave ('+S.lt[x.k]+')':x.st)}${hname(x.k)?' · '+esc(hname(x.k)):''}</td><td>${x.a!==undefined?tm(x.a):''}</td><td>${x.a!==undefined?(x.live?'—':tm(x.b)):''}</td><td class="r">${x.ms?hm(x.ms):''}</td><td class="r">${x.ot?hm(x.ot):''}</td></tr>`).join('')}
+<tr class="b"><td colspan="5">Total</td><td class="r">${hm(tot)}</td><td class="r">${hm(ot)}</td></tr></tbody></table>
+<table class="st xp"><thead><tr>${sum.map(s=>`<th>${s[0]}</th>`).join('')}</tr></thead><tbody><tr>${sum.map(s=>`<td style="text-align:center;font-weight:700">${s[1]}</td>`).join('')}</tr></tbody></table>
+<p class="ft">** System generated from Punch on ${fd(today)} ${tm(Date.now())}.</p>`;
+  const w=$('attWrap'),el=$('attSheet');el.style.transform='';w.style.height='';const k=Math.min(1,(w.clientWidth||794)/794);el.style.transformOrigin='top left';el.style.transform=k<1?`scale(${k})`:'';w.style.height=k<1?Math.ceil(el.offsetHeight*k)+'px':''}
+$('attPdfBtn').onclick=()=>show('attpdf');
+$('attBack').onclick=()=>show('attendance');
+$('attPrint').onclick=()=>{const nm='Attendance_'+cal.y+'-'+pad(cal.m+1);if(window.PunchNative&&PunchNative.printPage){PunchNative.printPage(fname(nm,'pdf').replace(/\.pdf$/,''));return}const t=document.title;document.title=nm;window.onafterprint=()=>{document.title=t;window.onafterprint=null};window.print()};
+addEventListener('resize',()=>{if(!$('p-attpdf').hidden)renderAttPdf()});
 $('slipPrint').onclick=()=>{if(window.PunchNative&&PunchNative.printPage){PunchNative.printPage(fname('Payslip_'+P().month,'pdf').replace(/\.pdf$/,''));return}const t=document.title;document.title='Payslip-'+P().month;window.onafterprint=()=>{document.title=t;window.onafterprint=null};window.print()};
 
 /* ---- saved places, trips, maps ---- */
@@ -1306,7 +1368,24 @@ $('lvForm').onchange=e=>{const el=e.target,k=el.dataset.k;if(!k)return;S.lv=S.lv
   if(k==='start'){if(/^\d{4}-\d{2}$/.test(el.value))S.lv.start=el.value}
   else{const[t,f]=k.split('.');S.lv[t]=S.lv[t]||{};const v=parseFloat(String(el.value).replace(',','.'));if(isNaN(v)||v<0){delete S.lv[t][f]}else S.lv[t][f]=v}
   save();render()};
-function coStats(){let e=0;Object.values(S.coL||{}).forEach(v=>e+=v);const u=Object.keys(S.coU||{}).length;return{e,u,b:e-u}}
+/* Comp off with expiry: each comp off taken uses the oldest one still valid on that date (first in, first out).
+   S.coDays = days a comp off stays valid after the day it was earned (0 = never expires). */
+function coDetail(){const V=+S.coDays||0,today=dayKey(Date.now()),add=(k,n)=>{const d=new Date(k+'T00:00:00');d.setDate(d.getDate()+n);return dayKey(d.getTime())};
+  const E=Object.entries(S.coL||{}).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,v])=>({k,v:+v||0,left:+v||0,till:V?add(k,V):'',used:[]}));
+  const U=Object.keys(S.coU||{}).sort();let over=0;
+  U.forEach(u=>{let need=1;for(const e of E){if(need<=0)break;if(e.left<=0||e.k>u||(e.till&&u>e.till))continue;const t=Math.min(e.left,need);e.left-=t;need-=t;e.used.push(u)}
+    if(need>0){for(const e of E){if(need<=0)break;if(e.left<=0||(e.till&&u>e.till))continue;const t=Math.min(e.left,need);e.left-=t;need-=t;e.used.push(u)}}
+    over+=need});
+  E.forEach(e=>{e.exp=!!(e.till&&today>e.till&&e.left>0);e.daysLeft=e.till?Math.round((new Date(e.till+'T00:00:00')-new Date(today+'T00:00:00'))/864e5):null});
+  return{E,over,V,today}}
+function coStats(){const d=coDetail(),e=d.E.reduce((s,x)=>s+x.v,0),u=Object.keys(S.coU||{}).length,x=d.E.filter(z=>z.exp).reduce((s,z)=>s+z.left,0),av=d.E.filter(z=>!z.exp).reduce((s,z)=>s+z.left,0);
+  return{e,u,x,b:r2(av-d.over)}}
+function coCard(){const el=$('coCard');if(!el)return;const d=coDetail(),st=coStats(),soon=d.E.filter(e=>!e.exp&&e.left>0&&e.daysLeft!==null&&e.daysLeft<=7);
+  el.innerHTML=`<h2>Comp off</h2><div class="tiles" style="grid-template-columns:repeat(3,1fr)"><div class="tile"><span>Earned</span><b>${fN(st.e)}</b></div><div class="tile"><span>Available</span><b style="${st.b<0?'color:var(--out)':''}">${fN(st.b)}</b></div><div class="tile"><span>Expired</span><b>${fN(st.x)}</b></div></div>
+${soon.length?`<p class="sub" style="color:var(--out)">${soon.map(e=>`${fN(e.left)} comp off from ${fd(e.k)} expires ${e.daysLeft===0?'today':'in '+e.daysLeft+' day'+(e.daysLeft===1?'':'s')}`).join('<br>')}</p>`:''}
+<div class="row" id="coExpRow"><label for="coDays">Valid for (days after earning)</label><input class="in2" id="coDays" type="number" min="0" max="365" value="${d.V}" style="max-width:100px"></div><p class="sub">${d.V?`Each comp off must be used within ${d.V} days. The oldest valid one is used first.`:'0 = comp offs never expire. Check the DMart rule with HR and set it here.'}</p>
+${d.E.length?`<div class="hbox">${d.E.slice().reverse().map(e=>`<div class="hrow"><div><b>Earned ${fd(e.k)}</b><small>${e.till?'Valid till '+fd(e.till):'No expiry'}${e.used.length?' · Used on '+e.used.map(fd).join(', '):''}</small></div><b style="${e.exp?'color:var(--out)':''}">${e.left<=0?'Used':e.exp?'Expired':e.daysLeft!==null?e.daysLeft+' day'+(e.daysLeft===1?'':'s')+' left':'Available'}</b></div>`).join('')}</div>`:'<p class="sub">No comp off earned yet. Mark a worked holiday as "Holiday + Present" to earn one.</p>'}
+${d.over>0?`<p class="sub" style="color:var(--out)">${fN(d.over)} comp off taken without a valid one to use.</p>`:''}`}
 /* ===== Holidays: file reading (xlsx / csv), date parsing, template builder ===== */
 const MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
 const y4=y=>y<100?2000+y:y;
@@ -1760,7 +1839,11 @@ const keepSet=v=>{try{v?localStorage.setItem('att_keep',v):localStorage.removeIt
    asks to sign in again. */
 const ADMH='b4e445c28fa3da37806e1310cdc6a374443db3f610ce439d8bb60b62b48f3b39';
 const sha=async v=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('punch-admin|'+v));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')};
-const ktok=r=>r==='admin'?'admin:'+ADMH.slice(0,16):'employee:'+tok();
+/* Admin password after a reset by mail: kept on this phone as a hash; until then the built-in one. */
+const admGet=()=>{let v=null;try{v=localStorage.getItem('att_apw')}catch(e){}if(!v&&PNk){try{v=PNk.getPref('att_apw')}catch(e){}}return v};
+const admSet=h=>{try{localStorage.setItem('att_apw',h)}catch(e){}if(PNk){try{PNk.setPref('att_apw',h)}catch(e){}}};
+const admH=()=>admGet()||ADMH;
+const ktok=r=>r==='admin'?'admin:'+admH().slice(0,16):'employee:'+tok();
 let role='employee';
 const setRole=r=>{role=r;window.PunchRole=r;try{sessionStorage.setItem('att_role',r)}catch(e){}document.documentElement.dataset.role=r;window.dispatchEvent(new CustomEvent('punchrole',{detail:r}))};
 const unlock=(keep,r)=>{B.classList.remove('locked');try{sessionStorage.setItem('att_in','1')}catch(e){}setRole(r);keepSet(keep?ktok(r):null);setTimeout(()=>window.dispatchEvent(new Event('resize')),50)};
@@ -1831,7 +1914,7 @@ B.insertAdjacentHTML('beforeend',`<div id="swd" hidden><div class="box"><h2 id="
 <div class="er" id="swe"></div><div class="sbtn"><button type="button" class="lk" id="swc">Cancel</button><button type="button" class="b" id="swo">Switch</button></div></div></div>`);
 $('lgout').onclick=()=>{try{sessionStorage.removeItem('att_in');sessionStorage.removeItem('att_role')}catch(e){}keepSet(null);window.PunchRole='';$('u').value=$('p').value='';show(1);B.classList.add('locked');window.dispatchEvent(new CustomEvent('punchrole',{detail:''}))};
 let lr='employee';const pickRole=r=>{lr=r;document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
-  $('uL').textContent=r==='admin'?'Username':'Login Name';$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=r==='admin';
+  $('uL').textContent=r==='admin'?'Username':'Login Name';$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=false;
   $('lgNote').textContent=r==='admin'?'Full access: change settings, salary, attendance, expenses and approve requests.':'View attendance, salary and payslips, send requests and download.';err('e1','')};
 $('lgRole').hidden=true;pickRole('admin');
 $('lgRole').onclick=e=>{const b=e.target.closest('[data-r]');if(b)pickRole(b.dataset.r)};
@@ -1846,7 +1929,7 @@ $('swc').onclick=()=>{$('swd').hidden=true};
 $('swd').onclick=e=>{if(e.target.id==='swd')$('swd').hidden=true};
 $('swv').onclick=()=>{const v=$('swp').type==='text';$('swp').type=v?'password':'text';$('swv').textContent=v?'Show':'Hide'};
 $('swo').onclick=async()=>{const u=$('swu').value.trim(),pw=$('swp').value;let ok=false;
-  try{ok=swTo==='admin'?(u.toLowerCase()==='admin'&&await sha(pw)===ADMH):(u===ID&&await pwOK(pw))}catch(e){}
+  try{ok=swTo==='admin'?(u.toLowerCase()==='admin'&&await sha(pw)===admH()):(u===ID&&await pwOK(pw))}catch(e){}
   if(!ok){$('swe').textContent='Wrong user ID or password.';return}
   const keep=!!keepGet();$('swd').hidden=true;unlock(keep,swTo);try{say('Switched to '+(swTo==='admin'?'Admin':'Employee')+'.')}catch(e){}};
 ['swu','swp'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')$('swo').click()});
@@ -1854,7 +1937,7 @@ setTimeout(()=>{try{swLbl()}catch(e){}},0);
 const togglePassword=(inputId,buttonId,label)=>{$(buttonId).onclick=()=>{const visible=$(inputId).type==='text';$(inputId).type=visible?'password':'text';$(buttonId).textContent=visible?'Show':'Hide';$(buttonId).setAttribute('aria-label',visible?'Show '+label:'Hide '+label)}};
 togglePassword('p','vp','password');togglePassword('n1','vn1','new password');togglePassword('n2','vn2','confirm password');
 $('li').onclick=async()=>{
-  if(lr==='admin'){let ok=false;try{ok=$('u').value.trim().toLowerCase()==='admin'&&await sha($('p').value)===ADMH}catch(e){}
+  if(lr==='admin'){let ok=false;try{ok=$('u').value.trim().toLowerCase()==='admin'&&await sha($('p').value)===admH()}catch(e){}
     if(ok)unlock($('kp').checked,'admin');else err('e1','Wrong admin username or password.');return}
   if($('u').value.trim()===ID&&await pwOK($('p').value))unlock($('kp').checked,'employee');else err('e1','Wrong login name or password.')};
 ['u','p'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')$('li').click()});
@@ -1873,8 +1956,8 @@ bt.disabled=false};
 $('vc').onclick=()=>{if(Date.now()>exp)return err('e3','Code expired. Please request a new one.');
 if($('cd').value.trim()!==code)return err('e3','Incorrect code.');show(4)};
 $('rp').onclick=()=>{const a=$('n1').value;if(a.length<6)return err('e4','Use at least 6 characters.');
-if(a!==$('n2').value)return err('e4','Passwords do not match.');set(a);keepSet(null);code='';err('e4','Password changed. Taking you to login…',1);
-setTimeout(()=>{$('u').value=ID;$('p').value='';$('p').type='password';$('vp').textContent='Show';show(1);err('e1','Password updated. Your login name is filled in. Enter your new password.',1);$('p').focus()},1200)};
+if(a!==$('n2').value)return err('e4','Passwords do not match.');if(lr==='admin'){sha(a).then(admSet)}else set(a);keepSet(null);code='';err('e4','Password changed. Taking you to login…',1);
+setTimeout(()=>{$('u').value=lr==='admin'?'admin':ID;$('p').value='';$('p').type='password';$('vp').textContent='Show';show(1);err('e1','Password updated. Your '+(lr==='admin'?'username':'login name')+' is filled in. Enter your new password.',1);$('p').focus()},1200)};
 })();
 </script>
 <script>(()=>{const sh=document.getElementById('sheet'),mb=document.getElementById('moreBtn'),set=v=>{sh.hidden=!v;mb.setAttribute('aria-expanded',v)};mb.onclick=()=>set(sh.hidden);document.getElementById('scrim').onclick=()=>set(false);sh.addEventListener('click',e=>{if(e.target.closest('.tab'))set(false)});document.addEventListener('keydown',e=>{if(e.key==='Escape')set(false)})})()</script>
@@ -1909,9 +1992,15 @@ function dash(){
 </div>
 <div class="qa">${[['home','Check in'],['maps','Maps'],['slip','Payslip'],['report','Reports']].map(a=>`<button data-go="${a[0]}">${I(a[0]==='slip'?'pay':a[0])}${a[1]}</button>`).join('')}</div>
 ${left.length?`<div class="card"><h2>Finish setup · ${todo.length-left.length}/${todo.length}</h2><div class="pb" style="--bt:var(--in)"><i style="width:${(todo.length-left.length)/todo.length*100}%"></i></div><div class="stp">${left.map(x=>`<button class="ghost" data-go="${x[2]}">${x[0]}</button>`).join('')}</div></div>`:''}
-<div class="card"><h2>Recent activity</h2>${ev.length?`<ul class="tl">${ev.slice(0,5).map(e=>`<li data-dv="day:${e.k}"><i>${I(e.i)}</i><div><b>${e.a}</b><span>${e.b}</span></div></li>`).join('')}</ul>`:'<p class="empty">No activity yet. Check in to get started.</p>'}</div>`;
+${bkCard()}<div class="card"><h2>Recent activity</h2>${ev.length?`<ul class="tl">${ev.slice(0,5).map(e=>`<li data-dv="day:${e.k}"><i>${I(e.i)}</i><div><b>${e.a}</b><span>${e.b}</span></div></li>`).join('')}</ul>`:'<p class="empty">No activity yet. Check in to get started.</p>'}</div>`;
 }
 /* Tap a dashboard tile: a sheet with that data by date, for the month (with month arrows) or for one day. */
+/* Backup reminder: once a month if Google backup is off, or when the last backup is old. */
+function bkCard(){const C=window.__cloud?window.__cloud():null;if(!C)return '';const now=Date.now(),D=864e5,dis=+S.bkDis||0;
+  const wh=t=>new Date(t).toLocaleString([], {day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'});
+  if(!C.on){if(now-dis<30*D)return '';return `<div class="card bk"><h2>Back up your data</h2><p class="sub">Your attendance, salary and settings are only on this phone. Turn on Google backup so a lost phone or reinstall doesn't lose them.</p><div class="row"><button data-go="settings">Turn on backup</button><button class="ghost" data-bk="later">Later</button></div></div>`}
+  const old=!C.synced||(C.changed>C.synced&&now-C.synced>D)||now-C.synced>30*D;if(!old||now-dis<7*D)return '';
+  return `<div class="card bk"><h2>Backup is out of date</h2><p class="sub">Last backup: ${C.synced?wh(C.synced):'never'}. Check your internet connection, then back up now.</p><div class="row"><button data-bk="now">Back up now</button><button class="ghost" data-bk="later">Later</button></div></div>`}
 let dv={v:'att',ym:''};
 const ymNow=()=>dayKey(Date.now()).slice(0,7),ymName=ym=>new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
 const monRows=ym=>{const y=+ym.slice(0,4),m=+ym.slice(5,7)-1,n=ym===ymNow()?new Date().getDate():new Date(y,m+1,0).getDate();return dayRows(Array.from({length:n},(_,i)=>new Date(y,m,i+1)))};
@@ -1949,7 +2038,7 @@ function openDv(v){if(v==='pay'){S.pay=Object.assign({},S.pay,{v2:1,month:cycOpt
       el.firstChild.innerHTML=sheetHtml();el.firstChild.scrollTop=0}}
   if(v.startsWith('day:')){dv.back='att';dv.ym=v.slice(4,11)}
   el.firstChild.innerHTML=sheetHtml();el.hidden=false;el.firstChild.scrollTop=0}
-g('dash').addEventListener('click',e=>{if(e.target.closest('[data-go]'))return;const b=e.target.closest('[data-dv]');if(b){e.stopPropagation();openDv(b.dataset.dv)}});
+g('dash').addEventListener('click',e=>{const bk=e.target.closest('[data-bk]');if(bk){if(bk.dataset.bk==='now'){window.__cloudPush&&__cloudPush();say('Backing up to Google Drive…')}S.bkDis=Date.now();save();last='';return}if(e.target.closest('[data-go]'))return;const b=e.target.closest('[data-dv]');if(b){e.stopPropagation();openDv(b.dataset.dv)}});
 document.head.insertAdjacentHTML('beforeend',`<style>
 #dash [data-dv]{cursor:pointer}#dash .bt[data-dv]:active,#dash .tl li[data-dv]:active{transform:scale(.98)}
 #dvS{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center}#dvS[hidden]{display:none}
@@ -2026,6 +2115,15 @@ function natSync(){if(!PNa)return;let at=0;
   if(cfg.on&&S.open&&fired!==S.open.t){const r=cfg.h*H-todayTotal();at=r>0?Math.max(Date.now()+r,snooze):(snooze>Date.now()?snooze:0)}
   at=Math.round(at/1000)*1000;if(Math.abs(at-natAt)<2000)return;natAt=at;
   try{PNa.setShiftAlarm(at,cfg.h+' hours completed','Your shift is complete. Time to check out.')}catch(e){}}
+/* Missed check-out reminder: a notification at the set time if still checked in. */
+const remCfg=()=>Object.assign({on:1,at:'21:00'},S.rem||{});
+let remNat=-1;
+function remSync(){const c=remCfg();let at=0;
+  if(c.on&&S.open){const[h,m]=String(c.at||'21:00').split(':').map(Number),d=new Date(S.open.t);d.setHours(h||0,m||0,0,0);if(d.getTime()<=S.open.t)d.setDate(d.getDate()+1);at=d.getTime()}
+  if(at&&at<=Date.now()&&S.open){const k='rem:'+S.open.t;if(S.remShown!==k){S.remShown=k;save();notify('Still checked in','You checked in at '+tm(S.open.t)+'. Did you forget to check out?',false);try{say('You are still checked in since '+tm(S.open.t)+'. Check out if you have left.',true)}catch(e){}}}
+  if(PNa&&PNa.setReminder&&Math.abs(at-remNat)>=2000){remNat=at;try{PNa.setReminder(at,'Still checked in','You checked in at '+(S.open?tm(S.open.t):'')+'. Did you forget to check out?')}catch(e){}}}
+(()=>{const on=g('remOn'),t=g('remAt');if(!on)return;const fill=()=>{const c=remCfg();on.checked=!!c.on;t.value=c.at};fill();
+  on.onchange=t.onchange=()=>{S.rem={on:on.checked?1:0,at:t.value||'21:00'};save();remNat=-1;remSync()};window.__remSync=remSync;setInterval(()=>{try{remSync()}catch(e){}},30000);setTimeout(()=>{try{fill();remSync()}catch(e){}},1500)})();
 function notify(t,b,loud){if(PNa){try{PNa.notify(t,b,!!loud)}catch(e){}return}
   try{if(!('Notification'in window)||Notification.permission!=='granted')return;const plain=()=>new Notification(t,{body:b,tag:'punch-shift'});
   if(navigator.serviceWorker)navigator.serviceWorker.getRegistration().then(r=>r?r.showNotification(t,{body:b,tag:'punch-shift',requireInteraction:true,vibrate:[300,150,300]}):plain()).catch(plain);else plain()}catch(e){}}
@@ -2388,6 +2486,7 @@ Storage.prototype.removeItem=function(k){const mine=this===ls&&!skip(k),had=mine
 function later(ms){clearTimeout(tmr);tmr=setTimeout(push,ms)}
 function push(){if(!st.email||leaving)return;clearTimeout(tmr);const t=Date.now();q.push(t);busy=true;
   try{N.cloudPush(JSON.stringify({app:'punch',v:1,savedAt:t,data:snap()}))}catch(e){q.pop();busy=false}ui()}
+window.__cloud=()=>({on:!!st.email,synced:getM('synced'),changed:getM('changed')});window.__cloudPush=()=>{if(st.email)push()};
 function pull(){if(!st.email)return;lastPull=Date.now();busy=true;try{N.cloudPull()}catch(e){busy=false}ui()}
 
 /* both sides changed: keep the records of both (attendance, trips, places ...); plain settings from the newer side */
@@ -2478,7 +2577,7 @@ beat()})();
 <script>
 /* Admin: everything unlocked. Employee: view, send requests (attendance, leave) and download only; every edit is blocked. */
 (()=>{const g=id=>document.getElementById(id),B=document.body;
-const LOCK=['#p-settings .card:not(#cloudCard):not(#hcard)','#p-trips','#saveHomeHere','#payForm','#lvForm','#exAdd','#p-admin',
+const LOCK=['#p-settings .card:not(#cloudCard):not(#hcard)','#p-trips','#saveHomeHere','#payForm','#payHike','#lvForm','#coExpRow','#exAdd','#p-admin',
   '#pn','#pe','#pd','#pg','#pc','#slogoBtn','#slogoDel','#msp','#mho','#gsave','#gdel','#gkey','#tclr','#clear','[data-x="unlock"]','[data-e]'];
 /* Viewing controls inside locked areas stay usable (the salary month). */
 const FREE='#pf_month';
@@ -2499,7 +2598,7 @@ function apply(){
 const block=e=>{if(!emp())return;const el=e.target.closest&&e.target.closest('input,select,textarea,button,label,[data-x],[data-e],[data-k]');
   if(el&&locked(el)){e.preventDefault();e.stopImmediatePropagation();try{say('Only the admin can change this. Log in as Admin to edit.',true)}catch(x){}}};
 ['click','change','input'].forEach(ev=>document.addEventListener(ev,block,true));
-document.head.insertAdjacentHTML('beforeend','<style>body.emp [data-roff]{opacity:.55}body.emp #exAdd,body.emp #lvForm,body.emp #admHol,body.emp #payCalc,body.emp #payForm .row:not(:has(#pf_month)),body.emp #payForm~.sub,body.emp .row:has(>#sf_calc){display:none!important}</style>');
+document.head.insertAdjacentHTML('beforeend','<style>body.emp [data-roff]{opacity:.55}body.emp #exAdd,body.emp #lvForm,body.emp #admHol,body.emp #payCalc,body.emp #payHike,body.emp #payForm .row:not(:has(#pf_month)),body.emp #payForm~.sub,body.emp .row:has(>#sf_calc){display:none!important}</style>');
 window.addEventListener('punchrole',()=>{apply();try{render()}catch(e){}try{if(!g('p-pay').hidden)renderPay();if(!g('p-slip').hidden)renderSlip()}catch(e){}});
 let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;requestAnimationFrame(()=>{apply();busy=false})}).observe(document.querySelector('main'),{childList:true,subtree:true});
 apply();try{render()}catch(e){}

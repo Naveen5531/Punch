@@ -14,6 +14,12 @@ public class AlarmReceiver extends BroadcastReceiver {
     static final int NOTIF_ID = 7;
 
     @Override public void onReceive(Context c, Intent i) {
+        if (i.getBooleanExtra("rem", false)) {
+            // Missed check-out reminder: a normal notification (not the ringing shift alarm).
+            c.getSharedPreferences("punch", 0).edit().putLong("rem_at", 0).apply();
+            notify(c, i.getStringExtra("t"), i.getStringExtra("b"), false);
+            return;
+        }
         c.getSharedPreferences("punch", 0).edit().putLong("alarm_at", 0).apply();
         notify(c, i.getStringExtra("t"), i.getStringExtra("b"), true);
         // Make sure the page catches up (shows the alarm screen when opened).
@@ -36,6 +42,21 @@ public class AlarmReceiver extends BroadcastReceiver {
             PendingIntent show = PendingIntent.getActivity(c, 44, new Intent(c, MainActivity.class),
                     PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
             try { am.setAlarmClock(new AlarmManager.AlarmClockInfo(at, show), p); }
+            catch (SecurityException e) { am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, p); }
+        } catch (Exception ignored) {}
+    }
+
+    /** Missed check-out reminder. at = epoch ms; 0 cancels. Separate from the shift alarm. */
+    static void scheduleReminder(Context c, long at, String t, String b) {
+        try {
+            AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+            Intent i = new Intent(c, AlarmReceiver.class).putExtra("rem", true)
+                    .putExtra("t", t == null ? "Still checked in" : t).putExtra("b", b == null ? "Did you forget to check out?" : b);
+            PendingIntent p = PendingIntent.getBroadcast(c, 46, i, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            am.cancel(p);
+            c.getSharedPreferences("punch", 0).edit().putLong("rem_at", at).apply();
+            if (at <= System.currentTimeMillis()) return;
+            try { am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, p); }
             catch (SecurityException e) { am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, p); }
         } catch (Exception ignored) {}
     }

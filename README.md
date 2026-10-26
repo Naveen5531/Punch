@@ -137,3 +137,13 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v4.0
 - Login screen is Admin only (the Employee choice is removed). The Employee view is opened from inside Admin with "⇄ Employee" (employee ID and password). A kept Employee login from before asks for the Admin login again.
+
+## Changes in v4.1
+- Admin "Forgot password?": same mail-code reset as Employee; the new admin password is kept on this phone.
+- Payslip: YTD column (financial year from April) for every earning and deduction, and a leave balance table (each leave type and comp off). Still one A4 page.
+- Salary: Year summary card (month by month gross, deductions, net pay, PF and professional tax so far); tap a month to open it.
+- Hikes: any number of hikes, each with its own % and month; they stack. The old single hike is moved over automatically.
+- Missed check-out reminder (Settings): a notification at the set time (default 9:00 PM) if you are still checked in, even with the app closed.
+- Comp off expiry (Leave): set how many days a comp off stays valid; the oldest valid one is used first; shows valid-till dates, days left, used and expired, with a warning a week before expiry.
+- Attendance: "Monthly attendance PDF" makes a one-page A4 report (date, status, in, out, hours, overtime, totals) to print or save.
+- Home: a reminder card when Google backup is off (once a month) or the last backup is old, with "Back up now".
