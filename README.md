@@ -183,3 +183,6 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v5.0
 - Login screen is one simple form (Employee login by default). A small green "Admin" button at the top right of the card switches it to the Admin login; tap it again ("Employee") to go back.
+
+## Changes in v5.1
+- Company name on the letterhead (payslip, attendance report, offer letter) is Movana Logistics by default; the workplace name ("Office") is no longer used as the company name. A name typed in Employees > Company details still takes priority.

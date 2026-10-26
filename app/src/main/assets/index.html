@@ -2669,7 +2669,9 @@ apply();try{render()}catch(e){}
    work on other phones once online sync (Firebase) is switched on. */
 (()=>{const g=id=>document.getElementById(id),D=864e5;
 S.emps=S.emps||[];S.co=S.co||{};
-const CO=()=>Object.assign({name:(S.wp&&S.wp.name)||'',addr:'',sig:'',sigD:'HR Manager',ref:'HR/OFFER',jur:'',ret:'58',col:'#a87a1e',logo:'ml',web:'',phone:'',cin:''},S.co);
+/* Company name: Movana Logistics unless the admin types another one. The workplace name (e.g. "Office") is never used as the company name. */
+const CO=()=>{const o=CO0();if(!o.name||o.name===(S.wp&&S.wp.name)||/^office$/i.test(o.name))o.name='Movana Logistics';return o};
+const CO0=()=>Object.assign({name:'',addr:'',sig:'',sigD:'HR Manager',ref:'HR/OFFER',jur:'',ret:'58',col:'#a87a1e',logo:'ml',web:'',phone:'',cin:''},S.co);
 window.__co=CO;
 /* Company logo, drawn from the company name: a monogram mark plus the name. Used on offer letters,
    payslips and reports unless the admin adds their own logo image on the Payslip page. */
