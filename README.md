@@ -163,3 +163,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - Letterhead (logo, company name, address, phone, website, CIN, brand-colour rule) on the offer letter, payslip and attendance report.
 - Offer letter redone as a formal two-page letter: reference and date, Private & Confidential, key details table, numbered terms, signature block, page footer; page 2 is Annexure A – Compensation Structure (earnings, employer contributions, CTC, deductions, take-home, notes) with signature and employee acceptance.
 - Employee login: the logo buttons on the Payslip page are hidden.
+
+## Changes in v4.5
+- Offer letter is now four pages: (1) offer letter with key details, validity and joining, (2) Terms and Conditions of Employment (13 clauses: appointment, probation, notice, termination for cause, unauthorised absence, hours and attendance, leave, salary and deductions, transfer, medical fitness and retirement, company property, change in details, governing law), (3) Code of Conduct and Ethics (10 rules: integrity, confidentiality, conflict of interest, gifts and bribery, respect at the workplace, safety, alcohol and drugs, IT and data, public communication, reporting concerns) and documents to bring on joining, (4) Annexure A compensation with the employee's declaration and acceptance. Every page has the letterhead, page number and a space for the employee's initials.
+- New fields: notice during probation (employee), courts city for disputes and retirement age (company details).
