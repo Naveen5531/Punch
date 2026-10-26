@@ -189,3 +189,10 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v5.2
 - Login screen: removed the description line under "Sign in to continue" for both Employee and Admin.
+
+## Changes in v6.0 – joined with the Movana portal
+- Punch reads the portal's Firebase connection from https://naveen5531.github.io/portal/firebase-config.js. Once that is filled in, staff sign in to Punch with their portal username and password.
+- Employee login: check-ins go to HR (punch_att); leave, comp off and attendance-change requests go to HR (punch_req). Profile (name, ID, designation, workplace, weekly offs), salary set-up and HR's attendance marks come from the portal. Salary settings are read-only in the app.
+- Admin login (HR head, HR manager, HR executive, Admin head, Super admin): new Team page with requests to approve (not HR executive), today's check-ins and the month summary.
+- Without the connection, or offline, Punch keeps working on its own with the logins kept on the phone.
+- Fixed: the attendance request list could fail at start-up (date formatter used before it was ready).

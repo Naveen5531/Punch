@@ -398,6 +398,12 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
     </div>
   </section>
 
+  <section class="pane" id="p-team" hidden>
+    <h2 class="ph">Team</h2>
+    <div class="seg" id="tmTabs" style="margin:0 0 12px"><button data-tm="req">Requests</button><button data-tm="today">Today</button><button data-tm="month">Month</button></div>
+    <div id="tmBody"></div>
+  </section>
+
   <section class="pane" id="p-emps" hidden>
     <h2 class="ph">Employees</h2>
     <div class="card" id="empList"></div>
@@ -591,6 +597,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
   <button class="tab" data-t="leave" aria-current="false"><svg viewBox="0 0 24 24"><path d="M4 20c0-9 6-15 16-16 0 10-6 16-16 16z"/><path d="M4 20l9-9"/></svg><span>Leave</span></button>
   <button class="tab" data-t="admin" aria-current="false"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><span>Admin</span></button>
   <button class="tab" data-t="emps" aria-current="false"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.6 3-5.5 6-5.5s5.4 1.9 6 5.5"/><path d="M17 8v6M14 11h6"/></svg><span>Employees</span></button>
+  <button class="tab" data-t="team" aria-current="false" hidden><svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9.5" r="2.5"/><path d="M2.5 20c.5-3.4 2.8-5.2 5.5-5.2s5 1.8 5.5 5.2M14 15.2c.8-.4 1.6-.6 2.5-.6 2.4 0 4.3 1.6 4.8 4.4"/></svg><span>Team</span></button>
   <button class="tab" data-t="report" aria-current="false"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M9 9h3M9 13h6M9 17h6"/></svg><span>Reports</span></button>
   <button class="tab" data-t="history" aria-current="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>History</span></button>
   <button class="tab" data-t="trips" aria-current="false"><svg viewBox="0 0 24 24"><path d="M4 19V5h16v14H4z"/><path d="M7 16l4-4 3 3 3-5"/><circle cx="7" cy="16" r="1"/><circle cx="11" cy="12" r="1"/><circle cx="14" cy="15" r="1"/><circle cx="17" cy="10" r="1"/></svg><span>Home &amp; Trips</span></button>
@@ -680,7 +687,7 @@ async function punch(){
       if(S.wp){S.here=S.wp.name;S.hereLL={la,lo};startTravelFrom(S.wp.name,la,lo,now);}
       S.open=null;S.outSince=null;if(!S.auto)stopAuto();say(`Checked out at ${tm(now)}.${S.trip?' Travelling Check-In started.':''}`)
     }
-    save();render();
+    save();render();try{window.PunchCloud&&PunchCloud.on&&PunchCloud.pushAtt()}catch(e){}
   }catch(e){say(e.message,true)}finally{$('punch').disabled=false}
 }
 
@@ -903,7 +910,7 @@ $('clear').onclick=()=>{if(confirm('Delete all attendance records?')){S.logs=[];
 function show(t){
   document.querySelectorAll('.pane').forEach(p=>{p.hidden=p.id!=='p-'+t});
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-current',b.dataset.t===(t==='slip'?'pay':t)?'page':'false'));
-  window.scrollTo(0,0);setTimeout(()=>window.__beat&&__beat(),0);if(t==='report')renderRep();if(t==='attendance')renderCal();if(t==='leave')try{coCard()}catch(e){try{console.error(e)}catch(x){}}if(t==='pay')renderPay();if(t==='slip'){fillSlip();renderSlip()}if(t==='attpdf')renderAttPdf();if((t==='emps'||t==='offer')&&window.PunchRole==='employee'){show('dash');return}if(t==='emps')window.__emps&&__emps();if(t==='offer')window.__offer&&__offer();if(t==='maps')openMaps();if(t==='lib')renderLib();if(t==='leave')renderLeave();if(t==='admin')renderAdmin();if(t==='exp')renderExp();if(t==='trips'){renderTrip();renderLib();}const ac=document.querySelector('.tab[aria-current="page"]');if(ac){const b=ac.parentElement;b.scrollLeft=ac.offsetLeft-(b.clientWidth-ac.clientWidth)/2}
+  window.scrollTo(0,0);setTimeout(()=>window.__beat&&__beat(),0);if(t==='report')renderRep();if(t==='attendance')renderCal();if(t==='leave')try{coCard()}catch(e){try{console.error(e)}catch(x){}}if(t==='pay')renderPay();if(t==='slip'){fillSlip();renderSlip()}if(t==='attpdf')renderAttPdf();if((t==='emps'||t==='offer')&&window.PunchRole==='employee'){show('dash');return}if(t==='emps')window.__emps&&__emps();if(t==='team')window.__team&&__team();if(t==='offer')window.__offer&&__offer();if(t==='maps')openMaps();if(t==='lib')renderLib();if(t==='leave')renderLeave();if(t==='admin')renderAdmin();if(t==='exp')renderExp();if(t==='trips'){renderTrip();renderLib();}const ac=document.querySelector('.tab[aria-current="page"]');if(ac){const b=ac.parentElement;b.scrollLeft=ac.offsetLeft-(b.clientWidth-ac.clientWidth)/2}
 }
 document.querySelectorAll('.tab').forEach(b=>{b.onclick=()=>show(b.dataset.t)});
 $('grace_m').onchange=()=>{const v=parseInt($('grace_m').value);S.grace=isNaN(v)?30:Math.min(240,Math.max(0,v));save();render()};
@@ -1041,7 +1048,7 @@ function markDays(keys,v){
     if(x.st==='Not joined'||(WORK.includes(x.st)&&v!=='holiday'&&v!==''&&v!=='holpresent')){skip++;return}
     S.lt=S.lt||{};
     if(v){const lv=v.startsWith('leave:')?v.slice(6):'';S.marks[x.k]=lv?'leave':v;if(lv)S.lt[x.k]=lv;else delete S.lt[x.k]}else{delete S.marks[x.k];delete S.lt[x.k]}n++});
-  save();let cb='';if(v==='holpresent'){coSync();cb=` Comp off earned: ${n}.`}else if(v==='compoff'){coSync();const b=coStats().b;cb=` Comp off balance: ${b}${b<0?' (more comp offs booked than earned)':''}.`}
+  save();try{window.PunchCloud&&PunchCloud.on&&PunchCloud.pushMarks()}catch(e){}let cb='';if(v==='holpresent'){coSync();cb=` Comp off earned: ${n}.`}else if(v==='compoff'){coSync();const b=coStats().b;cb=` Comp off balance: ${b}${b<0?' (more comp offs booked than earned)':''}.`}
   else if(v&&v.startsWith('leave:')){coSync();const t=v.slice(6),b=lvStats()[t].b;cb=` ${t} balance: ${b}${b<0?' (more leave than available)':''}.`}
   return `${v?'Marked':'Cleared'} ${n} day${n===1?'':'s'}${skip?`, skipped ${skip} with recorded check-ins or before joining`:''}.${cb}`;
 }
@@ -1071,12 +1078,14 @@ $('call').onclick=()=>{const dim=new Date(cal.y,cal.m+1,0).getDate();for(let i=1
 $('cnone').onclick=()=>{sel.clear();renderCal()};
 function isAdm(){try{return admOK}catch(e){return false}}
 function vLab(v){return({present:'Present',weekoff:'Week off',holiday:'Holiday',compoff:'Comp off',absent:'Absent',leave:'Leave (no type)',holpresent:'Holiday + Present','':'Clear mark'})[v]||(String(v).startsWith('leave:')?'Leave - '+v.slice(6):String(v))}
-function arRange(days){const a=days.slice().sort(),f=a[0],z=a[a.length-1];return f===z?fd(f):fd(f)+' to '+fd(z)}
+/* own date formatter: this runs at start-up, before the later script that defines fd() */
+const fdA=k=>new Date(k+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+function arRange(days){const a=days.slice().sort(),f=a[0],z=a[a.length-1];return f===z?fdA(f):fdA(f)+' to '+fdA(z)}
 function arSend(keys,v,why){S.areq=S.areq||[];
   const rows=dayRows(keys.map(k=>new Date(k+'T00:00:00'))),days=[];let skip=0;
   rows.forEach(x=>{if(x.st==='Not joined'||(WORK.includes(x.st)&&v!=='holiday'&&v!=='')||S.areq.some(q=>q.s==='Pending'&&q.v===v&&q.days.includes(x.k))){skip++;return}days.push(x.k)});
   if(!days.length)return[false,'No days to request'+(skip?' ('+skip+' skipped: recorded check-in, before joining, or already requested).':'.')];
-  S.areq.unshift({id:Date.now(),days:days.slice(0,62),v,why:why||'',s:'Pending',at:Date.now()});save();
+  S.areq.unshift({id:Date.now(),days:days.slice(0,62),v,why:why||'',s:'Pending',at:Date.now()});save();try{window.PunchCloud&&PunchCloud.on&&PunchCloud.sendReq(S.areq[0],'att')}catch(e){}
   return[true,'Request sent to the admin for '+Math.min(days.length,62)+' day'+(days.length===1?'':'s')+'. It counts only after the admin approves it.'+(skip?' '+skip+' skipped.':'')]}
 function renderAreq(){const el=$('arList');if(!el)return;S.areq=S.areq||[];
   el.innerHTML=S.areq.length?`<div class="hbox">${S.areq.slice(0,15).map(q=>`<div class="hrow"><div><b>${arRange(q.days)}</b><small>${vLab(q.v)} · ${q.days.length} day${q.days.length===1?'':'s'} · ${q.s}${q.by?' by '+q.by:''}${q.why?' · '+esc(q.why):''}</small></div>${q.s==='Pending'?`<button class="ghost" data-ac="${q.id}" style="width:auto;padding:7px 14px">Cancel</button>`:''}</div>`).join('')}</div>`:'<p class="sub">No requests yet.</p>'}
@@ -1084,7 +1093,7 @@ function AOPT(sel){const o=[['present','Present'],['holpresent','Holiday + Prese
   return o.map(([v,n])=>`<option value="${v}"${(sel===''?'-':sel)===v?' selected':''}>${n}</option>`).join('')}
 $('cgo').onclick=()=>{if(!sel.size){say('Tap days on the calendar first.',true);return}
   const v=$('cs').value;if(isAdm()){const t=markDays([...sel],v);sel.clear();render();say(t);return}const[ok,m]=arSend([...sel],v,$('arW').value.trim());if(ok){sel.clear();$('arW').value='';render();renderCal()}say(m,!ok)};
-$('arList').onclick=e=>{const b=e.target.closest('[data-ac]');if(!b)return;const q=(S.areq||[]).find(x=>x.id===+b.dataset.ac);if(!q||!confirm('Cancel this attendance request?'))return;q.s='Cancelled';save();renderAreq()};
+$('arList').onclick=e=>{const b=e.target.closest('[data-ac]');if(!b)return;const q=(S.areq||[]).find(x=>x.id===+b.dataset.ac);if(!q||!confirm('Cancel this attendance request?'))return;q.s='Cancelled';save();renderAreq();try{window.PunchCloud&&PunchCloud.on&&PunchCloud.cancelReq(q,'att')}catch(e){}};
 $('bgo').onclick=()=>{const f=$('bf').value,t=$('bt').value,v=$('bs').value;if(!f||!t||f>t){say('Pick a start date and an end date.',true);return}
   const ks=[];for(let d=new Date(f+'T00:00:00');dayKey(d.getTime())<=t&&ks.length<366;d.setDate(d.getDate()+1))ks.push(dayKey(d.getTime()));
   if(isAdm()){const r=markDays(ks,v);render();say(r);return}const[ok,m]=arSend(ks,v,$('arW').value.trim());if(ok){$('arW').value='';render();renderCal()}say(m,!ok)};
@@ -1964,7 +1973,7 @@ B.insertAdjacentHTML('beforeend',`<div id="swd" hidden><div class="box"><h2 id="
 <label id="swuL">User ID</label><input id="swu" autocomplete="username">
 <label>Password</label><div class="pwrow"><input id="swp" type="password" autocomplete="current-password"><button type="button" class="pwview" id="swv" aria-label="Show password">Show</button></div>
 <div class="er" id="swe"></div><div class="sbtn"><button type="button" class="lk" id="swc">Cancel</button><button type="button" class="b" id="swo">Switch</button></div></div></div>`);
-$('lgout').onclick=()=>{try{sessionStorage.removeItem('att_in');sessionStorage.removeItem('att_role')}catch(e){}keepSet(null);window.PunchRole='';$('u').value=$('p').value='';show(1);B.classList.add('locked');window.dispatchEvent(new CustomEvent('punchrole',{detail:''}))};
+$('lgout').onclick=()=>{try{window.PunchCloud&&PunchCloud.signOut()}catch(e){}try{sessionStorage.removeItem('att_in');sessionStorage.removeItem('att_role')}catch(e){}keepSet(null);window.PunchRole='';$('u').value=$('p').value='';show(1);B.classList.add('locked');window.dispatchEvent(new CustomEvent('punchrole',{detail:''}))};
 let lr='employee';const pickRole=r=>{lr=r;{const b=$('lgAdm');if(b){b.textContent=r==='admin'?'Employee':'Admin';b.setAttribute('aria-label',r==='admin'?'Switch to employee login':'Switch to admin login')}}document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
   $('uL').textContent=r==='admin'?'Username':'Login Name';$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=false;
   $('lgNote').textContent=r==='admin'?'Full access: change settings, salary, attendance, expenses and approve requests.':'View attendance, salary and payslips, send requests and download.';err('e1','')};
@@ -1992,9 +2001,18 @@ setTimeout(()=>{try{swLbl()}catch(e){}},0);
 const togglePassword=(inputId,buttonId,label)=>{$(buttonId).onclick=()=>{const visible=$(inputId).type==='text';$(inputId).type=visible?'password':'text';$(buttonId).textContent=visible?'Show':'Hide';$(buttonId).setAttribute('aria-label',visible?'Show '+label:'Hide '+label)}};
 togglePassword('p','vp','password');togglePassword('n1','vn1','new password');togglePassword('n2','vn2','confirm password');
 $('li').onclick=async()=>{
+  /* Portal login first (same username and password as the Movana portal); if that does not work,
+     the logins kept on this phone still work, so Punch is usable offline or before the portal is set up. */
+  const PC=window.PunchCloud;let cloudErr='';
+  if(PC&&PC.ready){const b=$('li');b.disabled=true;err('e1','Signing in…',1);
+    try{const r=await PC.signIn($('u').value,$('p').value);
+      if(lr==='admin'&&!r.hr){await PC.signOut();err('e1','This login has no HR or admin access. Use the Employee login.');return}
+      err('e1','');unlock($('kp').checked,lr==='admin'?'admin':'employee');return}
+    catch(x){cloudErr=PC.msg(x);err('e1','')}
+    finally{b.disabled=false}}
   if(lr==='admin'){let ok=false;try{ok=$('u').value.trim().toLowerCase()==='admin'&&await sha($('p').value)===admH()}catch(e){}
-    if(ok)unlock($('kp').checked,'admin');else err('e1','Wrong admin username or password.');return}
-  if($('u').value.trim()===ID&&await pwOK($('p').value))unlock($('kp').checked,'employee');else err('e1','Wrong login name or password.')};
+    if(ok)unlock($('kp').checked,'admin');else err('e1',cloudErr||'Wrong admin username or password.');return}
+  if($('u').value.trim()===ID&&await pwOK($('p').value))unlock($('kp').checked,'employee');else err('e1',cloudErr||'Wrong login name or password.')};
 ['u','p'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')$('li').click()});
 $('fg').onclick=()=>show(2);
 document.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>show(1));
@@ -2364,9 +2382,9 @@ $('lvGo').onclick=()=>{const t=$('lvT').value,a=$('lvA').value,b=$('lvB').value|
   if(t==='CO'&&d>st.b+1e-9){say(`Only ${fN(Math.max(0,st.b))} comp off available but you need ${d}.`,true);return}
   if(st.b!==null&&d>st.b+1e-9){say(`Only ${st.b} ${t} left but you need ${d}. Choose fewer days or LOP.`,true);return}
   const q={id:Date.now(),t,a,b,n:d,why,s:'Pending',at:Date.now()};S.req.unshift(q);
-  if(!lvCfg().appr){const m=lvApprove(q,'Auto');if(m){say(m,true);S.req.shift();return}}
+  if(window.PunchCloud&&PunchCloud.on){q.days=lvDays(a,b);PunchCloud.sendReq(q,'leave')}else if(!lvCfg().appr){const m=lvApprove(q,'Auto');if(m){say(m,true);S.req.shift();return}}
   save();$('lvW').value='';render();renderLeave();say(q.s==='Approved'?'Leave approved and added.':'Leave request sent for approval.')};
-$('lvReqs').onclick=e=>{const b=e.target.closest('[data-cq]');if(!b)return;const q=S.req.find(x=>x.id===+b.dataset.cq);if(!q||!confirm('Cancel this leave request?'))return;lvCancel(q);save();render();renderLeave()};
+$('lvReqs').onclick=e=>{const b=e.target.closest('[data-cq]');if(!b)return;const q=S.req.find(x=>x.id===+b.dataset.cq);if(!q||!confirm('Cancel this leave request?'))return;if(window.PunchCloud&&PunchCloud.on&&q.s!=='Pending'){say('Ask HR to cancel an approved leave.',true);return}lvCancel(q);save();render();renderLeave();try{window.PunchCloud&&PunchCloud.on&&PunchCloud.cancelReq(q,'leave')}catch(e){}};
 $('lvHols').onclick=e=>{const b=e.target.closest('[data-ok]');if(!b)return;const k=b.dataset.ok;if(!isAdm()){if(S.marks[k]==='holiday'){say('Only the admin can remove a taken holiday.',true);return}const o=optStats();if(o.b<=0){say(`You have used all ${o.q} optional holidays for ${o.y}.`,true);return}const[ok,m]=arSend([k],'holiday','Optional holiday');say(m,!ok);if(ok)render();return}
   if(S.marks[k]==='holiday')delete S.marks[k];else{const o=optStats();if(o.b<=0){say(`You have used all ${o.q} optional holidays for ${o.y}.`,true);return}S.marks[k]='holiday'}
   save();render();renderLeave()};
@@ -2850,6 +2868,132 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 @media print{.slip:not(.off) .lh{padding-bottom:5px;gap:10px}.slip:not(.off) .lh img{width:38px;height:38px;border-radius:8px}.slip:not(.off) .lht b{font-size:14pt}.slip:not(.off) .lht span{font-size:7.5pt}.slip:not(.off) .lhbar{height:3px;margin-bottom:5px}.slip:not(.off) .dt{font-size:10.5pt;padding:3px 0}}
 @media print{.slip.off .trm li{margin:3px 0}.slip.off .anx{margin:4px 0 8px}.slip.off{font-size:10pt;line-height:1.42;width:auto!important;max-width:none!important}.slip.off .pg{width:auto;min-height:268mm;padding:0 0 14mm;margin:0;border:0;border-radius:0}.slip.off .pg.pb{break-before:page;page-break-before:always}.slip.off .lf{left:0;right:0;bottom:0}.slip.off p{margin:5px 0}.slip.off .sl{height:34px}}
 </style>`);
+})();
+</script>
+<script>
+/* ===== Punch + Movana portal =====
+   When the portal (naveen5531.github.io/portal) has its Firebase connection, Punch signs in with the same staff
+   logins and roles. The employee's check-ins go up to HR; HR's attendance marks, approvals, salary set-up and
+   profile come down. Without the connection (or offline) Punch keeps working on its own as before. */
+(()=>{const g=id=>document.getElementById(id);
+const CFG_URL='https://naveen5531.github.io/portal/firebase-config.js',DOMAIN='staff.movana.app',VER='10.12.2';
+const HR=['superadmin','admin_head','hr_head','hr_manager','hr_exec'],APPR=['superadmin','admin_head','hr_head','hr_manager'];
+const toEmail=u=>{u=String(u||'').trim().toLowerCase();return u.includes('@')?u:u.replace(/[^a-z0-9._-]/g,'')+'@'+DOMAIN};
+const C=window.PunchCloud={ready:false,on:false,uid:'',role:'',hr:false,approve:false,name:'',err:''};
+let fsx=null,auth=null,unsub=[],lastAtt='',lastMk='',cfg=null;
+try{cfg=JSON.parse(localStorage.getItem('punch_fbcfg')||'null')}catch(e){}
+const parseCfg=t=>{const m=String(t).match(/MOVANA_FIREBASE_CONFIG\s*=\s*(\{[\s\S]*?\})\s*;?/);if(!m)return null;
+  try{const o=JSON.parse(m[1].replace(/\/\/[^\n]*/g,'').replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g,'$1"$2":').replace(/'/g,'"').replace(/,\s*}/,'}'));return o&&o.apiKey&&o.projectId?o:null}catch(e){return null}};
+const loadJs=src=>new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('load '+src));document.head.appendChild(s)});
+C.msg=e=>({'auth/invalid-credential':'Wrong username or password.','auth/wrong-password':'Wrong username or password.','auth/user-not-found':'Wrong username or password.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'No internet connection.','auth/user-disabled':'This login is switched off. Ask HR.','no-access':'This login has no access to Punch. Ask HR.'})[e&&e.code]||('Could not sign in ('+((e&&e.code)||'error')+').');
+C.hasUser=u=>String(u||'').trim().toLowerCase()!=='admin';
+async function start(){
+  try{const r=await fetch(CFG_URL+'?t='+Date.now(),{cache:'no-store'});if(r.ok){const c=parseCfg(await r.text());if(c){cfg=c;try{localStorage.setItem('punch_fbcfg',JSON.stringify(c))}catch(e){}}}}catch(e){}
+  if(!cfg)return;
+  try{if(!window.firebase||!firebase.firestore){for(const n of['app','auth','firestore'])await loadJs(`https://www.gstatic.com/firebasejs/${VER}/firebase-${n}-compat.js`)}
+    if(!firebase.apps.length)firebase.initializeApp(cfg);auth=firebase.auth();fsx=firebase.firestore();
+    try{fsx.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+    C.ready=true;
+    /* a kept portal session resumes syncing only once Punch itself is unlocked */
+    auth.onAuthStateChanged(async u=>{if(u){if(!window.PunchRole)return;try{await whoAmI(u);begin()}catch(e){}}else stop()});
+    window.addEventListener('punchrole',async()=>{const u=auth.currentUser;if(u&&window.PunchRole&&!C.on){try{await whoAmI(u);begin()}catch(e){}}})}
+  catch(e){C.err=String(e&&e.message||e)}}
+async function whoAmI(u){C.uid=u.uid;
+  const[m,o,p]=await Promise.all([fsx.doc('members/'+u.uid).get().catch(()=>null),fsx.doc('settings/owner').get().catch(()=>null),fsx.doc('users/'+u.uid).get().catch(()=>null)]);
+  const owner=o&&o.exists&&o.data().uid===u.uid,md=m&&m.exists?m.data():null;
+  C.role=owner?'superadmin':(md&&md.status!=='Suspended'?md.role:'none');C.name=(p&&p.exists&&p.data().name)||'';
+  C.hr=HR.includes(C.role);C.approve=APPR.includes(C.role);C.salEdit=['superadmin','admin_head','hr_head'].includes(C.role);
+  if(C.role==='none'){const x=new Error('no access');x.code='no-access';throw x}
+  return C}
+C.signIn=async(user,pw)=>{if(!C.ready){const x=new Error('offline');x.code='auth/network-request-failed';throw x}
+  stop();const cr=await auth.signInWithEmailAndPassword(toEmail(user),pw);
+  try{await whoAmI(cr.user)}catch(e){await auth.signOut();throw e}
+  lastAtt='';lastMk='';begin();return C};
+C.signOut=async()=>{stop();try{auth&&await auth.signOut()}catch(e){}};
+const ymOf=k=>String(k).slice(0,7),months=()=>{const n=new Date(),o=[];for(let i=-2;i<=1;i++){const d=new Date(n.getFullYear(),n.getMonth()+i,1);o.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}return o};
+function stop(){unsub.forEach(f=>{try{f()}catch(e){}});unsub=[];C.on=false;teamTab()}
+function begin(){if(C.on||!C.uid)return;C.on=true;const uid=C.uid;teamTab();
+  // profile kept by HR
+  unsub.push(fsx.doc('punch_emp/'+uid).onSnapshot(d=>{if(!d.exists)return;const e=d.data();
+    S.slip=Object.assign({},S.slip,{name:e.name||S.slip&&S.slip.name,eid:e.eid||'',desg:e.desg||'',grade:e.grade||'',cat:e.cat||''});if(e.join)S.join=e.join;
+    if(e.wp&&e.wp.lat!=null)S.wp={lat:+e.wp.lat,lng:+e.wp.lng,name:e.wp.name||'Workplace'};if(e.radius)S.radius=+e.radius;
+    if(Array.isArray(e.wo)){S.wo=e.wo.slice();const tk=dayKey(Date.now());S.woH=(S.woH&&S.woH.length?S.woH:[{f:'0000-00-00',w:e.wo.slice()}]).filter(x=>x.f!==tk).concat({f:tk,w:e.wo.slice()})}
+    save();try{render()}catch(x){}},()=>{}));
+  // salary set-up kept by HR (read-only in the app)
+  unsub.push(fsx.doc('punch_pay/'+uid).onSnapshot(d=>{if(!d.exists)return;const v=d.data();delete v.updatedAt;delete v.by;
+    S.pay=Object.assign({},S.pay,v,{v2:1,month:(S.pay&&S.pay.month)||''});S.payCloud=1;save();try{if(!g('p-pay').hidden)renderPay();if(!g('p-slip').hidden)renderSlip()}catch(x){}},()=>{}));
+  // attendance marked by HR (and approved leave / comp off) — HR's marks are the record
+  unsub.push(fsx.collection('punch_mark').where('uid','==',uid).onSnapshot(q=>{const mk={},lt={};let mo=[];
+    q.docs.forEach(d=>{const v=d.data();mo.push(v.ym);Object.assign(mk,v.marks||{});Object.assign(lt,v.lt||{})});
+    if(!C.hr){Object.keys(S.marks).forEach(k=>{if(mo.includes(ymOf(k)))delete S.marks[k]});S.lt=S.lt||{};Object.keys(S.lt).forEach(k=>{if(mo.includes(ymOf(k)))delete S.lt[k]})}
+    Object.assign(S.marks,mk);S.lt=Object.assign(S.lt||{},lt);lastMk=JSON.stringify(myMarks());coSync();save();try{render()}catch(x){}},()=>{}));
+  // my requests: status from HR
+  unsub.push(fsx.collection('punch_req').where('uid','==',uid).onSnapshot(q=>{let ch=0;
+    q.docs.forEach(d=>{const v=d.data(),L=v.kind==='leave'?(S.req=S.req||[]):(S.areq=S.areq||[]);let x=L.find(r=>String(r.id)===d.id);
+      if(!x){x=v.kind==='leave'?{id:+d.id||d.id,t:v.t,a:v.a,b:v.b,n:v.n,why:v.why||'',at:v.at}:{id:+d.id||d.id,days:v.days||[],v:v.v,why:v.why||'',at:v.at};x.days=v.days||x.days;L.unshift(x);ch=1}
+      if(x.s!==v.s||x.by!==(v.byName||v.by)){x.s=v.s;x.by=v.byName||'';ch=1}});
+    if(ch){coSync();save();try{render();renderAreq&&renderAreq()}catch(x){}}},()=>{}));
+  pushAtt();if(C.hr)pushMarks();
+  unsub.push((()=>{const t=setInterval(()=>{pushAtt();if(C.hr)pushMarks()},15000);return()=>clearInterval(t)})());
+  if(window.__teamWatch)__teamWatch()}
+/* my check-ins → punch_att/<uid>_<yyyy-mm> */
+C.pushAtt=pushAtt;function pushAtt(){if(!C.on)return;const uid=C.uid,out=[];
+  months().forEach(ym=>{const[y,m]=ym.split('-').map(Number),dim=new Date(y,m,0).getDate(),logs=(S.logs||[]).filter(l=>ymOf(dayKey(l.in))===ym).map(l=>({in:l.in,out:l.out,inLat:l.inLat??null,inLng:l.inLng??null,outLat:l.outLat??null,outLng:l.outLng??null}));
+    const open=S.open&&ymOf(dayKey(S.open.t))===ym?{t:S.open.t,lat:S.open.lat??null,lng:S.open.lng??null}:null;
+    const days={};try{dayRows(Array.from({length:dim},(_,i)=>new Date(y,m-1,i+1))).forEach(x=>{if(x.a!==undefined||x.ms)days[x.k.slice(8)]={st:x.st,a:x.a??null,b:x.b??null,ms:x.ms||0,ot:x.ot||0}})}catch(e){}
+    if(!logs.length&&!open&&!Object.keys(days).length)return;out.push([ym,{uid,ym,name:(S.slip&&S.slip.name)||C.name||'',eid:(S.slip&&S.slip.eid)||'',logs,open,days,updatedAt:Date.now()}])});
+  const sig=JSON.stringify(out.map(([y,d])=>[y,d.logs,d.open,d.days]));if(sig===lastAtt)return;lastAtt=sig;
+  out.forEach(([ym,d])=>fsx.doc(`punch_att/${uid}_${ym}`).set(d).catch(()=>{lastAtt=''}))}
+/* HR's own marks from the app → punch_mark (employees cannot mark; HR can, for themselves too) */
+function myMarks(){const o={};Object.keys(S.marks||{}).forEach(k=>{if(months().includes(ymOf(k)))o[k]=[S.marks[k],(S.lt||{})[k]||'']});return o}
+C.pushMarks=pushMarks;function pushMarks(){if(!C.on||!C.hr)return;const cur=myMarks(),sig=JSON.stringify(cur);if(sig===lastMk)return;lastMk=sig;
+  months().forEach(ym=>{const marks={},lt={};Object.entries(cur).forEach(([k,[v,t]])=>{if(ymOf(k)===ym){marks[k]=v;if(t)lt[k]=t}});
+    fsx.doc(`punch_mark/${C.uid}_${ym}`).set({uid:C.uid,ym,marks,lt,by:C.uid,updatedAt:Date.now()}).catch(()=>{lastMk=''})})}
+/* requests to HR */
+C.sendReq=(q,kind)=>{if(!C.on)return;const d={uid:C.uid,name:(S.slip&&S.slip.name)||C.name||'',eid:(S.slip&&S.slip.eid)||'',kind,s:'Pending',why:q.why||'',at:q.at||Date.now(),days:(q.days||[]).slice(0,62)};
+  if(kind==='leave')Object.assign(d,{t:q.t,a:q.a,b:q.b,n:q.n});else d.v=q.v;
+  fsx.doc('punch_req/'+q.id).set(d).catch(e=>{try{say('Could not send the request to HR: '+(e.code||e.message),true)}catch(x){}})};
+C.cancelReq=q=>{if(!C.on)return;fsx.doc('punch_req/'+q.id).update({s:'Cancelled',updatedAt:Date.now()}).catch(()=>{})};
+
+/* ===== Team page: HR sees everyone's requests and today's check-ins, and approves ===== */
+let T={tab:'req',reqs:[],emps:{},att:{},ym:''},tw=[];
+function teamTab(){document.querySelectorAll('.tab[data-t="team"]').forEach(b=>b.hidden=!(C.on&&C.hr&&window.PunchRole==='admin'))}
+window.addEventListener('punchrole',()=>{teamTab();if(window.PunchRole!=='admin'&&!g('p-team').hidden)show('dash')});
+window.__teamWatch=()=>{tw.forEach(f=>f());tw=[];if(!(C.on&&C.hr))return;const ym=dayKey(Date.now()).slice(0,7);T.ym=ym;
+  tw.push(fsx.collection('punch_req').where('s','==','Pending').onSnapshot(q=>{T.reqs=q.docs.map(d=>Object.assign({_id:d.id},d.data())).sort((a,b)=>a.at-b.at);draw()},()=>{}));
+  tw.push(fsx.collection('punch_emp').onSnapshot(q=>{T.emps={};q.docs.forEach(d=>T.emps[d.id]=d.data());draw()},()=>{}));
+  tw.push(fsx.collection('punch_att').where('ym','==',ym).onSnapshot(q=>{T.att={};q.docs.forEach(d=>{const v=d.data();T.att[v.uid]=v});draw()},()=>{}))};
+const VL={present:'Present',weekoff:'Week off',holiday:'Holiday',compoff:'Comp off',absent:'Absent',holpresent:'Holiday + Present','-':'Clear mark'};
+const reqLabel=r=>r.kind==='leave'?(r.t==='CO'?'Comp off':'Leave · '+r.t):(String(r.v).startsWith('leave:')?'Leave · '+r.v.slice(6):(VL[r.v]||r.v));
+const dr=a=>{a=(a||[]).slice().sort();return !a.length?'—':a.length===1?fd(a[0]):fd(a[0])+' to '+fd(a[a.length-1])};
+function draw(){const el=g('tmBody');if(!el||g('p-team').hidden)return;document.querySelectorAll('#tmTabs button').forEach(b=>b.classList.toggle('on',b.dataset.tm===T.tab));
+  if(!(C.on&&C.hr)){el.innerHTML='<div class="card"><p class="sub">Sign in with an HR login connected to the portal to see your team.</p></div>';return}
+  const nm=r=>esc(r.name||(T.emps[r.uid]||{}).name||'Employee'),today=dayKey(Date.now());
+  if(T.tab==='req'){el.innerHTML=`<div class="card"><h2>Waiting for approval · ${T.reqs.length}</h2>${T.reqs.length?`<div class="hbox">${T.reqs.map(r=>`<div class="hrow" style="align-items:flex-start"><div><b>${nm(r)}</b><small>${esc(reqLabel(r))} · ${dr(r.days&&r.days.length?r.days:[r.a,r.b].filter(Boolean))} · ${(r.days||[]).length||r.n||1} day${((r.days||[]).length||r.n||1)===1?'':'s'}${r.why?' · '+esc(r.why):''}</small></div>${C.approve?`<div style="display:flex;gap:6px"><button data-ap="${r._id}" style="width:auto;padding:7px 12px">Approve</button><button class="ghost" data-rj="${r._id}" style="width:auto;padding:7px 12px">Reject</button></div>`:''}</div>`).join('')}</div>`:'<p class="sub">Nothing waiting.</p>'}${C.approve?'':'<p class="sub">HR executives can see requests; HR manager or HR head approves them.</p>'}</div>`;return}
+  const ids=Object.keys(T.emps).sort((a,b)=>String(T.emps[a].name).localeCompare(T.emps[b].name));
+  if(T.tab==='today'){const st=id=>{const a=T.att[id],d=a&&a.days&&a.days[today.slice(8)];if(a&&a.open)return['In since '+tm(a.open.t),'#0f8a6d'];if(d&&d.a!=null)return[`${tm(d.a)} – ${d.b?tm(d.b):'—'} · ${hm(d.ms||0)}`,'#3b6fd4'];return['Not checked in','#dc2626']};
+    const n=ids.filter(id=>T.att[id]&&T.att[id].open).length;
+    el.innerHTML=`<div class="card"><h2>Today · ${n} of ${ids.length} checked in</h2>${ids.length?`<div class="hbox">${ids.map(id=>{const[t,c]=st(id);return `<div class="hrow" style="border-left:4px solid ${c}"><div><b>${esc(T.emps[id].name)}</b><small>${esc(T.emps[id].eid||'')} · ${esc(T.emps[id].desg||'')}</small></div><b style="font-size:13px">${t}</b></div>`}).join('')}</div>`:'<p class="sub">No employees in Punch yet. Add them in the portal: HR › Punch › Employees.</p>'}</div>`;return}
+  const sum=id=>{const a=T.att[id]||{},D=Object.values(a.days||{});return{p:D.filter(d=>['Full day','Shift completed'].includes(d.st)).length,h:D.filter(d=>d.st==='Half day').length,ms:D.reduce((s,d)=>s+(d.ms||0),0),ot:D.reduce((s,d)=>s+(d.ot||0),0)}};
+  el.innerHTML=`<div class="card"><h2>${MN[+T.ym.slice(5)-1]} ${T.ym.slice(0,4)} · from check-ins</h2><div class="ytbl"><table><thead><tr><th>Employee</th><th>Full</th><th>Half</th><th>Hours</th><th>OT</th></tr></thead><tbody>${ids.map(id=>{const x=sum(id);return `<tr><td>${esc(T.emps[id].name)}</td><td>${x.p}</td><td>${x.h}</td><td>${hm(x.ms)}</td><td>${hm(x.ot)}</td></tr>`}).join('')}</tbody></table></div><p class="sub">Leave, week offs and HR marks are in the portal register.</p></div>`}
+window.__team=()=>{if(C.on&&C.hr&&!tw.length)__teamWatch();draw()};
+g('tmTabs').onclick=e=>{const b=e.target.closest('[data-tm]');if(b){T.tab=b.dataset.tm;draw()}};
+/* approving: the request is marked, and the days go into that employee's HR marks */
+async function decide(id,ok){const r=T.reqs.find(x=>x._id===id);if(!r||!C.approve)return;
+  try{const days=(r.days&&r.days.length)?r.days:(r.a?lvDays(r.a,r.b):[]);
+    if(ok){const by={};days.forEach(k=>{(by[ymOf(k)]=by[ymOf(k)]||[]).push(k)});
+      for(const ym of Object.keys(by)){const ref=fsx.doc(`punch_mark/${r.uid}_${ym}`),cur=await ref.get(),v=cur.exists?cur.data():{uid:r.uid,ym,marks:{},lt:{}},marks=Object.assign({},v.marks),lt=Object.assign({},v.lt);
+        by[ym].forEach(k=>{if(r.kind==='leave'){if(r.t==='CO'){marks[k]='compoff';delete lt[k]}else{marks[k]='leave';lt[k]=r.t}}
+          else{const vv=String(r.v);if(vv==='-'){delete marks[k];delete lt[k]}else if(vv.startsWith('leave:')){marks[k]='leave';lt[k]=vv.slice(6)}else{marks[k]=vv;delete lt[k]}}});
+        await ref.set({uid:r.uid,ym,marks,lt,by:C.uid,updatedAt:Date.now()})}}
+    await fsx.doc('punch_req/'+id).update({s:ok?'Approved':'Rejected',by:C.uid,byName:C.name||'',decidedAt:Date.now()});
+    say(ok?'Approved.':'Rejected.')}catch(e){say('Could not save: '+(e.code||e.message),true)}}
+g('tmBody').onclick=e=>{const a=e.target.closest('[data-ap]'),j=e.target.closest('[data-rj]');if(a)decide(a.dataset.ap,true);if(j&&confirm('Reject this request?'))decide(j.dataset.rj,false)};
+/* in portal mode salary is set by HR in the portal */
+const note=()=>{const f=g('payForm');if(!f)return;const on=C.on&&S.payCloud;f.querySelectorAll('input,select').forEach(i=>{if(i.id!=='pf_month'){if(on){i.disabled=true;i.dataset.pc=1}else if(i.dataset.pc){i.disabled=false;delete i.dataset.pc}}});
+  let n=g('payCloudNote');if(on&&!n){f.insertAdjacentHTML('afterbegin','<p class="sub" id="payCloudNote">Salary is set by HR in the portal.</p>')}else if(!on&&n)n.remove()};
+setInterval(()=>{try{note()}catch(e){}},1500);
+start();
 })();
 </script>
 </body>
