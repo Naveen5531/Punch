@@ -2963,7 +2963,12 @@ function begin(){if(C.on||!C.uid)return;C.on=true;const uid=C.uid;teamTab();
   unsub.push((()=>{const t=setInterval(()=>{pushAtt();if(C.hr)pushMarks()},15000);return()=>clearInterval(t)})());
   if(window.__teamWatch)__teamWatch()}
 /* my check-ins → punch_att/<uid>_<yyyy-mm> */
-C.pushAtt=pushAtt;function pushAtt(){if(!C.on)return;const uid=C.uid,out=[];
+/* Leave and comp off balances exactly as this app works them out → punch_bal/<uid>, so the portal shows the same figures */
+let lastBal='';function pushBal(){if(!C.on)return;try{const L=lvStats(),c=lvCfg(),co=coStats(),lv={};LT.forEach(([t,n])=>{const x=L[t]||{};lv[t]={name:n,o:x.o||0,r:x.r||0,cr:x.cr||0,used:x.used||0,b:x.b||0}});
+  const d={uid:C.uid,lv,start:c.start,months:L.months||0,co:{e:co.e||0,u:co.u||0,x:co.x||0,p:co.p||0,b:co.b||0}},sig=JSON.stringify(d);if(sig===lastBal)return;lastBal=sig;
+  fsx.doc('punch_bal/'+C.uid).set(Object.assign(d,{updatedAt:Date.now()})).catch(()=>{lastBal=''})}catch(e){}}
+C.pushBal=pushBal;
+C.pushAtt=pushAtt;function pushAtt(){if(!C.on)return;try{pushBal()}catch(e){}const uid=C.uid,out=[];
   months().forEach(ym=>{const[y,m]=ym.split('-').map(Number),dim=new Date(y,m,0).getDate(),logs=(S.logs||[]).filter(l=>ymOf(dayKey(l.in))===ym).map(l=>({in:l.in,out:l.out,inLat:l.inLat??null,inLng:l.inLng??null,outLat:l.outLat??null,outLng:l.outLng??null}));
     const open=S.open&&ymOf(dayKey(S.open.t))===ym?{t:S.open.t,lat:S.open.lat??null,lng:S.open.lng??null}:null;
     const days={};try{dayRows(Array.from({length:dim},(_,i)=>new Date(y,m-1,i+1))).forEach(x=>{if(x.a!==undefined||x.ms)days[x.k.slice(8)]={st:x.st,a:x.a??null,b:x.b??null,ms:x.ms||0,ot:x.ot||0}})}catch(e){}
