@@ -3100,7 +3100,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=60,APP_VN='7.6',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=59,APP_VN='7.5',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
@@ -3111,7 +3111,7 @@ start();
 #updBar img{width:38px;height:38px;border-radius:10px;background:#fff;object-fit:contain;padding:3px;flex:none}
 #updBar .t{flex:1;min-width:0}#updBar .t small{display:block;opacity:.75;font-size:12.5px;margin-top:2px}
 #updBar button{border:0;border-radius:999px;padding:9px 16px;font-weight:800;background:#25cf9f;color:#04120d;margin:0;width:auto}#updBar .x{background:none;color:#fff;font-size:20px;padding:0 4px}
-#updS{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}#updS[hidden]{display:none}
+#updS{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}#updS[hidden]{display:none}
 #updS .ub{width:100%;max-width:520px;background:var(--card);color:var(--ink);border-radius:26px 26px 0 0;padding:10px 20px calc(22px + env(safe-area-inset-bottom,0px));box-sizing:border-box;animation:rise .25s;max-height:88vh;overflow:auto}
 #updS .grab{display:block;width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
 #updS .uh{display:flex;gap:14px;align-items:center}#updS .uh img{width:58px;height:58px;border-radius:16px;background:#fff;object-fit:contain;padding:5px;box-shadow:0 2px 10px -4px rgba(0,0,0,.35);flex:none}
@@ -3124,7 +3124,7 @@ start();
 #updS .ua{display:flex;gap:10px;margin-top:16px}#updS .ua button{flex:1;margin:0;padding:13px;border-radius:999px;font-weight:800;font-size:15px}
 #updS .ua .go{background:linear-gradient(145deg,#25cf9f,#0f8a6d);color:#fff;border:0}#updS .ua .go:disabled{opacity:.55}
 </style>`);
-  function bar(){let b=g('updBar');if(b&&has())b.remove();if(has()){const s=g('updS');if(!s||s.hidden)open();return}
+  function bar(){let b=g('updBar');
     if(!has()||busy||(()=>{try{return localStorage.getItem('updLater')===String(latest.versionCode)}catch(e){return false}})()){if(b)b.remove();return}
     if(!b){b=document.createElement('div');b.id='updBar';b.setAttribute('role','status');document.body.appendChild(b)}
     b.innerHTML=`<img src="sn-mark.png" alt=""><div class="t"><b>Update available</b><small>Punch ${E(latest.versionName)}${latest.size?' · '+mb(latest.size):''}</small></div><button type="button" id="updBarGo">Update</button><button type="button" class="x" id="updBarX" aria-label="Later">×</button>`;
@@ -3133,14 +3133,14 @@ start();
     t.textContent=latest?(has()?'You have Punch '+APP_VN+'. Punch '+latest.versionName+' is available'+(latest.date?' ('+latest.date+')':'')+'.':'You have the latest Punch ('+APP_VN+').'):'You have Punch '+APP_VN+'. Could not reach the website to check – try again when online.';
     if(bt){bt.hidden=!has();bt.textContent='See update'}}
   function sheet(){let s=g('updS');if(s)return s;s=document.createElement('div');s.id='updS';s.hidden=true;s.setAttribute('role','dialog');s.setAttribute('aria-modal','true');s.setAttribute('aria-label','App update');document.body.appendChild(s);
-    s.addEventListener('click',e=>{if(e.target===s&&!busy&&!has())s.hidden=true;const b=e.target.closest('[data-u]');if(!b)return;
+    s.addEventListener('click',e=>{if(e.target===s&&!busy)s.hidden=true;const b=e.target.closest('[data-u]');if(!b)return;
       if(b.dataset.u==='later'){s.hidden=true}else if(b.dataset.u==='go')go()});return s}
   function open(){const s=sheet(),L=latest||{},N=notes();
     s.innerHTML=`<div class="ub"><i class="grab"></i><div class="uh"><img src="sn-mark.png" alt=""><div><b>Punch</b><small>SN Logistics · Attendance &amp; payroll</small></div></div>
     <div class="um"><div><b>${E(L.versionName||'')}</b>New version</div><div><b>${E(APP_VN)}</b>On this phone</div>${L.size?`<div><b>${mb(L.size)}</b>Download</div>`:''}${L.date?`<div><b>${E(L.date)}</b>Released</div>`:''}</div>
     ${N.length?`<h3>What's new</h3><ul>${N.map(x=>`<li>${E(x)}</li>`).join('')}</ul>`:''}
-    <div class="pg" id="updPg" hidden><i id="updPi"></i></div><div class="us" id="updSt">${has()?'Please update to keep using Punch. Your attendance, salary and settings stay as they are.':'Punch is up to date.'}</div>
-    <div class="ua">${has()?'':`<button type="button" class="ghost" data-u="later" id="updL">Later</button>`}<button type="button" class="go" data-u="go" id="updB" ${has()&&!busy?'':'disabled'}>${busy?'Updating…':'Update'}</button></div></div>`;
+    <div class="pg" id="updPg" hidden><i id="updPi"></i></div><div class="us" id="updSt">${has()?'Your attendance, salary and settings stay as they are.':'Punch is up to date.'}</div>
+    <div class="ua"><button type="button" class="ghost" data-u="later" id="updL">${busy?'Hide':'Later'}</button><button type="button" class="go" data-u="go" id="updB" ${has()&&!busy?'':'disabled'}>${busy?'Updating…':'Update'}</button></div></div>`;
     s.hidden=false;if(state)upd(state.s,state.t)}
   function go(){const u=(latest&&latest.url)||'https://naveen5531.github.io/Punch.apk';
     if(window.PunchNative&&PunchNative.updateApp){busy=true;upd('dl','Starting the download…');const b=g('updBar');if(b)b.remove();PunchNative.updateApp(u);return}
@@ -3153,7 +3153,6 @@ start();
     if(pg){pg.hidden=!(st==='dl'||st==='inst');pg.classList.toggle('ind',st==='inst'||(st==='dl'&&!m));if(pi&&m)pi.style.width=m[1]+'%'}
     if(sl){sl.textContent=tx;sl.className='us'+(st==='fail'?' err':st==='ok'?' ok':'')}
     if(b){b.disabled=!(st==='fail'||st==='perm');b.textContent=st==='fail'?'Try again':st==='perm'?'Continue':st==='ok'?'Done':'Updating…'}
-    if(st==='fail'&&sl&&!g('updDl'))sl.insertAdjacentHTML('afterend','<a id="updDl" href="'+E((latest&&latest.url)||'https://naveen5531.github.io/Punch.apk')+'" style="display:block;margin-top:8px;font-size:13px;font-weight:700">Or download the new Punch in the browser</a>');
     if(l)l.textContent=busy?'Hide':'Later'}
   window.__updState=upd;
   async function check(force){if(!force&&Date.now()-last<6*3600e3)return;last=Date.now();
