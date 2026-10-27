@@ -2146,7 +2146,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 #dvS h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute);margin:14px 0 4px}
 #dvS .hrow small{display:block}
 </style>`);
-let pv=false;
+let pv=false,psg='';
 function fillProf(){const q=Q();g('pn').value=q.name||'';g('pe').value=q.eid||'';g('pd').value=q.desg||'';
   const gr=gradeOf(q);g('pg').innerHTML='<option value="">Not set</option>'+GRADES.map(([k,n])=>`<optgroup label="${k} · ${n}">${[1,2,3,4].map(i=>`<option value="${k}${i}"${gr===k+i?' selected':''}>${k}${i}</option>`).join('')}</optgroup>`).join('');
   g('pc').innerHTML='<option value="">Not set</option>'+CATS.map(c=>`<option${q.cat===c?' selected':''}>${esc(c)}</option>`).join('');
@@ -2167,7 +2167,11 @@ function live(){const tot=todayTotal(),pct=Math.min(100,tot/(9*Ho)*100),n=new Da
   e('dTot').textContent=hms(tot);e('dPb').style.width=pct.toFixed(2)+'%';e('dPct').textContent=Math.floor(pct);
   e('dClk').textContent=n.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true})}
 function tickD(){try{if(!g('p-dash').hidden){const h=dash();if(h!==last){last=h;g('dash').innerHTML=h}live()}}catch(e){try{console.error(e)}catch(x){}}
-  try{const v=!g('p-prof').hidden;if(v&&!pv)fillProf();if(v)prof();pv=v}catch(e){}}
+  /* the detail boxes are refilled whenever the logged-in person or their details change (e.g. after a login
+     switch, or when HR's profile arrives from the portal), but never while you are typing in one of them */
+  try{const v=!g('p-prof').hidden,q=Q(),sg=JSON.stringify([S.owner||'',q.name,q.eid,q.desg,q.grade,q.cat]),
+    typing=['pn','pe','pd','pg','pc'].includes((document.activeElement||{}).id);
+    if(v&&(!pv||(sg!==psg&&!typing))){fillProf();psg=sg}if(v)prof();pv=v}catch(e){}}
 window.__dashTick=tickD;tickD();
 })();
 </script>
