@@ -257,7 +257,12 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
 .fbn span{font-size:12px;opacity:.88;font-weight:500;text-align:right}
 .ftag{display:inline-block;margin-bottom:12px;padding:5px 14px;border-radius:99px;font-size:12px;font-weight:700;background:rgba(255,255,255,.2)}
 @media (prefers-reduced-motion:reduce){#festFx{display:none}}
-#lg .lgG{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;margin-top:10px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 15px inherit;font-family:inherit}#lg .lgG[hidden]{display:none}</style>
+#lg .lgG{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;margin-top:10px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 15px inherit;font-family:inherit}#lg .lgG[hidden]{display:none}
+/* SN Logistics brand */
+.logo::before,html[data-fest] .logo::before{background:#fff url(sn-mark.png) center/contain no-repeat!important;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+#lg .box::before,html[data-fest] #lg .box::before{display:none!important}
+.slip .lh img.snlh,#slipM .lh img.snlh{width:auto!important;height:62px!important;max-width:60%;border-radius:0!important;object-fit:contain}.slip .lhbar.sn,#slipM .lhbar.sn{background:linear-gradient(90deg,#2459a5,#e8731c)!important}@media print{.slip .lh img.snlh{height:46px!important}}
+</style>
 </head>
 <body>
 <header class="top"><span class="logo">Punch</span><small>Location attendance</small></header>
@@ -1911,7 +1916,7 @@ let a='',ar='';try{a=sessionStorage.getItem('att_in');ar=sessionStorage.getItem(
 if(!(a&&ar)){a='';const k=keepGet();if(k&&k===ktok('admin')){a='1';ar='admin'}else if(k&&k===ktok('employee')){a='1';ar='employee'}}
 if(a)setRole(ar);else{window.PunchRole='';B.classList.add('locked')}
 B.insertAdjacentHTML('afterbegin',`<div id="lg"><div class="box">
-<h1>Attendance Management</h1><p class="s" id="lgs">Sign in to continue</p>
+<img src="sn-logo.png" alt="SN Logistics – Speed & Trust" style="height:64px;width:auto;max-width:100%;display:block;margin:0 auto 12px"><h1>Attendance Management</h1><p class="s" id="lgs">Sign in to continue</p>
 <div id="v1"><div class="rseg" id="lgRole" role="tablist" aria-label="Login as"><button type="button" data-r="employee" class="on" role="tab" aria-selected="true">Employee</button><button type="button" data-r="admin" role="tab" aria-selected="false">Admin</button></div>
 <p class="rnote" id="lgNote">View attendance, salary and payslips, send requests and download.</p>
 <label id="uL">Login Name</label><input id="u" autocomplete="username" inputmode="numeric">
@@ -2702,8 +2707,8 @@ apply();try{render()}catch(e){}
    work on other phones once online sync (Firebase) is switched on. */
 (()=>{const g=id=>document.getElementById(id),D=864e5;
 S.emps=S.emps||[];S.co=S.co||{};
-/* Company name: Movana Logistics unless the admin types another one. The workplace name (e.g. "Office") is never used as the company name. */
-const CO=()=>{const o=CO0();if(!o.name||o.name===(S.wp&&S.wp.name)||/^office$/i.test(o.name))o.name='Movana Logistics';return o};
+/* Company name: SN Logistics unless the admin types another one. The workplace name (e.g. "Office") is never used as the company name. */
+const CO=()=>{const o=CO0();if(!o.name||o.name===(S.wp&&S.wp.name)||/^office$/i.test(o.name)||/^movana logistics$/i.test(o.name))o.name='SN Logistics';return o};
 const CO0=()=>Object.assign({name:'',addr:'',sig:'',sigD:'HR Manager',ref:'HR/OFFER',jur:'',ret:'58',col:'#a87a1e',logo:'ml',web:'',phone:'',cin:''},S.co);
 window.__co=CO;
 /* Company logo, drawn from the company name: a monogram mark plus the name. Used on offer letters,
@@ -2717,10 +2722,13 @@ function logoSvg(){const c=CO(),col=/^#[0-9a-f]{6}$/i.test(c.col)?c.col:'#0f6e56
    an "L" and ends in an arrow, starting from a pickup point. Black tile with gold, for a logistics company. */
 function mlSvg(){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3d27a"/><stop offset=".55" stop-color="#d4a640"/><stop offset="1" stop-color="#a87a1e"/></linearGradient><linearGradient id="bk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26262b"/><stop offset="1" stop-color="#0d0d10"/></linearGradient></defs><rect x="3" y="3" width="114" height="114" rx="28" fill="url(#bk)"/><rect x="6.5" y="6.5" width="107" height="107" rx="25" fill="none" stroke="url(#gd)" stroke-opacity=".55" stroke-width="1.5"/><path d="M27 86 V35 L50 62 L73 35 V86 H91" fill="none" stroke="url(#gd)" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M88 76.5 L100 86 L88 95.5 Z" fill="url(#gd)" stroke="url(#gd)" stroke-width="3" stroke-linejoin="round"/><circle cx="27" cy="86" r="7.5" fill="#0d0d10" stroke="url(#gd)" stroke-width="4"/></svg>`}
 window.__mlSvg=mlSvg;
-const logoUri=()=>(S.slip&&S.slip.logo)||('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(CO().logo==='mono'?logoSvg():mlSvg()));
+/* SN Logistics logo (assets/sn-logo.png) unless the admin uploaded their own or picked the plain mark */
+const snLogo=()=>!(S.slip&&S.slip.logo)&&CO().logo!=='mono';
+const logoUri=()=>(S.slip&&S.slip.logo)||(CO().logo==='mono'?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSvg()):'sn-logo.png');
 window.__logo=logoUri;
 /* Letterhead used on every printed page: logo, company name, address and contact, and a brand-colour rule. */
 window.__lh=(short)=>{const c=CO(),col=/^#[0-9a-f]{6}$/i.test(c.col)?c.col:'#0f6e56',ct=[c.phone&&'Tel: '+esc(c.phone),c.web&&esc(c.web)].filter(Boolean).join(' · ');
+  if(snLogo())return `<div class="lh" style="--bc:${col}"><img class="snlh" src="sn-logo.png" alt="${esc(c.name)} – Speed & Trust"><div class="lht" style="margin-left:auto;text-align:right">${short?'':`${c.addr?`<span>${esc(c.addr)}</span>`:''}${ct?`<span>${ct}</span>`:''}${c.cin?`<span>CIN: ${esc(c.cin)}</span>`:''}`}</div></div><div class="lhbar sn" style="--bc:${col}"></div>`;
   return `<div class="lh" style="--bc:${col}"><img src="${logoUri()}" alt="${esc(c.name)} logo"><div class="lht"><b>${esc(c.name)||'Company name'}</b>${short?'':`${c.addr?`<span>${esc(c.addr)}</span>`:''}${ct?`<span>${ct}</span>`:''}${c.cin?`<span>CIN: ${esc(c.cin)}</span>`:''}`}</div></div><div class="lhbar" style="--bc:${col}"></div>`};
 const F=[['name','Full name','text'],['eid','Employee ID (login ID)','text'],['desg','Designation','text'],['grade','Grade','grade'],['cat','Department / category','text'],['loc','Work location','text'],
   ['join','Date of joining','date'],['mgr','Reporting manager','text'],['mob','Mobile','tel'],['email','Email','email'],['addr','Address','text'],

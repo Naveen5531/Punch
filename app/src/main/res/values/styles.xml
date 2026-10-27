@@ -4,4 +4,4 @@
         <item name="android:navigationBarColor">#ffffff</item>
         <item name="android:windowBackground">#f2f3f7</item>
     </style>
-</resources>
+<color name="ic_sn_bg">#FFFFFF</color></resources>
