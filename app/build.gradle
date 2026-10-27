@@ -6,8 +6,8 @@ android {
         applicationId 'com.punch.attendance'
         minSdk 26
         targetSdk 34
-        versionCode 54
-        versionName '7.0'
+        versionCode 55
+        versionName '7.1'
     }
     // Fixed key so every new build installs as an update over the previous one.
     signingConfigs {

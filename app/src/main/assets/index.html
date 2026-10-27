@@ -92,7 +92,9 @@ body:has(#statusCard.on) .hero-clock::after{content:'● ON DUTY';background:#ff
 .elapsed{font-size:40px;font-weight:300;letter-spacing:-1px;margin:10px 0 0}
 #tripE{font-size:28px}
 #perm,#grace{display:none;border-radius:18px;padding:14px;margin-bottom:12px;font-size:14px;background:color-mix(in srgb,var(--warn) 12%,var(--card));color:var(--ink)}
-#perm.show,#grace.show{display:block}#grace{text-align:center}
+#perm.show,#grace.show{display:block}
+.tg{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 7px;border-radius:999px;white-space:nowrap}.tg.lt{background:color-mix(in srgb,#dc2626 14%,transparent);color:#dc2626}
+.cd{position:relative}.ldot{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:#dc2626}#grace{text-align:center}
 .log{display:grid;grid-template-columns:1fr auto;gap:3px 10px;padding:12px 2px;border-top:1px solid var(--line)}
 .log:first-of-type{border-top:0}
 .log b{font-weight:700}.log span{color:var(--mute);font-size:13px;line-height:1.5}
@@ -428,7 +430,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
     <div class="card">
       <div class="row"><label for="mon">Show</label><select id="mon" style="font:inherit;width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
       <p class="sub">Reports keep the last 90 days. Older records are deleted automatically.</p>
-      <p class="sub">Daily rule: under 1 hr is not counted, 1 to 4 hrs Absent, 4 to 6 hrs Half day, 6 to 9 hrs Full day, 9 hrs or more Shift completed. Time after 9 hrs is overtime.</p>
+      <p class="sub" id="repRule"></p>
       <div id="repSum"></div>
       <div class="row"><button class="ghost" id="csv">Download CSV</button><button class="ghost" id="share">Share</button></div>
     </div>
@@ -578,7 +580,14 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
       <div class="row"><label for="pd">Designation</label><input id="pd" type="text" maxlength="40"></div>
       <div class="row"><label for="pg">Grade</label><select id="pg"></select></div>
       <div class="row"><label for="pc">Category</label><select id="pc"></select></div>
-      <p class="sub">These details appear on your payslip.</p>
+      <h3 class="hh">Statutory &amp; bank</h3>
+      <div class="row"><label for="ppan">PAN</label><input id="ppan" type="text" maxlength="10" autocapitalize="characters" placeholder="ABCDE1234F"></div>
+      <div class="row"><label for="puan">UAN (PF)</label><input id="puan" type="text" maxlength="12" inputmode="numeric" placeholder="12 digits"></div>
+      <div class="row"><label for="pesi">ESI number</label><input id="pesi" type="text" maxlength="17" inputmode="numeric"></div>
+      <div class="row"><label for="pbank">Bank name</label><input id="pbank" type="text" maxlength="40"></div>
+      <div class="row"><label for="pacct">Bank account</label><input id="pacct" type="text" maxlength="20" inputmode="numeric"></div>
+      <div class="row"><label for="pifsc">IFSC</label><input id="pifsc" type="text" maxlength="11" autocapitalize="characters"></div>
+      <p class="sub">These details appear on your payslip. The bank account shows only its last 4 digits.</p>
       <details><summary style="cursor:pointer">DMart grade guide</summary><div class="sub" id="gGuide"></div></details></div>
     <div class="card"><h2>Festival theme</h2><div class="row"><label for="festSel">Theme</label><select id="festSel"></select></div><p class="sub" id="festNow"></p><p class="sub">The whole app (background, header, buttons, switches and tabs) and the falling decorations change automatically on Indian and Telangana festivals and national days. Pick a festival to preview it.</p></div>
     <div class="card"><h2>Appearance</h2><div class="seg" id="theme"><button data-th="">Auto</button><button data-th="light">Light</button><button data-th="dark">Dark</button></div></div>
@@ -844,7 +853,13 @@ if(S.trk&&S.home&&!S.trip&&!S.here){
 }
 if(S.auto||S.open||S.trk)startAuto(1);
 watchPerm();
-const H=3600000,RULE={min:1*H,half:4*H,full:6*H,shift:9*H};
+const H=3600000;
+/* Attendance policy (set by Admin › Attendance policy, or by HR from the portal): shift timing, late-mark grace,
+   half-day / full-day hours, late marks that cost half a day, and the minimum extra time that counts as overtime. */
+const POLD={start:'09:00',end:'18:00',lg:15,eg:15,half:4,full:6,shift:9,lateN:0,otMin:30};
+function POL(){const o=Object.assign({},POLD,S.pol||{});['lg','eg','half','full','shift','lateN','otMin'].forEach(k=>{o[k]=+o[k];if(isNaN(o[k]))o[k]=POLD[k]});return o}
+const hmTo=(k,t)=>{const[h,m]=String(t||'0:0').split(':').map(Number);const d=new Date(k+'T00:00:00');d.setHours(h||0,m||0,0,0);return d.getTime()};
+const RULE={min:1*H,get half(){return POL().half*H},get full(){return POL().full*H},get shift(){return POL().shift*H}};
 const WORK=['Absent','Half day','Full day','Shift completed'];
 function classify(ms){
   if(ms<RULE.min)return 'none';
@@ -861,7 +876,9 @@ function dayRows(ds){
   if(S.open){const k=dayKey(S.open.t),x=by[k]=by[k]||{a:S.open.t,b:undefined,ms:0,lat:S.open.lat,lng:S.open.lng};x.ms+=Date.now()-S.open.t;x.live=true}
   return ds.map(d=>{const k=dayKey(d.getTime()),x=by[k],c=x?classify(x.ms):'none';
     if(S.join&&k<S.join)return{k,d,st:'Not joined'};
-    if(x&&c!=='none')return{k,d,...x,st:c,ot:Math.max(0,x.ms-RULE.shift),hol:isMand(k)||S.marks[k]==='holpresent',co:(isHol(k)||S.marks[k]==='holpresent')?coVal(c):0,hp:S.marks[k]==='holpresent'?1:0};
+    if(x&&c!=='none'){const po=POL(),ls=hmTo(k,po.start),le=hmTo(k,po.end),wd=!woFor(k).includes(d.getDay())&&!isMand(k),
+        late=wd&&x.a>ls+po.lg*60000?x.a-ls:0,early=wd&&!x.live&&x.b&&x.b<le-po.eg*60000?le-x.b:0,ot0=Math.max(0,x.ms-RULE.shift);
+      return{k,d,...x,st:c,late,early,ot:ot0>=po.otMin*60000?ot0:0,hol:isMand(k)||S.marks[k]==='holpresent',co:(isHol(k)||S.marks[k]==='holpresent')?coVal(c):0,hp:S.marks[k]==='holpresent'?1:0}}
     const m=S.marks[k]||(woFor(k).includes(d.getDay())?'weekoff':(holInfo(k)?'holiday':''));
     if(m==='holpresent')return{k,d,...(x||{}),st:'Marked present',ot:0,hol:true,co:1,hp:1};
     return{k,d,...(x||{}),st:m==='weekoff'?'Week off':m==='leave'?'Leave':m==='compoff'?'Comp off':m==='holiday'?'Holiday':m==='absent'?'Marked absent':m==='present'?'Marked present':'No check-in',short:x?x.ms:undefined}});
@@ -870,11 +887,12 @@ const sc=t=>({'Full day':'#0f8a6d','Shift completed':'#0a6b54','Marked present':
 const f5=v=>v===undefined?'':(+v).toFixed(5);
 function renderRep(){
   const r=repRows(),loc=(S.wp&&S.wp.name)||'Workplace';
+  {const po=POL(),el=$('repRule');if(el)el.textContent=`Shift ${po.start}–${po.end}. Daily rule: under 1 hr is not counted, 1 to ${po.half} hrs Absent, ${po.half} to ${po.full} hrs Half day, ${po.full} to ${po.shift} hrs Full day, ${po.shift} hrs or more Shift completed. Time after ${po.shift} hrs is overtime when it is ${po.otMin} min or more. Check-in after ${po.start} + ${po.lg} min is a late mark`+(po.lateN?`; every ${po.lateN} late marks in a month cost half a day's pay.`:'.')}
   const w=r.filter(x=>WORK.includes(x.st)),tot=w.reduce((s,x)=>s+x.ms,0),ot=w.reduce((s,x)=>s+(x.ot||0),0),c=s=>r.filter(x=>x.st===s).length;
   const full=c('Full day')+c('Shift completed')+c('Marked present'),half=c('Half day');
   $('repSum').innerHTML=`<div class="hero"><div class="big">${full+half/2}</div><div>days attendance<br><small>Full ${full}, Half ${half}</small></div></div><div class="tiles"><div class="tile"><span>Time worked</span><b>${hm(tot)}</b></div><div class="tile ot"><span>Overtime</span><b>${hm(ot)}</b></div></div><div class="chips"><span class="chip" style="--c:#0f8a6d"><i></i>Present<b>${full}</b></span><span class="chip" style="--c:#d99a06"><i></i>Half day<b>${half}</b></span><span class="chip" style="--c:#dc2626"><i></i>Absent<b>${c('Absent')+c('Marked absent')}</b></span><span class="chip" style="--c:#3b6fd4"><i></i>Week off<b>${c('Week off')}</b></span><span class="chip" style="--c:#7c3aed"><i></i>Holiday<b>${c('Holiday')}</b></span><span class="chip" style="--c:#ea580c"><i></i>Leave<b>${c('Leave')}</b></span><span class="chip" style="--c:#0891b2"><i></i>Comp off taken<b>${c('Comp off')}</b></span><span class="chip" style="--c:#0891b2"><i></i>Comp off earned<b>${r.reduce((s,x)=>s+(x.co||0),0)}</b></span><span class="chip" style="--c:var(--mute)"><i></i>No check-in<b>${c('No check-in')}</b></span></div>`;
   $('rep').innerHTML=r.map(x=>{
-    if(WORK.includes(x.st))return `<div class="log" style="--s:${sc(x.st)}"><b>${dy(x.d)}</b><span class="dur">${hm(x.ms)}</span><span>${esc(loc)}${x.lat!==undefined?` (${f5(x.lat)}, ${f5(x.lng)})`:''}<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}<br><b style="color:var(--s)">${x.st}${x.live?' so far':''}</b>${x.ot?`, Overtime ${hm(x.ot)}`:''}${x.hol?', Holiday work'+(P().holDbl?' (double pay)':(x.co?`, Comp off +${x.co} earned`:'')):''}</span><div class="mk"><button data-k="${x.k}" data-v="holiday" class="${x.hol?'on':''}">Holiday</button></div></div>`;
+    if(WORK.includes(x.st))return `<div class="log" style="--s:${sc(x.st)}"><b>${dy(x.d)}</b><span class="dur">${hm(x.ms)}</span><span>${esc(loc)}${x.lat!==undefined?` (${f5(x.lat)}, ${f5(x.lng)})`:''}<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}<br><b style="color:var(--s)">${x.st}${x.live?' so far':''}</b>${x.late?` <em class="tg lt">Late ${hm(x.late)}</em>`:''}${x.early?` <em class="tg lt">Early out ${hm(x.early)}</em>`:''}${x.ot?`, Overtime ${hm(x.ot)}`:''}${x.hol?', Holiday work'+(P().holDbl?' (double pay)':(x.co?`, Comp off +${x.co} earned`:'')):''}</span><div class="mk"><button data-k="${x.k}" data-v="holiday" class="${x.hol?'on':''}">Holiday</button></div></div>`;
     const btn=(v,t)=>`<button data-k="${x.k}" data-v="${v}" class="${x.st===t||x.st==='Marked '+t.toLowerCase()?'on':''}">${t}</button>`;
     const note=x.st==='No check-in'?(x.short!==undefined?`Only ${hm(x.short)} at workplace, not counted`:'No check-in'):x.st==='Not joined'?'Before joining date':x.st==='Week off'&&!S.marks[x.k]?'Weekly off':x.st==='Holiday'&&!S.marks[x.k]?'Holiday: '+esc(hname(x.k)):x.st==='Leave'?'Leave'+(S.lt&&S.lt[x.k]?' ('+S.lt[x.k]+')':' (no type, not deducted)'):x.hp?'Holiday + Present (double pay, comp off earned)':'Marked by admin';
     return `<div class="log" style="--s:${sc(x.st)}"><b>${dy(x.d)}</b><span class="dur" style="color:var(--s)">${x.short!==undefined?hm(x.short):x.st==='No check-in'?'':x.st}</span><span>${note}${x.a!==undefined?`<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}`:''}</span>${x.st==='Not joined'?'':!isAdm()?`<div class="mk"><button data-rq="${x.k}">Request change</button></div>`:`<div class="mk">${btn('present','Present')}${btn('weekoff','Week off')}${btn('holiday','Holiday')}${LT.map(x=>x[0]).map(t=>`<button data-k="${x.k}" data-v="leave" data-lt="${t}" class="${x.st==='Leave'&&S.lt&&S.lt[x.k]===t?'on':''}">${t}</button>`).join('')}${btn('compoff','Comp off')}${btn('absent','Absent')}</div>`}</div>`;
@@ -959,12 +977,13 @@ function calcPay(mo){
   const sal=p.basicAmt+p.hraAmt+p.convAmt+p.splAmt,rate=base?sal/base:0,cnt=p.basis==='cal'||p.basis==='30';
   let pay=full+half/2+co+(p.leavePaid?lv:0)+(p.holPaid?hol:0)+(cnt?wo:0);
   if(p.basis==='26'||p.basis==='30')pay=Math.min(pay,base);
+  const po=POL(),lates=r.filter(x=>x.late&&x.d<t0).length,lpen=po.lateN>0?Math.floor(lates/po.lateN)*0.5:0;pay=Math.max(0,pay-lpen);
   const hx=p.holDbl?r.filter(x=>x.hol).reduce((s,x)=>s+(x.st==='Half day'?.5:x.st==='Absent'?0:1),0):0;pay+=hx;
   const k=base?pay/base:0,basic=r2(p.basicAmt*k),hra=r2(p.hraAmt*k),conv=r2(p.convAmt*k),spl=r2(p.splAmt*k);
   const oh=r.reduce((s,x)=>s+(x.ot||0),0)/H,ota=r2(p.ot?oh*(rate/(p.hpd||9))*p.ot:0),gross=r2(basic+hra+conv+spl+ota);
   const pct=p.pfMode==='pct',pp=+p.pfPct||0,pf=pct?Math.round(basic*pp/100):+p.pf||0,pfEr=pct?Math.round(basic*pp/100):+p.pfEr||0,vpf=p.vpf,esi=p.esi,exL=exOcc(p.month+'-01',p.month+'-31'),ex=exL.reduce((q,o)=>q+o.a,0);
   const tded=r2(pf+vpf+esi+p.pt+p.oth+ex),net=r2(gross-tded);
-  const L=[['Attendance'],['Full days',full],['Half days',half],['Week offs',wo],['Holidays',hol],['Holiday double pay days',hx],['Leave',lv],['Comp off (paid)',co],['Absent / no check-in',ab],['Today and upcoming days (pending, not paid)',up],['LOP days',ab+half/2],['Before joining',nj],['Payable days',`${pay} of ${base}`],['Rate per day',inr2(rate)],['Earnings'],['Monthly salary (full)',inr2(sal)],['Basic',inr2(basic)],['HRA',inr2(hra)],['Conveyance',inr2(conv)],['Special allowance',inr2(spl)]];
+  const L=[['Attendance'],['Full days',full],['Half days',half],['Week offs',wo],['Holidays',hol],['Holiday double pay days',hx],['Leave',lv],['Comp off (paid)',co],['Absent / no check-in',ab],['Today and upcoming days (pending, not paid)',up],['Late marks',lates],['Late-mark deduction (days)',lpen],['LOP days',ab+half/2+lpen],['Before joining',nj],['Payable days',`${pay} of ${base}`],['Rate per day',inr2(rate)],['Earnings'],['Monthly salary (full)',inr2(sal)],['Basic',inr2(basic)],['HRA',inr2(hra)],['Conveyance',inr2(conv)],['Special allowance',inr2(spl)]];
   if(p.ot)L.push([`Overtime (${oh.toFixed(1)} h)`,inr2(ota)]);
   L.push(['Gross pay',inr2(gross)],['Deductions']);
   L.push(['PF (employee)',inr2(pf)],['VPF',inr2(vpf)],['ESI',inr2(esi)],['Professional tax',inr2(p.pt)],['Other deduction',inr2(p.oth)]);
@@ -982,9 +1001,11 @@ function calcPay(mo){
   if(wo)C.push(['Week offs',cnt?'Paid, because salary is on '+bLbl:'Not paid separately on this day basis',wo]);
   if(hol)C.push(['Holidays',p.holPaid?'Paid':'Not paid',hol]);
   if(lv)C.push(['Leave',p.leavePaid?'Paid leave':'Unpaid leave',lv]);
-  C.push(['LOP days (loss of pay)',`${ab} absent / no check-in${half?` + ${half} half day${half===1?'':'s'} × ½`:''}`,fN(ab+half/2)]);
+  if(lates)C.push(['Late marks',`Came in after ${po.start} + ${po.lg} min grace`+(po.lateN?`; every ${po.lateN} late marks = ½ day LOP`:'; no deduction set'),lates]);
+  if(lpen)C.push(['Late-mark deduction',`${lates} late ÷ ${po.lateN} = ${Math.floor(lates/po.lateN)} × ½ day`,fN(lpen)]);
+  C.push(['LOP days (loss of pay)',`${ab} absent / no check-in${half?` + ${half} half day${half===1?'':'s'} × ½`:''}${lpen?` + ${fN(lpen)} late-mark`:''}`,fN(ab+half/2+lpen)]);
   if(up)C.push(['Pending days',`Today and upcoming days, paid once marked`,up]);
-  C.push(['Paid days (PD)',pd.map(x=>x[0]+' '+x[1]).join(' + ')+(p.basis==='26'||p.basis==='30'?` (max ${base})`:''),fN(pay),'t']);
+  C.push(['Paid days (PD)',pd.map(x=>x[0]+' '+x[1]).join(' + ')+(p.basis==='26'||p.basis==='30'?` (max ${base})`:'')+(lpen?` − ${fN(lpen)} late-mark`:''),fN(pay),'t']);
   C.push(['Pay factor',`PD ÷ day basis = ${fN(pay)} ÷ ${base}`,base?(pay/base).toFixed(4):'0','t']);
   C.push(['Earnings']);
   const hn=x=>MN[+x.slice(5,7)-1]+' '+x.slice(0,4);
@@ -1066,14 +1087,14 @@ function renderCal(){
   $('cprev').disabled=y*12+m<=cal0-3;$('cnext').disabled=y*12+m>=cal0+3;
   $('cal').innerHTML=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="wd">${d}</div>`).join('')+'<div></div>'.repeat(lead)+rows.map(x=>{
     const ab=x.hol?'P+H':((x.st==='Leave'&&S.lt&&S.lt[x.k])||AB[x.st]||''),on=sel.has(x.k);
-    return `<button class="cd${x.k===today?' today':''}${x.k>today?' fut':''}" data-k="${x.k}" aria-pressed="${on}" aria-label="${dy(x.d)}, ${x.st}" style="--s:${sc(x.st)}"><b>${x.d.getDate()}</b><small>${ab}</small></button>`}).join('');
+    return `<button class="cd${x.k===today?' today':''}${x.k>today?' fut':''}" data-k="${x.k}" aria-pressed="${on}" aria-label="${dy(x.d)}, ${x.st}" style="--s:${sc(x.st)}"><b>${x.d.getDate()}</b><small>${ab}</small>${x.late?'<i class="ldot" aria-label="late"></i>':''}</button>`}).join('');
   const c=s=>rows.filter(x=>x.st===s).length,full=c('Full day')+c('Shift completed')+c('Marked present'),half=c('Half day');
-  $('cSum').innerHTML=`<div class="chips"><span class="chip" style="--c:#0f8a6d"><i></i>Present (P)<b>${full}</b></span><span class="chip" style="--c:#d99a06"><i></i>Half day (\u00bd)<b>${half}</b></span><span class="chip" style="--c:#dc2626"><i></i>Absent (A)<b>${c('Absent')+c('Marked absent')}</b></span><span class="chip" style="--c:#3b6fd4"><i></i>Week off (W)<b>${c('Week off')}</b></span><span class="chip" style="--c:#7c3aed"><i></i>Holiday (H)<b>${c('Holiday')}</b></span><span class="chip" style="--c:#ea580c"><i></i>Leave (L)<b>${c('Leave')}</b></span><span class="chip" style="--c:#0891b2"><i></i>Comp off (CO)<b>${c('Comp off')}</b></span></div>`;
+  $('cSum').innerHTML=`<div class="chips"><span class="chip" style="--c:#0f8a6d"><i></i>Present (P)<b>${full}</b></span><span class="chip" style="--c:#d99a06"><i></i>Half day (\u00bd)<b>${half}</b></span><span class="chip" style="--c:#dc2626"><i></i>Absent (A)<b>${c('Absent')+c('Marked absent')}</b></span><span class="chip" style="--c:#3b6fd4"><i></i>Week off (W)<b>${c('Week off')}</b></span><span class="chip" style="--c:#7c3aed"><i></i>Holiday (H)<b>${c('Holiday')}</b></span><span class="chip" style="--c:#ea580c"><i></i>Leave (L)<b>${c('Leave')}</b></span><span class="chip" style="--c:#0891b2"><i></i>Comp off (CO)<b>${c('Comp off')}</b></span><span class="chip" style="--c:#dc2626"><i></i>Late marks<b>${rows.filter(x=>x.late).length}</b></span></div>`;
   const n=sel.size;
   $('csub').textContent=n?`${n} day${n===1?'':'s'} selected. Choose a status and tap ${isAdm()?'Apply':'Send request'}.`:'Tap days on the calendar to select them.';
   if(n===1){
     const k=[...sel][0],x=dayRows([new Date(k+'T00:00:00')])[0];
-    $('cdet').innerHTML=`<b>${dy(x.d)}</b>: ${x.st}${hname(x.k)?' ('+esc(hname(x.k))+')':''}${x.co?`<br>Comp off earned: ${x.co}`:''}${x.a!==undefined?`<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}, ${hm(x.ms)}`:''}${x.ot?`, Overtime ${hm(x.ot)}`:''}`;
+    $('cdet').innerHTML=`<b>${dy(x.d)}</b>: ${x.st}${hname(x.k)?' ('+esc(hname(x.k))+')':''}${x.co?`<br>Comp off earned: ${x.co}`:''}${x.a!==undefined?`<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}, ${hm(x.ms)}`:''}${x.ot?`, Overtime ${hm(x.ot)}`:''}${x.late?`<br><span style="color:#dc2626;font-weight:700">Late by ${hm(x.late)}</span> (shift ${POL().start})`:''}${x.early?`<br><span style="color:#dc2626;font-weight:700">Left early by ${hm(x.early)}</span> (shift ends ${POL().end})`:''}`;
   }else $('cdet').textContent=n?'':'Tap a day to see its details.';
   renderHol();
 }
@@ -1140,7 +1161,7 @@ function renderSlipM(){const el=$('slipM');if(!el)return;const emp=isEmp(),q=Obj
   const calcOn=!emp&&!(S.slip&&S.slip.calc===0);
   el.innerHTML=`<div class="mh">${window.__lh?__lh(1):''}<div class="mt">Salary slip · ${MN[m-1]} ${y}</div></div>
 <div class="mnet"><span>Net pay</span><b>${esc(net)}</b><small>${inWords(Math.floor(Math.abs(nn)))} Rupees${Math.round(Math.abs(nn)*100)%100?' and '+_two(Math.round(Math.abs(nn)*100)%100)+' Paise':''} Only${nn<0?' (minus)':''}</small></div>
-<div class="kv"><span>Employee</span><b>${esc(q.name)}</b></div><div class="kv"><span>Employee ID</span><b>${esc(q.eid)}</b></div><div class="kv"><span>Designation</span><b>${esc(q.desg)}</b></div><div class="kv"><span>Date of joining</span><b>${jd}</b></div>
+<div class="kv"><span>Employee</span><b>${esc(q.name)}</b></div><div class="kv"><span>Employee ID</span><b>${esc(q.eid)}</b></div><div class="kv"><span>Designation</span><b>${esc(q.desg)}</b></div><div class="kv"><span>Date of joining</span><b>${jd}</b></div>${q.pan?`<div class="kv"><span>PAN</span><b>${esc(q.pan)}</b></div>`:''}${q.uan?`<div class="kv"><span>UAN</span><b>${esc(q.uan)}</b></div>`:''}${q.acct?`<div class="kv"><span>Paid to</span><b>${esc(q.bank||'Bank')} · XXXX${esc(String(q.acct).slice(-4))}</b></div>`:''}
 ${emp?'':`<div class="kv"><span>Paid days (PD)</span><b>${esc(at('Payable days'))}</b></div><div class="kv"><span>LOP days</span><b>${esc(at('LOP days'))}</b></div>`}
 <h3 class="hh">Earnings</h3>${E.map(line).join('')||'<p class="sub">No earnings this month.</p>'}<div class="ml t"><span>Gross earnings<small>${yv('Gross pay')}</small></span><b>${esc(get('Earnings','Gross pay'))}</b></div>
 <h3 class="hh">Deductions</h3>${Dd.map(line).join('')||'<p class="sub">No deductions this month.</p>'}<div class="ml t"><span>Total deductions<small>${yv('Total deductions')}</small></span><b>${esc(get('Deductions','Total deductions'))}</b></div>
@@ -1169,7 +1190,7 @@ function renderSlip0(){
   const cv=n=>{const r=(L.calc||[]).find(x=>x[0]===n);return r?r[2]:''};
   const pr=(a,b,c,d)=>`<tr><td class="l">${a}</td><td class="v">: ${b}</td><td class="l">${c}</td><td class="v">${d===''?'':': '+d}</td></tr>`;
   $('slip').innerHTML=`${window.__lh?__lh(1):`<div class="band">${q.logo?`<img src="${q.logo}" alt="Company logo">`:''}<b>${esc(S.wp&&S.wp.name)||'Company'}</b></div>`}<div class="dt">Salary Slip for the Month of ${mn(en)} ${en.getFullYear()}</div>
-<table class="emp">${pr('Employee Name',esc(q.name).toUpperCase(),'Employee ID',esc(q.eid))}${pr('Designation',esc(q.desg),'Date of Joining',jd)}${gradeOf(q)||q.cat?pr('Grade',esc(gradeName(gradeOf(q))||'N.A'),'Category',esc(q.cat||'N.A')):''}${pr('Duration',dur,'Current Office location',esc(S.wp&&S.wp.name)||'N.A')}${emp?'':pr('Total Days (basis)',base,'Paid Days (PD)',pay)+pr('Days Worked',(cv('Days worked')||0),'Week off / Paid holiday',(+cv('Week offs')||0)+(+cv('Holidays')||0))+pr('LOP Days',((sec['Attendance']||[]).find(r=>r[0]==='LOP days')||[,0])[1],'Tenure',S.join?tenureYM(S.join):'N.A')}${emp?pr('Tenure',S.join?tenureYM(S.join):'N.A','',''):''}</table>
+<table class="emp">${pr('Employee Name',esc(q.name).toUpperCase(),'Employee ID',esc(q.eid))}${pr('Designation',esc(q.desg),'Date of Joining',jd)}${gradeOf(q)||q.cat?pr('Grade',esc(gradeName(gradeOf(q))||'N.A'),'Category',esc(q.cat||'N.A')):''}${pr('Duration',dur,'Current Office location',esc(S.wp&&S.wp.name)||'N.A')}${q.pan||q.uan?pr('PAN',esc(q.pan||'N.A'),'UAN',esc(q.uan||'N.A')):''}${q.esino||q.ifsc?pr('ESI No',esc(q.esino||'N.A'),'IFSC',esc(q.ifsc||'N.A')):''}${q.bank||q.acct?pr('Bank Name',esc(q.bank||'N.A'),'Bank A/c No',q.acct?'XXXX'+esc(String(q.acct).slice(-4)):'N.A'):''}${pr('Pay Mode',q.acct?'Bank Transfer':'Cash / Bank','Pay Date',fd(dayKey(new Date(y,m,0).getTime())))}${emp?'':pr('Total Days (basis)',base,'Paid Days (PD)',pay)+pr('Days Worked',(cv('Days worked')||0),'Week off / Paid holiday',(+cv('Week offs')||0)+(+cv('Holidays')||0))+pr('LOP Days',((sec['Attendance']||[]).find(r=>r[0]==='LOP days')||[,0])[1],'Tenure',S.join?tenureYM(S.join):'N.A')}${emp?pr('Tenure',S.join?tenureYM(S.join):'N.A','',''):''}</table>
 <table class="st"><thead><tr class="h1"><th colspan="3">Earnings</th><th colspan="3">Deductions</th></tr><tr><th>Description</th><th>Amount</th><th>YTD</th><th>Description</th><th>Amount</th><th>YTD</th></tr></thead><tbody>${rows}
 <tr class="b"><td>Gross Earnings</td><td class="r">${gross?amt(gross[1]):''}</td><td class="r y">${yv('Gross pay')}</td><td>Gross Deductions</td><td class="r">${tded?amt(tded[1]):''}</td><td class="r y">${yv('Total deductions')}</td></tr>
 <tr class="b"><td>Net Pay</td><td class="r">${netS}</td><td class="r y">${yv('Net pay (take home)')}</td><td colspan="3" class="ys">YTD = ${fyName(p.month)}, April to ${mn(en)}</td></tr></tbody></table>
@@ -2063,7 +2084,7 @@ const days=n=>Array.from({length:n},(_,i)=>{const d=new Date();d.setHours(0,0,0,
 let last='';
 function dash(){
   const n=new Date(),h=n.getHours(),q=Q(),nm=(q.name||'').trim(),first=esc(nm.split(/\s+/)[0]||'there'),ini=esc(nm.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'P');
-  const tot=todayTotal(),pct=Math.min(100,tot/(9*Ho)*100),on=!!S.open;
+  const tot=todayTotal(),pct=Math.min(100,tot/(POL().shift*Ho)*100),on=!!S.open;
   const wk=dayRows(days(7)).reverse(),wt=wk.reduce((s,x)=>s+(x.ms||0),0),r60=dayRows(days(60));
   let st=0;for(let i=0;i<r60.length;i++){const x=r60[i];if(FULL.includes(x.st)||x.st==='Half day'){st++;continue}if(['Week off','Holiday','Leave','Comp off'].includes(x.st)||(i===0&&x.st==='No check-in'))continue;break}
   const y=n.getFullYear(),m=n.getMonth(),mr=dayRows(Array.from({length:n.getDate()},(_,i)=>new Date(y,m,i+1))),c=s=>mr.filter(x=>x.st===s).length;
@@ -2077,10 +2098,12 @@ function dash(){
   const R=2*Math.PI*26;
   return `<div class="greet"><div><small>${h<12?'Good morning':h<17?'Good afternoon':'Good evening'} · <span id="dClk"></span></small><h1>${first}</h1></div><button class="av" data-go="prof" aria-label="Profile">${ini}</button></div>
 <div class="bento">
-<div class="bt w2 b1" data-dv="day:${dayKey(Date.now())}"><div class="tr"><small>${on?'On duty since '+tm(S.open.t):'Off duty'}</small><i class="lv${on?' on':''}"></i></div><b style="font-size:40px" id="dTot"></b><div class="pb"><i id="dPb"></i></div><div class="tr2"><span><span id="dPct"></span>% of a 9h shift</span><button class="mini" data-go="home">${on?'Check out':'Check in'}</button></div></div>
+<div class="bt w2 b1" data-dv="day:${dayKey(Date.now())}"><div class="tr"><small>${on?'On duty since '+tm(S.open.t):'Off duty'}${(()=>{const t=dayRows([new Date(new Date().setHours(0,0,0,0))])[0];return t&&t.late?' · <em class="tg lt">Late '+hm(t.late)+'</em>':''})()}</small><i class="lv${on?' on':''}"></i></div><b style="font-size:40px" id="dTot"></b><div class="pb"><i id="dPb"></i></div><div class="tr2"><span><span id="dPct"></span>% of a ${POL().shift}h shift · ${POL().start}–${POL().end}</span><button class="mini" data-go="home">${on?'Check out':'Check in'}</button></div></div>
+<div class="qa w2">${[['leave','Apply leave','M4 20c0-9 6-15 16-16 0 10-6 16-16 16zM4 20l9-9'],['attendance','Regularise','M3 5h18v16H3zM3 10h18M8 3v4M16 3v4M8 15l2.5 2.5L16 13'],['slip','Payslip','M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6'],['report','Reports','M5 3h10l4 4v14H5zM9 9h3M9 13h6M9 17h6']].map(([t,l,d])=>`<button type="button" data-go="${t}"><i><svg viewBox="0 0 24 24"><path d="${d}"/></svg></i>${l}</button>`).join('')}</div>
+${(()=>{const tk=dayKey(Date.now()),nx=(S.hols||[]).filter(h=>h.k>=tk&&(typeof regionOk!=='function'||regionOk(h))).sort((a,b)=>a.k<b.k?-1:1)[0];if(!nx)return '';const dd=Math.round((new Date(nx.k+'T00:00:00')-new Date(tk+'T00:00:00'))/864e5);return `<div class="bt w2 plain nh" data-go="attendance"><div><small>Next holiday</small><b>${esc(nx.n)}</b></div><span>${dd===0?'Today':dd===1?'Tomorrow':'in '+dd+' days'}<br>${fd(nx.k)}</span></div>`})()}
 <div class="bt b2" data-dv="att"><small>Streak</small><b>${st}</b><span>days in a row</span></div>
-<div class="bt b3" data-dv="ot"><small>Overtime · month</small><b>${hm(ot)}</b><span>beyond 9h days</span></div>
-<div class="bt w2 plain" data-dv="hrs"><div class="tr"><small>Last 7 days</small><span>${hm(wt)} total</span></div><div class="wk">${wk.map(x=>`<div class="bc${x.k===dayKey(Date.now())?' t':''}" data-dv="day:${x.k}"><i style="height:${Math.max(5,Math.round(Math.min(1,(x.ms||0)/(9*Ho))*100))}%;--s:${sc(x.st)}"></i>${'SMTWTFS'[x.d.getDay()]}</div>`).join('')}</div></div>
+<div class="bt b3" data-dv="ot"><small>Overtime · month</small><b>${hm(ot)}</b><span>beyond ${POL().shift}h days</span></div>
+<div class="bt w2 plain" data-dv="hrs"><div class="tr"><small>Last 7 days</small><span>${hm(wt)} total</span></div><div class="wk">${wk.map(x=>`<div class="bc${x.k===dayKey(Date.now())?' t':''}" data-dv="day:${x.k}"><i style="height:${Math.max(5,Math.round(Math.min(1,(x.ms||0)/(POL().shift*Ho))*100))}%;--s:${sc(x.st)}"></i>${'SMTWTFS'[x.d.getDay()]}</div>`).join('')}</div></div>
 <div class="bt b4" data-dv="att"><small>Attendance</small><div class="rgr"><svg class="rg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="8" opacity=".18"/><circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(R*rate/100).toFixed(1)} ${R.toFixed(1)}" transform="rotate(-90 32 32)"/></svg><b>${rate}%</b></div><span>${att} day${att===1?'':'s'} this month</span></div>
 <div class="bt plain" data-dv="pay"><small>Net pay</small><b style="font-size:${net.length>8?26:32}px">${net||'—'}</b><span>${sal?cycOpts()[0][1].replace(' to ','–'):'Add salary details'}</span></div>
 </div>
@@ -2145,9 +2168,15 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 #dvS .dvt button{flex:1;margin:0;padding:8px;border-radius:9px;background:none;color:var(--mute);font-weight:700;font-size:14px}#dvS .dvt button.on{background:var(--in);color:#fff}
 #dvS h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute);margin:14px 0 4px}
 #dvS .hrow small{display:block}
+#dash .qa{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#dash .qa button{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0;padding:12px 4px;border-radius:18px;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:12px;font-weight:700;width:auto}
+#dash .qa i{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:color-mix(in srgb,var(--in) 12%,transparent)}
+#dash .qa svg{width:20px;height:20px;fill:none;stroke:var(--in);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#dash .qa button:active{transform:scale(.96)}#dash .bt.nh{min-height:0;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px}#dash .nh b{display:block;font-size:18px;margin-top:2px}#dash .nh>span{text-align:right;color:var(--mute);font-size:12.5px;opacity:1;line-height:1.4}
 </style>`);
 let pv=false,psg='';
 function fillProf(){const q=Q();g('pn').value=q.name||'';g('pe').value=q.eid||'';g('pd').value=q.desg||'';
+  [['ppan','pan'],['puan','uan'],['pesi','esino'],['pbank','bank'],['pacct','acct'],['pifsc','ifsc']].forEach(([i,k])=>{const el=g(i);if(el)el.value=q[k]||''});
   const gr=gradeOf(q);g('pg').innerHTML='<option value="">Not set</option>'+GRADES.map(([k,n])=>`<optgroup label="${k} · ${n}">${[1,2,3,4].map(i=>`<option value="${k}${i}"${gr===k+i?' selected':''}>${k}${i}</option>`).join('')}</optgroup>`).join('');
   g('pc').innerHTML='<option value="">Not set</option>'+CATS.map(c=>`<option${q.cat===c?' selected':''}>${esc(c)}</option>`).join('');
   g('gGuide').innerHTML=GRADES.map(([k,n,r])=>`<p style="margin:6px 0"><b>${k} – ${n}</b><br>${r}</p>`).join('')+'<p style="margin:6px 0">Each letter has levels 1–4 (higher = senior). Check your appointment letter or HR for your exact grade.</p>'}
@@ -2155,7 +2184,11 @@ function prof(){const q=Q(),nm=(q.name||'').trim();
   g('pAv').textContent=nm.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'P';g('pName').textContent=nm||'Your name';g('pDesg').textContent=[q.desg,gradeName(gradeOf(q))&&!new RegExp('\\b'+gradeOf(q)+'\\b','i').test(q.desg||'')?'Grade '+gradeOf(q):'',q.cat,S.wp&&S.wp.name].filter(Boolean).join(' · ');
   const tn=S.join?Math.max(0,Math.floor((Date.now()-new Date(S.join+'T00:00:00'))/864e5)):null;
   g('pStats').innerHTML=`<div class="tile"><span>Tenure</span><b>${tn===null?'—':tenureYM(S.join)}</b></div><div class="tile"><span>Hours · 90 days</span><b>${Math.round(S.logs.reduce((s,l)=>s+l.out-l.in,0)/Ho)}h</b></div><div class="tile"><span>Saved places</span><b>${S.locs.length}</b></div><div class="tile"><span>Trips logged</span><b>${S.trips.length}</b></div>`}
-['pn:name','pe:eid','pd:desg','pg:grade','pc:cat'].forEach(s=>{const[i,k]=s.split(':');g(i).onchange=()=>{S.slip=Object.assign({},S.slip,{[k]:g(i).value.trim()});save();prof()}});
+['pn:name','pe:eid','pd:desg','pg:grade','pc:cat','ppan:pan','puan:uan','pesi:esino','pbank:bank','pacct:acct','pifsc:ifsc'].forEach(s=>{const[i,k]=s.split(':');g(i).onchange=()=>{let v=g(i).value.trim();if(['pan','ifsc'].includes(k))v=v.toUpperCase();if(['uan','acct','esino'].includes(k))v=v.replace(/\s+/g,'');
+  if(k==='pan'&&v&&!/^[A-Z]{5}\d{4}[A-Z]$/.test(v))say('PAN looks wrong. It is 5 letters, 4 digits, 1 letter.',true);
+  if(k==='ifsc'&&v&&!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(v))say('IFSC looks wrong. It is 11 characters, like SBIN0001234.',true);
+  if(k==='uan'&&v&&!/^\d{12}$/.test(v))say('UAN is 12 digits.',true);
+  g(i).value=v;S.slip=Object.assign({},S.slip,{[k]:v});save();prof()}});
 const th=v=>{const r=document.documentElement;v?r.dataset.theme=v:delete r.dataset.theme;try{v?localStorage.setItem('punch_theme',v):localStorage.removeItem('punch_theme')}catch(e){}document.querySelectorAll('#theme button').forEach(b=>b.classList.toggle('on',b.dataset.th===v))};
 g('theme').onclick=e=>{const b=e.target.closest('button');if(b)th(b.dataset.th)};
 let sv='';try{sv=localStorage.getItem('punch_theme')||''}catch(e){}th(sv);
@@ -2163,14 +2196,14 @@ g('pOut').onclick=()=>g('lgout').click();
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)show(b.dataset.go)});
 /* Today's worked time, the shift bar and the clock change every second in place; the rest of the page is
    rebuilt only when something in it changes (so buttons are not replaced while you tap them). */
-function live(){const tot=todayTotal(),pct=Math.min(100,tot/(9*Ho)*100),n=new Date(),e=id=>g(id)||{style:{}};
+function live(){const tot=todayTotal(),pct=Math.min(100,tot/(POL().shift*Ho)*100),n=new Date(),e=id=>g(id)||{style:{}};
   e('dTot').textContent=hms(tot);e('dPb').style.width=pct.toFixed(2)+'%';e('dPct').textContent=Math.floor(pct);
   e('dClk').textContent=n.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true})}
-function tickD(){try{if(!g('p-dash').hidden){const h=dash();if(h!==last){last=h;g('dash').innerHTML=h}live()}}catch(e){try{console.error(e)}catch(x){}}
+function tickD(){try{const sm=document.querySelector('header.top small');if(sm){const t=S.open?'On duty · '+hm(todayTotal()):'Off duty';if(sm.textContent!==t)sm.textContent=t}}catch(e){}try{if(!g('p-dash').hidden){const h=dash();if(h!==last){last=h;g('dash').innerHTML=h}live()}}catch(e){try{console.error(e)}catch(x){}}
   /* the detail boxes are refilled whenever the logged-in person or their details change (e.g. after a login
      switch, or when HR's profile arrives from the portal), but never while you are typing in one of them */
-  try{const v=!g('p-prof').hidden,q=Q(),sg=JSON.stringify([S.owner||'',q.name,q.eid,q.desg,q.grade,q.cat]),
-    typing=['pn','pe','pd','pg','pc'].includes((document.activeElement||{}).id);
+  try{const v=!g('p-prof').hidden,q=Q(),sg=JSON.stringify([S.owner||'',q.name,q.eid,q.desg,q.grade,q.cat,q.pan,q.uan,q.esino,q.bank,q.acct,q.ifsc]),
+    typing=['pn','pe','pd','pg','pc','ppan','puan','pesi','pbank','pacct','pifsc'].includes((document.activeElement||{}).id);
     if(v&&(!pv||(sg!==psg&&!typing))){fillProf();psg=sg}if(v)prof();pv=v}catch(e){}}
 window.__dashTick=tickD;tickD();
 })();
@@ -2437,6 +2470,18 @@ function renderAdmin(){
   ${LT.filter(x=>x[0]!=='LOP').map(([t])=>`<div class="row"><b style="min-width:42px">${t}</b><input class="in2" type="number" step="0.05" min="0" data-p="${t}.r" value="${r2(c[t].r)}"><input class="in2" type="number" step="0.05" min="0" data-p="${t}.o" value="${c[t].o}"></div>`).join('')}
   <p class="sub">Optional holidays: maximum 4 a year, only on optional holiday dates, no double pay.</p>
   <div class="row"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-p="appr" ${c.appr?'checked':''} style="width:auto">Leave needs admin approval</label></div></div>
+  ${(()=>{const po=POL();return `<div class="card"><h2>Attendance policy</h2><p class="sub">Shift timing and the rules HR uses. A day is <b>Late</b> when the first check-in is after shift start + grace, and <b>Early out</b> when the last check-out is before shift end − grace.</p>
+  <div class="row"><label for="po_s">Shift start</label><input class="in2" type="time" id="po_s" data-po="start" value="${po.start}"></div>
+  <div class="row"><label for="po_e">Shift end</label><input class="in2" type="time" id="po_e" data-po="end" value="${po.end}"></div>
+  <div class="row"><label for="po_lg">Late grace (min)</label><input class="in2" type="number" min="0" max="120" id="po_lg" data-po="lg" value="${po.lg}"></div>
+  <div class="row"><label for="po_eg">Early-out grace (min)</label><input class="in2" type="number" min="0" max="120" id="po_eg" data-po="eg" value="${po.eg}"></div>
+  <div class="row"><label for="po_ln">Late marks for ½ day LOP</label><input class="in2" type="number" min="0" max="10" id="po_ln" data-po="lateN" value="${po.lateN}"></div>
+  <p class="sub">0 = late marks are shown but never deducted. Example: 3 means every 3 late marks in a month cut half a day's pay.</p>
+  <div class="row"><label for="po_h">Half day from (hours)</label><input class="in2" type="number" min="1" max="12" step="0.5" id="po_h" data-po="half" value="${po.half}"></div>
+  <div class="row"><label for="po_f">Full day from (hours)</label><input class="in2" type="number" min="1" max="14" step="0.5" id="po_f" data-po="full" value="${po.full}"></div>
+  <div class="row"><label for="po_sh">Shift hours</label><input class="in2" type="number" min="1" max="16" step="0.5" id="po_sh" data-po="shift" value="${po.shift}"></div>
+  <div class="row"><label for="po_ot">Overtime counts after (min)</label><input class="in2" type="number" min="0" max="240" id="po_ot" data-po="otMin" value="${po.otMin}"></div>
+  <p class="sub">Under ${po.half} h is Absent, ${po.half}–${po.full} h is Half day, ${po.full} h or more is Full day. Extra time beyond ${po.shift} h counts as overtime only if it is at least ${po.otMin} min.</p></div>`})()}
   <div class="card"><h2>Leave requests</h2>${pend.length?`<div class="hbox">${pend.map(q=>`<div class="hrow"><div><b>${q.a===q.b?fd(q.a):fd(q.a)+' to '+fd(q.b)}</b><small>${q.t} · ${q.n} day${q.n===1?'':'s'}${q.why?' · '+esc(q.why):''}</small></div><span style="display:flex;gap:6px"><button class="ghost" data-x="appr" data-id="${q.id}" style="width:auto;padding:7px 12px">Approve</button><button class="ghost" data-x="rej" data-id="${q.id}" style="width:auto;padding:7px 12px">Reject</button></span></div>`).join('')}</div>`:'<p class="sub">No pending requests.</p>'}
   ${done.length?`<h3 class="hh">Recent</h3><div class="hbox">${done.map(q=>`<div class="hrow"><div><b>${fd(q.a)}${q.a===q.b?'':' to '+fd(q.b)}</b><small>${q.t} · ${q.s}${q.by?' by '+q.by:''}</small></div></div>`).join('')}</div>`:''}</div>
   <div class="card"><h2>Attendance requests</h2><p class="sub">Choose the final status, then Approve. Use Holiday + Present for a holiday worked: double pay and 1 comp off.</p>${pendA.length?`<div class="hbox">${pendA.map(q=>`<div class="hrow" style="flex-wrap:wrap;gap:8px"><div><b>${arRange(q.days)}</b><small>Requested: ${vLab(q.v)} · ${q.days.length} day${q.days.length===1?'':'s'}${q.why?' · '+esc(q.why):''}</small></div><span style="display:flex;gap:6px;align-items:center"><select class="in2" data-ao="${q.id}" style="max-width:150px">${AOPT(q.v)}</select><button class="ghost" data-x="aap" data-id="${q.id}" style="width:auto;padding:7px 12px">Approve</button><button class="ghost" data-x="arj" data-id="${q.id}" style="width:auto;padding:7px 12px">Reject</button></span></div>`).join('')}</div>`:'<p class="sub">No pending requests.</p>'}
@@ -2470,12 +2515,17 @@ $('admBody').onclick=e=>{const el=e.target.closest('[data-x]');if(!el)return;con
     const la=S.wp?S.wp.lat:0,lo=S.wp?S.wp.lng:0;S.logs.unshift({in:a,out:z,inLat:la,inLng:lo,outLat:la,outLng:lo});S.logs.sort((p,q)=>q.in-p.in);save();render();say('Punch added.')}
   else if(x==='aacsv'){const [y,mo]=aaMonth.split('-').map(Number),q=v=>`"${String(v).replace(/"/g,'""')}"`,
     r=dayRows(Array.from({length:new Date(y,mo,0).getDate()},(_,i)=>new Date(y,mo-1,i+1)));
-    const t=['Date,Status,Leave type,Check in,Check out,Hours'].concat(r.map(v=>[v.k,q(v.st),v.st==='Leave'&&S.lt&&S.lt[v.k]||'',v.a!==undefined?q(tm(v.a)):'',v.a!==undefined&&!v.live&&v.b?q(tm(v.b)):'',v.ms?(v.ms/H).toFixed(2):''].join(',')));
+    const t=['Date,Status,Leave type,Check in,Check out,Hours,Late (min),Early out (min),Overtime (h)'].concat(r.map(v=>[v.k,q(v.st),v.st==='Leave'&&S.lt&&S.lt[v.k]||'',v.a!==undefined?q(tm(v.a)):'',v.a!==undefined&&!v.live&&v.b?q(tm(v.b)):'',v.ms?(v.ms/H).toFixed(2):'',v.late?Math.round(v.late/60000):'',v.early?Math.round(v.early/60000):'',v.ot?(v.ot/H).toFixed(2):''].join(',')));
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+t.join('\n')],{type:'text/csv'}));a.download=fname('Admin_Attendance_'+aaMonth,'csv');document.body.appendChild(a);a.click();a.remove();return}
   renderAdmin()};
 $('admBody').onchange=e=>{const el=e.target;if(!admOK)return;
   if(el.id==='aaM'){aaMonth=el.value||aaMonth;renderAdmin();return}
   if(el.dataset.am){if(el.value){setMark(el.dataset.am,el.value);save();coSync();render();renderAdmin()}return}
+  if(el.dataset.po){const k=el.dataset.po;S.pol=Object.assign({},S.pol);
+    if(k==='start'||k==='end'){if(/^\d{2}:\d{2}$/.test(el.value))S.pol[k]=el.value}
+    else{const v=parseFloat(el.value);if(isNaN(v)||v<0)delete S.pol[k];else S.pol[k]=v}
+    const q=POL();if(q.half>q.full){S.pol.full=q.half;say('Full day hours raised to match half day.',true)}
+    save();render();renderAdmin();try{window.PunchCloud&&PunchCloud.pushAtt&&PunchCloud.pushAtt()}catch(x){}return}
   const k=el.dataset.p;if(!k)return;S.lv=S.lv||{};
   if(k==='start'){if(/^\d{4}-\d{2}$/.test(el.value))S.lv.start=el.value}
   else if(k==='appr')S.lv.appr=el.checked?1:0;
@@ -2736,7 +2786,7 @@ window.__lh=(short)=>{const c=CO(),col=/^#[0-9a-f]{6}$/i.test(c.col)?c.col:'#0f6
   if(snLogo())return `<div class="lh" style="--bc:${col}"><img class="snlh" src="sn-logo.png" alt="${esc(c.name)} – Speed & Trust"><div class="lht" style="margin-left:auto;text-align:right">${short?'':`${c.addr?`<span>${esc(c.addr)}</span>`:''}${ct?`<span>${ct}</span>`:''}${c.cin?`<span>CIN: ${esc(c.cin)}</span>`:''}`}</div></div><div class="lhbar sn" style="--bc:${col}"></div>`;
   return `<div class="lh" style="--bc:${col}"><img src="${logoUri()}" alt="${esc(c.name)} logo"><div class="lht"><b>${esc(c.name)||'Company name'}</b>${short?'':`${c.addr?`<span>${esc(c.addr)}</span>`:''}${ct?`<span>${ct}</span>`:''}${c.cin?`<span>CIN: ${esc(c.cin)}</span>`:''}`}</div></div><div class="lhbar" style="--bc:${col}"></div>`};
 const F=[['name','Full name','text'],['eid','Employee ID (login ID)','text'],['desg','Designation','text'],['grade','Grade','grade'],['cat','Department / category','text'],['loc','Work location','text'],
-  ['join','Date of joining','date'],['mgr','Reporting manager','text'],['mob','Mobile','tel'],['email','Email','email'],['addr','Address','text'],
+  ['join','Date of joining','date'],['mgr','Reporting manager','text'],['mob','Mobile','tel'],['email','Email','email'],['addr','Address','text'],['pan','PAN','text'],['uan','UAN (if any)','text'],['bank','Bank name','text'],['acct','Bank account','text'],['ifsc','IFSC','text'],
   ['basic','Basic per month (₹)','number'],['hra','HRA per month (₹)','number'],['conv','Conveyance per month (₹)','number'],['spl','Special allowance per month (₹)','number'],
   ['pfPct','PF % of Basic','number'],['pt','Professional tax per month (₹)','number'],['grat','Include gratuity in CTC (4.81% of Basic)','check'],
   ['prob','Probation (months)','number'],['pnotice','Notice during probation (days)','number'],['notice','Notice period after confirmation (days)','number'],['hrs','Working hours per day','number'],['wdays','Working days per week','number']];
@@ -2803,6 +2853,7 @@ function letter(e){const c=CO(),k=ctc(e),n=new Date(),first=String(e.name||'').s
   const lvTxt=lv?`privilege leave of ${fN(lv.PL.r)} day, sick leave of ${fN(lv.SL.r)} day and casual leave of ${fN(lv.CL.r)} day credited for every month of service`:'leave as per the leave policy of the Company';
   const T=[
    ['Appointment','Your appointment is on a full-time basis. You will devote your whole working time and attention to the work of the Company and will not take up any other employment, business or paid assignment, directly or indirectly, without written permission.'],
+   ['Documents on joining','On or before your date of joining, submit self-attested copies of: Aadhaar card, PAN card, two passport-size photographs, educational certificates and mark sheets, relieving and experience letters from previous employers (if any), last three salary slips (if any), and a cancelled cheque or bank passbook page. Your appointment is subject to verification of these documents and of your background and references.'],
    ['Probation and confirmation',`You will be on probation for ${pr} month${pr==='1'?'':'s'} from your date of joining. The Company may extend the probation if your performance or conduct is not found satisfactory. You will be treated as confirmed only when you receive a written letter of confirmation.`],
    ['Notice and separation',`During probation, either party may end the employment by giving ${pn} days' written notice. After confirmation, the notice period is ${nt} days. The Company may pay or recover salary in lieu of notice. Leave balance cannot be adjusted against the notice period without approval.`],
    ['Termination for cause','The Company may end your employment without notice or salary in lieu of notice for misconduct, dishonesty, breach of these terms or the Code of Conduct, unauthorised absence, or if any information given by you is found to be false.'],
@@ -2971,8 +3022,8 @@ function stop(){unsub.forEach(f=>{try{f()}catch(e){}});unsub=[];C.on=false;teamT
 function begin(){if(C.on||!C.uid)return;C.on=true;const uid=C.uid;teamTab();
   // profile kept by HR
   unsub.push(fsx.doc('punch_emp/'+uid).onSnapshot(d=>{if(!d.exists)return;const e=d.data();
-    S.slip=Object.assign({},S.slip,{name:e.name||S.slip&&S.slip.name,eid:e.eid||'',desg:e.desg||'',grade:e.grade||'',cat:e.cat||''});if(e.join)S.join=e.join;
-    if(e.wp&&e.wp.lat!=null)S.wp={lat:+e.wp.lat,lng:+e.wp.lng,name:e.wp.name||'Workplace'};if(e.radius)S.radius=+e.radius;
+    S.slip=Object.assign({},S.slip,{name:e.name||S.slip&&S.slip.name,eid:e.eid||'',desg:e.desg||'',grade:e.grade||'',cat:e.cat||''});['pan','uan','esino','bank','acct','ifsc'].forEach(f=>{if(e[f])S.slip[f]=String(e[f])});if(e.join)S.join=e.join;
+    if(e.wp&&e.wp.lat!=null)S.wp={lat:+e.wp.lat,lng:+e.wp.lng,name:e.wp.name||'Workplace'};if(e.radius)S.radius=+e.radius;if(e.pol&&typeof e.pol==='object')S.pol=Object.assign({},S.pol,e.pol);
     if(Array.isArray(e.wo)){S.wo=e.wo.slice();const tk=dayKey(Date.now());S.woH=(S.woH&&S.woH.length?S.woH:[{f:'0000-00-00',w:e.wo.slice()}]).filter(x=>x.f!==tk).concat({f:tk,w:e.wo.slice()})}
     save();try{render()}catch(x){}},()=>{}));
   // salary set-up kept by HR (read-only in the app)
@@ -3001,7 +3052,7 @@ C.pushBal=pushBal;
 C.pushAtt=pushAtt;function pushAtt(){if(!C.on)return;try{pushBal()}catch(e){}const uid=C.uid,out=[];
   months().forEach(ym=>{const[y,m]=ym.split('-').map(Number),dim=new Date(y,m,0).getDate(),logs=(S.logs||[]).filter(l=>ymOf(dayKey(l.in))===ym).map(l=>({in:l.in,out:l.out,inLat:l.inLat??null,inLng:l.inLng??null,outLat:l.outLat??null,outLng:l.outLng??null}));
     const open=S.open&&ymOf(dayKey(S.open.t))===ym?{t:S.open.t,lat:S.open.lat??null,lng:S.open.lng??null}:null;
-    const days={};try{dayRows(Array.from({length:dim},(_,i)=>new Date(y,m-1,i+1))).forEach(x=>{if(x.a!==undefined||x.ms)days[x.k.slice(8)]={st:x.st,a:x.a??null,b:x.b??null,ms:x.ms||0,ot:x.ot||0}})}catch(e){}
+    const days={};try{dayRows(Array.from({length:dim},(_,i)=>new Date(y,m-1,i+1))).forEach(x=>{if(x.a!==undefined||x.ms)days[x.k.slice(8)]={st:x.st,a:x.a??null,b:x.b??null,ms:x.ms||0,ot:x.ot||0,late:x.late||0,early:x.early||0}})}catch(e){}
     if(!logs.length&&!open&&!Object.keys(days).length)return;out.push([ym,{uid,ym,name:(S.slip&&S.slip.name)||C.name||'',eid:(S.slip&&S.slip.eid)||'',logs,open,days,updatedAt:Date.now()}])});
   const sig=JSON.stringify(out.map(([y,d])=>[y,d.logs,d.open,d.days]));if(sig===lastAtt)return;lastAtt=sig;
   out.forEach(([ym,d])=>fsx.doc(`punch_att/${uid}_${ym}`).set(d).catch(()=>{lastAtt=''}))}
@@ -3057,31 +3108,70 @@ setInterval(()=>{try{note()}catch(e){}},1500);
 start();
 })();
 
-/* ===== App update: compares this app with the latest Punch on the website (naveen5531.github.io/punch-version.json) ===== */
+/* ===== App update: compares this app with the latest Punch on the website (naveen5531.github.io/punch-version.json)
+   and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
+   progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=54,APP_VN='7.0',SRC='https://naveen5531.github.io/punch-version.json';
-  let latest=null,last=0;
-  const g=id=>document.getElementById(id);
-  function bar(){let b=g('updBar');if(!latest||latest.versionCode<=APP_VC){if(b)b.remove();return}
-    if(!b){b=document.createElement('div');b.id='updBar';b.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:#101828;color:#fff;border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);font-size:14px';document.body.appendChild(b)}
-    b.innerHTML='<span style="flex:1"><b>Update available – Punch '+latest.versionName+'</b>'+(latest.notes?'<br><span style="opacity:.8;font-size:12.5px">'+String(latest.notes).replace(/[<>&]/g,'')+'</span>':'')+'</span><button type="button" id="updBarGo" style="border:0;border-radius:999px;padding:9px 14px;font-weight:800;background:#25cf9f;color:#04120d">Update</button><button type="button" id="updBarX" aria-label="Later" style="border:0;background:none;color:#fff;font-size:20px;padding:0 4px">×</button>';
-    g('updBarGo').onclick=go;g('updBarX').onclick=()=>{try{localStorage.setItem('updLater',String(latest.versionCode))}catch(e){}b.remove()};
-    try{if(localStorage.getItem('updLater')===String(latest.versionCode))b.remove()}catch(e){}}
+  const APP_VC=55,APP_VN='7.1',SRC='https://naveen5531.github.io/punch-version.json';
+  let latest=null,last=0,state='',busy=false;
+  const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
+  const has=()=>latest&&latest.versionCode>APP_VC;
+  const notes=()=>{const n=latest&&latest.notes;return Array.isArray(n)?n:n?String(n).split(/\n|(?<=\.)\s+(?=[A-Z])/).map(x=>x.trim()).filter(Boolean):[]};
+  const mb=b=>b?(b/1048576).toFixed(1)+' MB':'';
+  document.head.insertAdjacentHTML('beforeend',`<style>
+#updBar{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:#101828;color:#fff;border-radius:16px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);font-size:14px;animation:rise .25s}
+#updBar img{width:38px;height:38px;border-radius:10px;background:#fff;object-fit:contain;padding:3px;flex:none}
+#updBar .t{flex:1;min-width:0}#updBar .t small{display:block;opacity:.75;font-size:12.5px;margin-top:2px}
+#updBar button{border:0;border-radius:999px;padding:9px 16px;font-weight:800;background:#25cf9f;color:#04120d;margin:0;width:auto}#updBar .x{background:none;color:#fff;font-size:20px;padding:0 4px}
+#updS{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}#updS[hidden]{display:none}
+#updS .ub{width:100%;max-width:520px;background:var(--card);color:var(--ink);border-radius:26px 26px 0 0;padding:10px 20px calc(22px + env(safe-area-inset-bottom,0px));box-sizing:border-box;animation:rise .25s;max-height:88vh;overflow:auto}
+#updS .grab{display:block;width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
+#updS .uh{display:flex;gap:14px;align-items:center}#updS .uh img{width:58px;height:58px;border-radius:16px;background:#fff;object-fit:contain;padding:5px;box-shadow:0 2px 10px -4px rgba(0,0,0,.35);flex:none}
+#updS .uh b{display:block;font-size:19px}#updS .uh small{color:var(--mute);font-size:13px}
+#updS .um{display:flex;margin:16px 0 4px;border:1px solid var(--line);border-radius:14px;overflow:hidden}#updS .um div{flex:1;text-align:center;padding:9px 4px;font-size:12px;color:var(--mute)}#updS .um div+div{border-left:1px solid var(--line)}#updS .um b{display:block;color:var(--ink);font-size:14px}
+#updS h3{font-size:15px;margin:16px 0 6px}#updS ul{margin:0;padding-left:20px;font-size:14px;line-height:1.5}#updS li{margin:3px 0}
+#updS .pg{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin:18px 0 6px}#updS .pg i{display:block;height:100%;width:0;background:linear-gradient(90deg,#25cf9f,#0f8a6d);border-radius:6px;transition:width .3s}
+#updS .pg.ind i{width:35%;animation:updI 1.1s ease-in-out infinite}@keyframes updI{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+#updS .us{font-size:13px;color:var(--mute);min-height:18px}#updS .us.err{color:#dc2626;font-weight:600}#updS .us.ok{color:#0f8a6d;font-weight:700}
+#updS .ua{display:flex;gap:10px;margin-top:16px}#updS .ua button{flex:1;margin:0;padding:13px;border-radius:999px;font-weight:800;font-size:15px}
+#updS .ua .go{background:linear-gradient(145deg,#25cf9f,#0f8a6d);color:#fff;border:0}#updS .ua .go:disabled{opacity:.55}
+</style>`);
+  function bar(){let b=g('updBar');
+    if(!has()||busy||(()=>{try{return localStorage.getItem('updLater')===String(latest.versionCode)}catch(e){return false}})()){if(b)b.remove();return}
+    if(!b){b=document.createElement('div');b.id='updBar';b.setAttribute('role','status');document.body.appendChild(b)}
+    b.innerHTML=`<img src="sn-mark.png" alt=""><div class="t"><b>Update available</b><small>Punch ${E(latest.versionName)}${latest.size?' · '+mb(latest.size):''}</small></div><button type="button" id="updBarGo">Update</button><button type="button" class="x" id="updBarX" aria-label="Later">×</button>`;
+    g('updBarGo').onclick=open;g('updBarX').onclick=()=>{try{localStorage.setItem('updLater',String(latest.versionCode))}catch(e){}b.remove()}}
   function card(){const t=g('updText'),bt=g('updGo');if(!t)return;
-    t.textContent=latest?(latest.versionCode>APP_VC?'You have Punch '+APP_VN+'. Punch '+latest.versionName+' is available'+(latest.date?' ('+latest.date+')':'')+'.'+(latest.notes?' '+latest.notes:''):'You have the latest Punch ('+APP_VN+'). Your attendance, leave and salary sync live with SN People.'):'You have Punch '+APP_VN+'. Could not reach the website to check – try again when online.';
-    if(bt)bt.hidden=!(latest&&latest.versionCode>APP_VC)}
+    t.textContent=latest?(has()?'You have Punch '+APP_VN+'. Punch '+latest.versionName+' is available'+(latest.date?' ('+latest.date+')':'')+'.':'You have the latest Punch ('+APP_VN+').'):'You have Punch '+APP_VN+'. Could not reach the website to check – try again when online.';
+    if(bt){bt.hidden=!has();bt.textContent='See update'}}
+  function sheet(){let s=g('updS');if(s)return s;s=document.createElement('div');s.id='updS';s.hidden=true;s.setAttribute('role','dialog');s.setAttribute('aria-modal','true');s.setAttribute('aria-label','App update');document.body.appendChild(s);
+    s.addEventListener('click',e=>{if(e.target===s&&!busy)s.hidden=true;const b=e.target.closest('[data-u]');if(!b)return;
+      if(b.dataset.u==='later'){s.hidden=true}else if(b.dataset.u==='go')go()});return s}
+  function open(){const s=sheet(),L=latest||{},N=notes();
+    s.innerHTML=`<div class="ub"><i class="grab"></i><div class="uh"><img src="sn-mark.png" alt=""><div><b>Punch</b><small>SN Logistics · Attendance &amp; payroll</small></div></div>
+    <div class="um"><div><b>${E(L.versionName||'')}</b>New version</div><div><b>${E(APP_VN)}</b>On this phone</div>${L.size?`<div><b>${mb(L.size)}</b>Download</div>`:''}${L.date?`<div><b>${E(L.date)}</b>Released</div>`:''}</div>
+    ${N.length?`<h3>What's new</h3><ul>${N.map(x=>`<li>${E(x)}</li>`).join('')}</ul>`:''}
+    <div class="pg" id="updPg" hidden><i id="updPi"></i></div><div class="us" id="updSt">${has()?'Your attendance, salary and settings stay as they are.':'Punch is up to date.'}</div>
+    <div class="ua"><button type="button" class="ghost" data-u="later" id="updL">${busy?'Hide':'Later'}</button><button type="button" class="go" data-u="go" id="updB" ${has()&&!busy?'':'disabled'}>${busy?'Updating…':'Update'}</button></div></div>`;
+    s.hidden=false;if(state)upd(state.s,state.t)}
   function go(){const u=(latest&&latest.url)||'https://naveen5531.github.io/Punch.apk';
-    if(window.PunchNative&&PunchNative.updateApp){upd('dl','Starting the download…');PunchNative.updateApp(u);return}
+    if(window.PunchNative&&PunchNative.updateApp){busy=true;upd('dl','Starting the download…');const b=g('updBar');if(b)b.remove();PunchNative.updateApp(u);return}
     location.href=u}
-  /* messages from the in-app updater: shown on the update bar and in Settings › App update */
-  function upd(st,tx){const t=g('updText');if(t)t.textContent=tx;const b=g('updBar');if(b){const s=b.querySelector('span');if(s)s.innerHTML='<b>'+(st==='fail'?'Update failed':st==='ok'?'Updated':'Updating Punch')+'</b><br><span style="opacity:.85;font-size:12.5px">'+String(tx).replace(/[<>&]/g,'')+'</span>';const k=g('updBarGo');if(k){k.textContent=st==='fail'?'Try again':'Update';k.disabled=!(st==='fail'||st==='perm')}}
-    const bt=g('updGo');if(bt){bt.disabled=!(st==='fail'||st==='perm');bt.textContent=st==='fail'?'Try again':'Update now'}}
+  /* messages from the in-app updater (Updater.java): drive the progress bar and the status line */
+  function upd(st,tx){state={s:st,t:tx};if(st==='fail'||st==='ok'||st==='perm')busy=false;
+    const t=g('updText');if(t)t.textContent=tx;
+    if(!g('updS')||g('updS').hidden){if(st==='fail'||st==='perm'||st==='inst'){open()}else return}
+    const pg=g('updPg'),pi=g('updPi'),sl=g('updSt'),b=g('updB'),l=g('updL'),m=/(\d+)%/.exec(tx);
+    if(pg){pg.hidden=!(st==='dl'||st==='inst');pg.classList.toggle('ind',st==='inst'||(st==='dl'&&!m));if(pi&&m)pi.style.width=m[1]+'%'}
+    if(sl){sl.textContent=tx;sl.className='us'+(st==='fail'?' err':st==='ok'?' ok':'')}
+    if(b){b.disabled=!(st==='fail'||st==='perm');b.textContent=st==='fail'?'Try again':st==='perm'?'Continue':st==='ok'?'Done':'Updating…'}
+    if(l)l.textContent=busy?'Hide':'Later'}
   window.__updState=upd;
   async function check(force){if(!force&&Date.now()-last<6*3600e3)return;last=Date.now();
     try{const r=await fetch(SRC+'?t='+Date.now(),{cache:'no-store'});if(r.ok)latest=await r.json()}catch(e){}
     card();bar()}
-  window.PunchUpdate={check,version:APP_VN};
-  document.addEventListener('click',e=>{if(e.target.closest('#updCheck')){g('updText').textContent='Checking…';check(true)}else if(e.target.closest('#updGo'))go()});
+  window.PunchUpdate={check,open,version:APP_VN};
+  document.addEventListener('click',e=>{if(e.target.closest('#updCheck')){g('updText').textContent='Checking…';check(true).then(()=>{if(has())open()})}else if(e.target.closest('#updGo'))open()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)check(false)});
   setTimeout(()=>check(true),2500);
 })();
