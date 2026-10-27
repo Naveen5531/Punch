@@ -2954,16 +2954,29 @@ async function start(){
    Signing in as someone else puts the current person's data away and loads theirs; a person new to this phone
    gets their check-ins back from the cloud. Nothing of one person is ever shown to, or sent as, another. */
 const BLANK_S=()=>({wp:null,radius:150,open:null,logs:[],marks:{},pay:{},grace:30,wo:[0],outSince:null,locs:[],trips:[],tripN:0,home:null,trip:null,here:null,homeDeparture:500});
+/* Workplace, home, saved places and auto check-in belong to this phone: a login that has none of its own keeps the
+   ones already set up here (from before logins were split per person, or from the previous login on this phone). */
+function keepPlaces(prev){let lg=null;try{lg=JSON.parse(localStorage.getItem('punch_legacy')||'null')}catch(e){}
+  const has=o=>o&&o!==S&&(o.wp||o.home||(o.locs||[]).length),oth=[];
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^punch_u_/.test(k)&&k!=='punch_u_'+S.owner){try{oth.push(JSON.parse(localStorage.getItem(k)))}catch(e){}}}}catch(e){}
+  const src=[lg,prev].concat(oth).find(has);if(!src)return false;let ch=false;
+  if(!S.wp&&src.wp){S.wp=src.wp;if(src.radius)S.radius=src.radius;if(src.grace!=null)S.grace=src.grace;ch=true}
+  if(!S.home&&src.home){S.home=src.home;if(src.homeDeparture)S.homeDeparture=src.homeDeparture;ch=true}
+  if(!(S.locs||[]).length&&(src.locs||[]).length){S.locs=src.locs.map(x=>Object.assign({},x));ch=true}
+  if(!S.auto&&src.auto){S.auto=src.auto;ch=true}if(!S.trk&&src.trk){S.trk=src.trk;ch=true}return ch}
+function autoFollow(){try{const a=document.getElementById('auto');if(a)a.checked=!!S.auto;if((S.auto||S.open||S.trk)&&typeof startAuto==='function')startAuto(1)}catch(e){}}
 async function useDataOf(uid){
-  if(S.owner===uid)return;
+  if(S.owner===uid){if(keepPlaces(null)){save();try{render()}catch(e){}autoFollow()}return}
   try{if(S.owner)localStorage.setItem('punch_u_'+S.owner,JSON.stringify(S));else if((S.logs||[]).length||S.slip)localStorage.setItem('punch_legacy',JSON.stringify(S))}catch(e){}
   let n=null;try{n=JSON.parse(localStorage.getItem('punch_u_'+uid)||'null')}catch(e){}
-  const co=S.co;S=Object.assign(BLANK_S(),n||{});if(!S.co&&co)S.co=co;S.owner=uid;
+  const co=S.co,prev=S;S=Object.assign(BLANK_S(),n||{});if(!S.co&&co)S.co=co;S.owner=uid;
+  keepPlaces(prev);
   if(!n){try{const q=await fsx.collection('punch_att').where('uid','==',uid).get(),L=[];let op=null;
     q.docs.forEach(d=>{const v=d.data();(v.logs||[]).forEach(l=>{if(l&&l.in&&l.out&&!L.some(x=>x.in===l.in))L.push(Object.assign({},l))});
       if(v.open&&v.open.t&&dayKey(v.open.t)===dayKey(Date.now()))op={t:v.open.t,lat:v.open.lat,lng:v.open.lng}});
     S.logs=L.sort((a,b)=>a.in-b.in);S.open=op}catch(e){}}
-  lastAtt='';lastMk='';save();try{render()}catch(e){}}
+  lastAtt='';lastMk='';save();try{render()}catch(e){}
+  autoFollow()}
 async function whoAmI(u){C.uid=u.uid;
   const[m,o,p]=await Promise.all([fsx.doc('members/'+u.uid).get().catch(()=>null),fsx.doc('settings/owner').get().catch(()=>null),fsx.doc('users/'+u.uid).get().catch(()=>null)]);
   const owner=o&&o.exists&&o.data().uid===u.uid,md=m&&m.exists?m.data():null;
@@ -2996,7 +3009,7 @@ function begin(){if(C.on||!C.uid)return;C.on=true;const uid=C.uid;teamTab();
   // profile kept by HR
   unsub.push(fsx.doc('punch_emp/'+uid).onSnapshot(d=>{if(!d.exists)return;const e=d.data();
     S.slip=Object.assign({},S.slip,{name:e.name||S.slip&&S.slip.name,eid:e.eid||'',desg:e.desg||'',grade:e.grade||'',cat:e.cat||''});['pan','uan','esino','bank','acct','ifsc'].forEach(f=>{if(e[f])S.slip[f]=String(e[f])});if(e.join)S.join=e.join;
-    if(e.wp&&e.wp.lat!=null)S.wp={lat:+e.wp.lat,lng:+e.wp.lng,name:e.wp.name||'Workplace'};if(e.radius)S.radius=+e.radius;
+    if(e.wp&&e.wp.lat!=null&&!S.wp){S.wp={lat:+e.wp.lat,lng:+e.wp.lng,name:e.wp.name||'Workplace'};if(e.radius)S.radius=+e.radius}
     if(Array.isArray(e.wo)){S.wo=e.wo.slice();const tk=dayKey(Date.now());S.woH=(S.woH&&S.woH.length?S.woH:[{f:'0000-00-00',w:e.wo.slice()}]).filter(x=>x.f!==tk).concat({f:tk,w:e.wo.slice()})}
     save();try{render()}catch(x){}},()=>{}));
   // salary set-up kept by HR (read-only in the app)
@@ -3085,7 +3098,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=57,APP_VN='7.3',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=58,APP_VN='7.4',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
