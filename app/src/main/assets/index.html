@@ -2937,7 +2937,7 @@ try{cfg=JSON.parse(localStorage.getItem('punch_fbcfg')||'null')}catch(e){}
 const parseCfg=t=>{const m=String(t).match(/MOVANA_FIREBASE_CONFIG\s*=\s*(\{[\s\S]*?\})\s*;?/);if(!m)return null;
   try{const o=JSON.parse(m[1].replace(/\/\/[^\n]*/g,'').replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g,'$1"$2":').replace(/'/g,'"').replace(/,\s*}/,'}'));return o&&o.apiKey&&o.projectId?o:null}catch(e){return null}};
 const loadJs=src=>new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('load '+src));document.head.appendChild(s)});
-C.msg=e=>({'auth/invalid-credential':'Wrong username or password.','auth/wrong-password':'Wrong username or password.','auth/user-not-found':'Wrong username or password.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'No internet connection.','auth/user-disabled':'This login is switched off. Ask HR.','no-access':'This login has no access to Punch. Ask HR.'})[e&&e.code]||('Could not sign in ('+((e&&e.code)||'error')+').');
+C.msg=e=>({'auth/invalid-credential':'Wrong username or password.','auth/wrong-password':'Wrong username or password.','auth/user-not-found':'Wrong username or password.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'No internet connection.','auth/user-disabled':'This login is switched off. Ask HR.','no-access':'This login has no access to Punch. Ask HR.','no-app':'Your login does not have access to Punch. Ask your admin.'})[e&&e.code]||('Could not sign in ('+((e&&e.code)||'error')+').');
 C.hasUser=u=>String(u||'').trim().toLowerCase()!=='admin';
 async function start(){
   try{const r=await fetch(CFG_URL+'?t='+Date.now(),{cache:'no-store'});if(r.ok){const c=parseCfg(await r.text());if(c){cfg=c;try{localStorage.setItem('punch_fbcfg',JSON.stringify(c))}catch(e){}}}}catch(e){}
@@ -2983,6 +2983,8 @@ async function whoAmI(u){C.uid=u.uid;
   C.role=owner?'superadmin':(md&&md.status!=='Suspended'?md.role:'none');C.name=(p&&p.exists&&p.data().name)||'';
   C.hr=HR.includes(C.role);C.approve=APPR.includes(C.role);C.salEdit=['superadmin','admin_head','hr_head'].includes(C.role);
   if(C.role==='none'){const x=new Error('no access');x.code='no-access';throw x}
+  /* App access (portal › Settings › App access): only the roles ticked for Punch may sign in; Super admin always can */
+  if(!owner){try{const ap=await fsx.doc('settings/apps').get(),L=ap.exists?ap.data().punch:null;if(Array.isArray(L)&&L.length){const rs=[C.role].concat((md&&md.roles)||[]);if(!rs.includes('superadmin')&&!rs.some(r=>L.includes(r))){const x=new Error('no app');x.code='no-app';throw x}}}catch(e){if(e.code==='no-app')throw e}}
   /* an admin login without its own Punch profile (e.g. username "naveen" next to the same person's Gmail login) uses that person's Punch profile */
   let du=u.uid;try{const pe=await fsx.doc('punch_emp/'+u.uid).get();if(!pe.exists&&C.hr&&C.name){const nm=v=>String(v||'').toLowerCase().replace(/\s+/g,' ').trim(),q=await fsx.collection('punch_emp').get(),tw=q.docs.filter(d=>nm(d.data().name)===nm(C.name));if(tw.length===1)du=tw[0].id}}catch(e){}
   C.authUid=u.uid;C.uid=du;await useDataOf(du);
@@ -3098,7 +3100,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=58,APP_VN='7.4',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=59,APP_VN='7.5',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
