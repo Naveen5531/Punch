@@ -2922,12 +2922,29 @@ async function start(){
     auth.onAuthStateChanged(async u=>{if(u){if(!window.PunchRole)return;try{await whoAmI(u);begin()}catch(e){}}else stop()});
     window.addEventListener('punchrole',async()=>{const u=auth.currentUser;if(u&&window.PunchRole&&!C.on){try{await whoAmI(u);begin()}catch(e){}}})}
   catch(e){C.err=String(e&&e.message||e)}}
+/* One phone, several people: each login keeps its own Punch data on this phone (localStorage punch_u_<uid>).
+   Signing in as someone else puts the current person's data away and loads theirs; a person new to this phone
+   gets their check-ins back from the cloud. Nothing of one person is ever shown to, or sent as, another. */
+const BLANK_S=()=>({wp:null,radius:150,open:null,logs:[],marks:{},pay:{},grace:30,wo:[0],outSince:null,locs:[],trips:[],tripN:0,home:null,trip:null,here:null,homeDeparture:500});
+async function useDataOf(uid){
+  if(S.owner===uid)return;
+  try{if(S.owner)localStorage.setItem('punch_u_'+S.owner,JSON.stringify(S));else if((S.logs||[]).length||S.slip)localStorage.setItem('punch_legacy',JSON.stringify(S))}catch(e){}
+  let n=null;try{n=JSON.parse(localStorage.getItem('punch_u_'+uid)||'null')}catch(e){}
+  const co=S.co;S=Object.assign(BLANK_S(),n||{});if(!S.co&&co)S.co=co;S.owner=uid;
+  if(!n){try{const q=await fsx.collection('punch_att').where('uid','==',uid).get(),L=[];let op=null;
+    q.docs.forEach(d=>{const v=d.data();(v.logs||[]).forEach(l=>{if(l&&l.in&&l.out&&!L.some(x=>x.in===l.in))L.push(Object.assign({},l))});
+      if(v.open&&v.open.t&&dayKey(v.open.t)===dayKey(Date.now()))op={t:v.open.t,lat:v.open.lat,lng:v.open.lng}});
+    S.logs=L.sort((a,b)=>a.in-b.in);S.open=op}catch(e){}}
+  lastAtt='';lastMk='';save();try{render()}catch(e){}}
 async function whoAmI(u){C.uid=u.uid;
   const[m,o,p]=await Promise.all([fsx.doc('members/'+u.uid).get().catch(()=>null),fsx.doc('settings/owner').get().catch(()=>null),fsx.doc('users/'+u.uid).get().catch(()=>null)]);
   const owner=o&&o.exists&&o.data().uid===u.uid,md=m&&m.exists?m.data():null;
   C.role=owner?'superadmin':(md&&md.status!=='Suspended'?md.role:'none');C.name=(p&&p.exists&&p.data().name)||'';
   C.hr=HR.includes(C.role);C.approve=APPR.includes(C.role);C.salEdit=['superadmin','admin_head','hr_head'].includes(C.role);
   if(C.role==='none'){const x=new Error('no access');x.code='no-access';throw x}
+  /* an admin login without its own Punch profile (e.g. username "naveen" next to the same person's Gmail login) uses that person's Punch profile */
+  let du=u.uid;try{const pe=await fsx.doc('punch_emp/'+u.uid).get();if(!pe.exists&&C.hr&&C.name){const nm=v=>String(v||'').toLowerCase().replace(/\s+/g,' ').trim(),q=await fsx.collection('punch_emp').get(),tw=q.docs.filter(d=>nm(d.data().name)===nm(C.name));if(tw.length===1)du=tw[0].id}}catch(e){}
+  C.authUid=u.uid;C.uid=du;await useDataOf(du);
   return C}
 C.signIn=async(user,pw)=>{if(!C.ready){const x=new Error('offline');x.code='auth/network-request-failed';throw x}
   stop();const cr=await auth.signInWithEmailAndPassword(toEmail(user),pw);
@@ -3038,7 +3055,7 @@ start();
 
 /* ===== App update: compares this app with the latest Punch on the website (naveen5531.github.io/punch-version.json) ===== */
 (function(){
-  const APP_VC=51,APP_VN='6.7',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=52,APP_VN='6.8',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0;
   const g=id=>document.getElementById(id);
   function bar(){let b=g('updBar');if(!latest||latest.versionCode<=APP_VC){if(b)b.remove();return}
