@@ -509,6 +509,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
 
   <section class="pane" id="p-settings" hidden>
     <h2 class="ph">Settings</h2>
+    <div class="card" id="updCard"><h2>App update</h2><p class="sub" id="updText">Checking for updates…</p><div class="row"><button class="ghost" type="button" id="updCheck">Check for updates</button><button type="button" id="updGo" hidden>Update now</button></div></div>
     <div class="card" id="cloudCard" hidden>
       <h2>Google sync</h2>
       <p class="sub" id="cloudText"></p>
@@ -3033,6 +3034,29 @@ const note=()=>{const f=g('payForm');if(!f)return;const on=C.on&&S.payCloud;f.qu
   let n=g('payCloudNote');if(on&&!n){f.insertAdjacentHTML('afterbegin','<p class="sub" id="payCloudNote">Salary is set by HR in the portal.</p>')}else if(!on&&n)n.remove()};
 setInterval(()=>{try{note()}catch(e){}},1500);
 start();
+})();
+
+/* ===== App update: compares this app with the latest Punch on the website (naveen5531.github.io/punch-version.json) ===== */
+(function(){
+  const APP_VC=51,APP_VN='6.7',SRC='https://naveen5531.github.io/punch-version.json';
+  let latest=null,last=0;
+  const g=id=>document.getElementById(id);
+  function bar(){let b=g('updBar');if(!latest||latest.versionCode<=APP_VC){if(b)b.remove();return}
+    if(!b){b=document.createElement('div');b.id='updBar';b.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:#101828;color:#fff;border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);font-size:14px';document.body.appendChild(b)}
+    b.innerHTML='<span style="flex:1"><b>Update available – Punch '+latest.versionName+'</b>'+(latest.notes?'<br><span style="opacity:.8;font-size:12.5px">'+String(latest.notes).replace(/[<>&]/g,'')+'</span>':'')+'</span><button type="button" id="updBarGo" style="border:0;border-radius:999px;padding:9px 14px;font-weight:800;background:#25cf9f;color:#04120d">Update</button><button type="button" id="updBarX" aria-label="Later" style="border:0;background:none;color:#fff;font-size:20px;padding:0 4px">×</button>';
+    g('updBarGo').onclick=go;g('updBarX').onclick=()=>{try{localStorage.setItem('updLater',String(latest.versionCode))}catch(e){}b.remove()};
+    try{if(localStorage.getItem('updLater')===String(latest.versionCode))b.remove()}catch(e){}}
+  function card(){const t=g('updText'),bt=g('updGo');if(!t)return;
+    t.textContent=latest?(latest.versionCode>APP_VC?'You have Punch '+APP_VN+'. Punch '+latest.versionName+' is available'+(latest.date?' ('+latest.date+')':'')+'.'+(latest.notes?' '+latest.notes:''):'You have the latest Punch ('+APP_VN+'). Your attendance, leave and salary sync live with SN People.'):'You have Punch '+APP_VN+'. Could not reach the website to check – try again when online.';
+    if(bt)bt.hidden=!(latest&&latest.versionCode>APP_VC)}
+  function go(){const u=(latest&&latest.url)||'https://naveen5531.github.io/Punch.apk';try{if(window.PunchNative&&PunchNative.toast)PunchNative.toast('Downloading the update…')}catch(e){}location.href=u}
+  async function check(force){if(!force&&Date.now()-last<6*3600e3)return;last=Date.now();
+    try{const r=await fetch(SRC+'?t='+Date.now(),{cache:'no-store'});if(r.ok)latest=await r.json()}catch(e){}
+    card();bar()}
+  window.PunchUpdate={check,version:APP_VN};
+  document.addEventListener('click',e=>{if(e.target.closest('#updCheck')){g('updText').textContent='Checking…';check(true)}else if(e.target.closest('#updGo'))go()});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)check(false)});
+  setTimeout(()=>check(true),2500);
 })();
 </script>
 </body>
