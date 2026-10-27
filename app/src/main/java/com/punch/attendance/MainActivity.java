@@ -29,6 +29,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        Updater.resume(getApplicationContext());
         WebHolder.current = this;
         WebHolder.permChanged(this);
         WebHolder.js("window.__beat&&__beat()");   // clocks and timers show the right time at once on opening

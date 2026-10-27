@@ -3059,7 +3059,7 @@ start();
 
 /* ===== App update: compares this app with the latest Punch on the website (naveen5531.github.io/punch-version.json) ===== */
 (function(){
-  const APP_VC=53,APP_VN='6.9',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=54,APP_VN='7.0',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0;
   const g=id=>document.getElementById(id);
   function bar(){let b=g('updBar');if(!latest||latest.versionCode<=APP_VC){if(b)b.remove();return}
@@ -3070,7 +3070,13 @@ start();
   function card(){const t=g('updText'),bt=g('updGo');if(!t)return;
     t.textContent=latest?(latest.versionCode>APP_VC?'You have Punch '+APP_VN+'. Punch '+latest.versionName+' is available'+(latest.date?' ('+latest.date+')':'')+'.'+(latest.notes?' '+latest.notes:''):'You have the latest Punch ('+APP_VN+'). Your attendance, leave and salary sync live with SN People.'):'You have Punch '+APP_VN+'. Could not reach the website to check – try again when online.';
     if(bt)bt.hidden=!(latest&&latest.versionCode>APP_VC)}
-  function go(){const u=(latest&&latest.url)||'https://naveen5531.github.io/Punch.apk';try{if(window.PunchNative&&PunchNative.toast)PunchNative.toast('Downloading the update…')}catch(e){}location.href=u}
+  function go(){const u=(latest&&latest.url)||'https://naveen5531.github.io/Punch.apk';
+    if(window.PunchNative&&PunchNative.updateApp){upd('dl','Starting the download…');PunchNative.updateApp(u);return}
+    location.href=u}
+  /* messages from the in-app updater: shown on the update bar and in Settings › App update */
+  function upd(st,tx){const t=g('updText');if(t)t.textContent=tx;const b=g('updBar');if(b){const s=b.querySelector('span');if(s)s.innerHTML='<b>'+(st==='fail'?'Update failed':st==='ok'?'Updated':'Updating Punch')+'</b><br><span style="opacity:.85;font-size:12.5px">'+String(tx).replace(/[<>&]/g,'')+'</span>';const k=g('updBarGo');if(k){k.textContent=st==='fail'?'Try again':'Update';k.disabled=!(st==='fail'||st==='perm')}}
+    const bt=g('updGo');if(bt){bt.disabled=!(st==='fail'||st==='perm');bt.textContent=st==='fail'?'Try again':'Update now'}}
+  window.__updState=upd;
   async function check(force){if(!force&&Date.now()-last<6*3600e3)return;last=Date.now();
     try{const r=await fetch(SRC+'?t='+Date.now(),{cache:'no-store'});if(r.ok)latest=await r.json()}catch(e){}
     card();bar()}

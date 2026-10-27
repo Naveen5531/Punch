@@ -167,6 +167,8 @@ public class WebHolder {
         return web;
     }
 
+    static WebView webView() { return web; }
+
     static String quote(String s) { return "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'"; }
 
     static void attach(Activity a, ViewGroup parent) {
@@ -207,6 +209,9 @@ public class WebHolder {
     static class Bridge {
         private final Context app;
         Bridge(Context app) { this.app = app; }
+
+        /** In-app update: download the new APK inside Punch and open Android's installer. */
+        @JavascriptInterface public void updateApp(String url) { Updater.start(app, url); }
 
         @JavascriptInterface public void start() {
             app.getSharedPreferences("punch", 0).edit().putBoolean("auto", true).apply();
