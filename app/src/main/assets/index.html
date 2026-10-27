@@ -1965,7 +1965,11 @@ body.locked #lg{display:flex}
 #lg .rseg button{flex:1;margin:0;padding:10px;border-radius:9px;background:none;color:var(--mute);font-weight:700;font-size:15px}
 #lg .rseg button.on{background:var(--in);color:#fff}
 #lg .rnote{display:none!important}
-#rsw{position:absolute;right:92px;top:50%;transform:translateY(-50%);z-index:2;width:auto;padding:6px 10px;font-size:12px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.08);background:var(--bg);color:var(--in);border:1px solid var(--line)}
+#rsw{position:static;margin:0 0 0 auto;width:auto;padding:5px 11px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;background:var(--bg);color:var(--in);border:1px solid var(--line);flex:none}
+/* Admin: one pill "Admin ⇄" (tap to switch) instead of a separate role tag, so nothing overlaps in the top bar */
+html[data-role="admin"] #roleTag{display:none}
+html[data-role="admin"] body .top #lgout{margin-left:0}
+.top .logo,.top small{flex:none}.top small{min-width:0;overflow:hidden;text-overflow:ellipsis}
 body.locked #rsw,body.locked #swd,html[data-role="employee"] #rsw{display:none!important}
 #swd{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
 #swd[hidden]{display:none}
@@ -1980,7 +1984,7 @@ body.locked #rsw,body.locked #swd,html[data-role="employee"] #rsw{display:none!i
 #roleTag{margin-left:8px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--bg);border:1px solid var(--line);color:var(--in)}
 `+'</style>');
 const hd=document.querySelector('header.top');hd.style.position='relative';
-hd.insertAdjacentHTML('beforeend','<button id="lgout">Logout</button><button id="rsw" type="button">Switch</button>');
+hd.insertAdjacentHTML('beforeend','<button id="rsw" type="button">Switch</button><button id="lgout">Logout</button>');
 /* Quick switch between Employee and Admin without logging out; always asks for the other login's user ID and password. */
 B.insertAdjacentHTML('beforeend',`<div id="swd" hidden><div class="box"><h2 id="swt">Switch</h2><p class="s" id="sws"></p>
 <label id="swuL">User ID</label><input id="swu" autocomplete="username">
@@ -1996,7 +2000,7 @@ $('lgAdm').onclick=()=>pickRole(lr==='admin'?'employee':'admin');
 pickRole('employee');
 $('lgRole').onclick=e=>{const b=e.target.closest('[data-r]');if(b)pickRole(b.dataset.r)};
 let swTo='admin';
-const swLbl=()=>{const r=window.PunchRole;$('rsw').textContent=r==='admin'?'⇄ Employee':'⇄ Admin';$('rsw').setAttribute('aria-label',r==='admin'?'Switch to Employee':'Switch to Admin');$('rsw').style.right=($('lgout').offsetWidth+20)+'px'};
+const swLbl=()=>{const r=window.PunchRole;$('rsw').textContent='Admin ⇄';$('rsw').setAttribute('aria-label','Admin. Tap to switch to Employee');$('rsw').style.right=''};
 window.addEventListener('punchrole',()=>{try{swLbl()}catch(e){}});
 $('rsw').onclick=()=>{if(window.PunchRole!=='admin')return;swTo=window.PunchRole==='admin'?'employee':'admin';$('swt').textContent='Switch to '+(swTo==='admin'?'Admin':'Employee');
   $('sws').textContent=swTo==='admin'?'Enter the admin user ID and password.':'Enter the employee user ID and password.';
@@ -3081,7 +3085,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=56,APP_VN='7.2',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=57,APP_VN='7.3',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
