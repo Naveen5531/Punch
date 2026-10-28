@@ -1929,7 +1929,7 @@ B.insertAdjacentHTML('afterbegin',`<div id="lg"><div class="box">
 <img src="sn-logo.png" alt="SN Logistics – Speed & Trust" style="height:64px;width:auto;max-width:100%;display:block;margin:0 auto 12px"><h1>Attendance Management</h1><p class="s" id="lgs">Sign in to continue</p>
 <div id="v1"><div class="rseg" id="lgRole" role="tablist" aria-label="Login as"><button type="button" data-r="employee" class="on" role="tab" aria-selected="true">Employee</button><button type="button" data-r="admin" role="tab" aria-selected="false">Admin</button></div>
 <p class="rnote" id="lgNote">View attendance, salary and payslips, send requests and download.</p>
-<label id="uL">Login Name</label><input id="u" autocomplete="username" inputmode="numeric">
+<label id="uL">Employee ID or SN Mail ID</label><input id="u" autocomplete="username" inputmode="text" autocapitalize="none">
 <label>Password</label><div class="pwrow"><input id="p" type="password" autocomplete="current-password"><button type="button" class="pwview" id="vp" aria-label="Show password">Show</button></div>
 <label class="kp"><input type="checkbox" id="kp" checked> Keep me logged in</label>
 <div class="er" id="e1"></div><button class="b" id="li">Login</button><button type="button" class="lgG" id="lgG" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.2V7.2H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.2L5.8 10c.9-2.7 3.3-4.6 6.2-4.6z"/></svg>Sign in with Google</button><button class="lk" id="fg">Forgot password?</button></div>
@@ -1994,7 +1994,7 @@ B.insertAdjacentHTML('beforeend',`<div id="swd" hidden><div class="box"><h2 id="
 <div class="er" id="swe"></div><div class="sbtn"><button type="button" class="lk" id="swc">Cancel</button><button type="button" class="b" id="swo">Switch</button></div></div></div>`);
 $('lgout').onclick=()=>{try{window.PunchCloud&&PunchCloud.signOut()}catch(e){}try{sessionStorage.removeItem('att_in');sessionStorage.removeItem('att_role')}catch(e){}keepSet(null);window.PunchRole='';$('u').value=$('p').value='';show(1);B.classList.add('locked');window.dispatchEvent(new CustomEvent('punchrole',{detail:''}))};
 let lr='employee';const pickRole=r=>{lr=r;{const b=$('lgAdm');if(b){b.textContent=r==='admin'?'Employee':'Admin';b.setAttribute('aria-label',r==='admin'?'Switch to employee login':'Switch to admin login')}}document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
-  $('uL').textContent=r==='admin'?'Username or Gmail':'Login Name';{const gb=$('lgG');if(gb)gb.hidden=r!=='admin'}$('u').inputMode=r==='admin'?'text':'numeric';$('u').value='';$('p').value='';$('fg').hidden=false;
+  $('uL').textContent=r==='admin'?'Username, SN Mail ID or Gmail':'Employee ID or SN Mail ID';{const gb=$('lgG');if(gb)gb.hidden=r!=='admin'}$('u').inputMode='text';$('u').value='';$('p').value='';$('fg').hidden=false;
   $('lgNote').textContent=r==='admin'?'Full access: change settings, salary, attendance, expenses and approve requests.':'View attendance, salary and payslips, send requests and download.';err('e1','')};
 $('lgRole').hidden=true;
 {const bx=document.querySelector('#lg .box');bx.style.position='relative';bx.insertAdjacentHTML('afterbegin','<button type="button" id="lgAdm" aria-label="Switch to admin login">Admin</button>')}
@@ -2992,7 +2992,11 @@ async function whoAmI(u){C.uid=u.uid;
   C.authUid=u.uid;C.uid=du;await useDataOf(du);
   return C}
 C.signIn=async(user,pw)=>{if(!C.ready){const x=new Error('offline');x.code='auth/network-request-failed';throw x}
-  stop();const cr=await auth.signInWithEmailAndPassword(toEmail(user),pw);
+  stop();user=String(user||'').trim().toLowerCase();
+  /* SN Mail ID (name@snlogistics): look up which employee ID it belongs to, then sign in with that ID and the same password */
+  if(/^[^@\s]+@snlogistics$/.test(user)){let d=null;try{d=await fsx.doc('mailid/'+user).get()}catch(e){}
+    if(!d||!d.exists||!d.data().user){const x=new Error('mail');x.code='auth/user-not-found';throw x}user=String(d.data().user)}
+  const cr=await auth.signInWithEmailAndPassword(toEmail(user),pw);
   try{await whoAmI(cr.user)}catch(e){await auth.signOut();throw e}
   lastAtt='';lastMk='';begin();return C};
 /* Google sign-in (Admin login): token from the phone's Google account; the Gmail must be linked to a portal login or approved by an admin */
@@ -3102,7 +3106,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=60,APP_VN='7.6',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=61,APP_VN='7.7',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
