@@ -956,6 +956,8 @@ function exOcc(a,z){const out=[],idx=k=>(+k.slice(0,4))*12+(+k.slice(5,7))-1;
   return out}
 function calcPay(mo){
   const p=P();if(mo)p.month=mo;p.ot=+p.ot||0;
+  /* VPF, ESI and Other deduction set by HR with a From month count only from that month on (empty = from joining). */
+  ['vpf','esi','oth'].forEach(k=>{if(p[k+'From']&&p.month&&p.month<p[k+'From'])p[k]=0});
   /* Hike: from the chosen month on, every full-month amount (Basic, HRA, Conveyance, Special) goes up by the %. */
   const hks=p.hikes.filter(h=>+h.p&&h.f&&p.month>=h.f).sort((a,b)=>a.f<b.f?-1:1),hf=hks.reduce((f,h)=>f*(1+h.p/100),1),hk=hks.length?r2((hf-1)*100):0,pre={b:p.basicAmt,h:p.hraAmt,c:p.convAmt,s:p.splAmt};
   if(hk){p.basicAmt=r2(p.basicAmt*hf);p.hraAmt=r2(p.hraAmt*hf);p.convAmt=r2(p.convAmt*hf);p.splAmt=r2(p.splAmt*hf)}
@@ -3100,7 +3102,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=59,APP_VN='7.5',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=60,APP_VN='7.6',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
