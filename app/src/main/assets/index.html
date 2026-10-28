@@ -3048,8 +3048,8 @@ function mailOpen(id,quiet){const m=(window.MAILS||[]).find(x=>x._id===id);if(!m
 const mScripts={};const mLoad=u=>mScripts[u]||(mScripts[u]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>{delete mScripts[u];no(new Error('load'))};document.head.appendChild(s)}));
 async function mattOpen(i){const m=(window.MAILS||[]).find(x=>x._id===mailCur),x=m&&(m.att||[])[i];if(!x)return;const body=document.getElementById('mattBody');body.innerHTML='<p class="sub">Opening…</p>';show('mailatt');
   try{if(x.kind==='slip'){await mLoad('https://naveen5531.github.io/portal/payslip.js?v=2');body.innerHTML=Payslip.html(x.data)}
-    else{await mLoad('https://naveen5531.github.io/portal/offer.js?v=9');const d=await fsx.doc('punch_offer/'+x.uid).get();if(!d.exists)throw new Error('gone');const o=d.data(),co={name:'SN Logistics'};
-      if(x.kind==='rev'){const r=(o.revs||[]).find(z=>z.f===x.f);if(!r)throw new Error('gone');body.innerHTML=OfferLetter.revHtml(o,r,co,r.at)}else body.innerHTML=x.kind==='ctc'?OfferLetter.ctcHtml(o,co,o.ctcAt):OfferLetter.html(o,co)}
+    else{await mLoad('https://naveen5531.github.io/portal/offer.js?v=10');const d=await fsx.doc('punch_offer/'+x.uid).get();if(!d.exists)throw new Error('gone');const o=d.data(),co={name:'SN Logistics'};
+      const h=OfferLetter.attHtml?OfferLetter.attHtml(o,x,co):'';if(!h)throw new Error('gone');body.innerHTML=h}
     mattCur=x}catch(e){mattCur=null;body.innerHTML='<p class="sub">'+(e&&e.code==='permission-denied'?'Only the employee and HR can open this letter.':e&&e.message==='load'?'No internet – could not open the letter.':'This letter is no longer available.')+'</p>'}}
 window.mailOpen=mailOpen;window.mattOpen=mattOpen;Object.defineProperty(window,'mattCur',{get:()=>mattCur,configurable:true});
 function begin(){if(C.on||!C.uid)return;C.on=true;const uid=C.uid;teamTab();
@@ -3147,7 +3147,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=63,APP_VN='7.9',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=64,APP_VN='8.0',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
