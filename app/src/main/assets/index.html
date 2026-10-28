@@ -148,7 +148,7 @@ body:has(#statusCard.on) .hero-clock::after{content:'● ON DUTY';background:#ff
 .bar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;z-index:9;display:flex;padding:7px 4px calc(7px + env(safe-area-inset-bottom,0px));background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);border-top:1px solid var(--line)}
 .mbadge{position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e5484d;color:#fff;font:700 11px/18px system-ui;text-align:center}.moreb{position:relative}
 .mrow{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:var(--card);border:0;border-radius:14px;padding:12px 14px;margin:0 0 8px;color:var(--ink)}.mrow .mf{font-weight:600}.mrow.un .mf,.mrow.un .ms{font-weight:800}.mrow .ms{display:block;margin-top:2px}.mrow .mp{display:block;color:var(--mute);font-size:13px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mrow .md{margin-left:auto;color:var(--mute);font-size:12px;white-space:nowrap}.mrow .g1{flex:1;min-width:0}.mrow .udot{width:9px;height:9px;border-radius:50%;background:var(--in);margin-top:6px;flex:none}
-.mbody{white-space:pre-wrap;line-height:1.55;background:var(--card);border-radius:14px;padding:14px;margin-top:10px;word-wrap:break-word}.matt{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);border-radius:14px;padding:12px 14px;margin-top:10px}.matt .ai{background:#d33;color:#fff;font:800 11px system-ui;border-radius:6px;padding:6px 7px}.matt .an{flex:1;min-width:140px;font-weight:700;word-break:break-word}.matt button{width:auto;padding:8px 14px}
+.mbody{white-space:pre-wrap;line-height:1.55;background:var(--card);border-radius:14px;padding:14px;margin-top:10px;word-wrap:break-word}.matt{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);border-radius:14px;padding:12px 14px;margin-top:10px}.matt .ai{background:#d33;color:#fff;font:800 11px system-ui;border-radius:6px;padding:6px 7px}.matt .an{flex:1;min-width:140px;font-weight:700;word-break:break-word}.matt button{width:auto;padding:8px 18px;background:var(--in)!important;color:#fff!important;opacity:1!important;border:0;border-radius:12px;font-weight:700}
 .tab,.moreb{flex:1 1 0;min-width:0;width:auto;background:transparent;color:var(--mute);border-radius:14px;padding:6px 0 3px;font-size:10.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px}
 .tab svg,.moreb svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tab[aria-current="page"],body:has(.sheet .tab[aria-current="page"]) .moreb{color:var(--in)}
@@ -3048,7 +3048,7 @@ function mailOpen(id,quiet){const m=(window.MAILS||[]).find(x=>x._id===id);if(!m
 const mScripts={};const mLoad=u=>mScripts[u]||(mScripts[u]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>{delete mScripts[u];no(new Error('load'))};document.head.appendChild(s)}));
 async function mattOpen(i){const m=(window.MAILS||[]).find(x=>x._id===mailCur),x=m&&(m.att||[])[i];if(!x)return;const body=document.getElementById('mattBody');body.innerHTML='<p class="sub">Opening…</p>';show('mailatt');
   try{if(x.kind==='slip'){await mLoad('https://naveen5531.github.io/portal/payslip.js?v=2');body.innerHTML=Payslip.html(x.data)}
-    else{await mLoad('https://naveen5531.github.io/portal/offer.js?v=8');const d=await fsx.doc('punch_offer/'+x.uid).get();if(!d.exists)throw new Error('gone');const o=d.data(),co={name:'SN Logistics'};
+    else{await mLoad('https://naveen5531.github.io/portal/offer.js?v=9');const d=await fsx.doc('punch_offer/'+x.uid).get();if(!d.exists)throw new Error('gone');const o=d.data(),co={name:'SN Logistics'};
       if(x.kind==='rev'){const r=(o.revs||[]).find(z=>z.f===x.f);if(!r)throw new Error('gone');body.innerHTML=OfferLetter.revHtml(o,r,co,r.at)}else body.innerHTML=x.kind==='ctc'?OfferLetter.ctcHtml(o,co,o.ctcAt):OfferLetter.html(o,co)}
     mattCur=x}catch(e){mattCur=null;body.innerHTML='<p class="sub">'+(e&&e.code==='permission-denied'?'Only the employee and HR can open this letter.':e&&e.message==='load'?'No internet – could not open the letter.':'This letter is no longer available.')+'</p>'}}
 window.mailOpen=mailOpen;window.mattOpen=mattOpen;Object.defineProperty(window,'mattCur',{get:()=>mattCur,configurable:true});
@@ -3147,7 +3147,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=62,APP_VN='7.8',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=63,APP_VN='7.9',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
