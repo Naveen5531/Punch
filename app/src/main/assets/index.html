@@ -146,6 +146,9 @@ body:has(#statusCard.on) .hero-clock::after{content:'● ON DUTY';background:#ff
 #msg{position:fixed;left:14px;right:14px;bottom:calc(86px + env(safe-area-inset-bottom,0px));max-width:452px;margin:0 auto;background:var(--ink);color:var(--bg);padding:13px 16px;border-radius:18px;font-size:14px;font-weight:600;z-index:40;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .22s,transform .22s;box-shadow:0 14px 34px -10px rgba(0,0,0,.45)}
 #msg.show{opacity:1;transform:none}#msg.err{background:var(--warn);color:#fff}
 .bar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;z-index:9;display:flex;padding:7px 4px calc(7px + env(safe-area-inset-bottom,0px));background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);border-top:1px solid var(--line)}
+.mbadge{position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e5484d;color:#fff;font:700 11px/18px system-ui;text-align:center}.moreb{position:relative}
+.mrow{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:var(--card);border:0;border-radius:14px;padding:12px 14px;margin:0 0 8px;color:var(--ink)}.mrow .mf{font-weight:600}.mrow.un .mf,.mrow.un .ms{font-weight:800}.mrow .ms{display:block;margin-top:2px}.mrow .mp{display:block;color:var(--mute);font-size:13px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mrow .md{margin-left:auto;color:var(--mute);font-size:12px;white-space:nowrap}.mrow .g1{flex:1;min-width:0}.mrow .udot{width:9px;height:9px;border-radius:50%;background:var(--in);margin-top:6px;flex:none}
+.mbody{white-space:pre-wrap;line-height:1.55;background:var(--card);border-radius:14px;padding:14px;margin-top:10px;word-wrap:break-word}.matt{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);border-radius:14px;padding:12px 14px;margin-top:10px}.matt .ai{background:#d33;color:#fff;font:800 11px system-ui;border-radius:6px;padding:6px 7px}.matt .an{flex:1;min-width:140px;font-weight:700;word-break:break-word}.matt button{width:auto;padding:8px 14px}
 .tab,.moreb{flex:1 1 0;min-width:0;width:auto;background:transparent;color:var(--mute);border-radius:14px;padding:6px 0 3px;font-size:10.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px}
 .tab svg,.moreb svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tab[aria-current="page"],body:has(.sheet .tab[aria-current="page"]) .moreb{color:var(--in)}
@@ -563,6 +566,18 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
       <div class="row"><button class="ghost" id="clear">Clear all records</button></div>
     </div>
   </section>
+  <section class="pane" id="p-mail" hidden>
+    <h2 class="ph">Mail</h2><p class="sub" id="mailSub">Your SN Mail – letters and payslips from HR come here.</p>
+    <div id="mailList"></div>
+  </section>
+  <section class="pane" id="p-mailmsg" hidden>
+    <div class="row noprint"><button class="ghost" id="mailBack">← Back to Mail</button></div>
+    <div id="mailMsg"></div>
+  </section>
+  <section class="pane" id="p-mailatt" hidden>
+    <div class="row noprint"><button class="ghost" id="mattBack">← Back to mail</button><button id="mattPrint" style="background:var(--in)">Print / Save as PDF</button></div>
+    <div id="mattBody" style="overflow-x:auto"></div>
+  </section>
   <section class="pane" id="p-dash">
     <div class="fbn" id="festBanner" hidden></div>
     <button class="cbn" id="cloudBan" hidden></button>
@@ -616,6 +631,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
   <button class="tab" data-t="trips" aria-current="false"><svg viewBox="0 0 24 24"><path d="M4 19V5h16v14H4z"/><path d="M7 16l4-4 3 3 3-5"/><circle cx="7" cy="16" r="1"/><circle cx="11" cy="12" r="1"/><circle cx="14" cy="15" r="1"/><circle cx="17" cy="10" r="1"/></svg><span>Home &amp; Trips</span></button>
   <button class="tab" data-t="maps" aria-current="false"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Maps</span></button>
   <button class="tab" data-t="lib" aria-current="false"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg><span>Library</span></button>
+  <button class="tab" data-t="mail" aria-current="false" style="position:relative"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Mail</span><b class="mbadge" id="mailN" hidden></b></button>
   <button class="tab" data-t="slip" aria-current="false"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span>Payslip</span></button>
   <button class="tab" data-t="prof" aria-current="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span>Profile</span></button>
   <button class="tab" data-t="settings" aria-current="false"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>Settings</span></button>
@@ -923,9 +939,12 @@ $('clear').onclick=()=>{if(confirm('Delete all attendance records?')){S.logs=[];
 function show(t){
   document.querySelectorAll('.pane').forEach(p=>{p.hidden=p.id!=='p-'+t});
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-current',b.dataset.t===(t==='slip'?'pay':t)?'page':'false'));
-  window.scrollTo(0,0);setTimeout(()=>window.__beat&&__beat(),0);if(t==='report')renderRep();if(t==='attendance')renderCal();if(t==='leave')try{coCard()}catch(e){try{console.error(e)}catch(x){}}if(t==='pay')renderPay();if(t==='slip'){fillSlip();renderSlip()}if(t==='attpdf')renderAttPdf();if((t==='emps'||t==='offer')&&window.PunchRole==='employee'){show('dash');return}if(t==='emps')window.__emps&&__emps();if(t==='team')window.__team&&__team();if(t==='offer')window.__offer&&__offer();if(t==='maps')openMaps();if(t==='lib')renderLib();if(t==='leave')renderLeave();if(t==='admin')renderAdmin();if(t==='exp')renderExp();if(t==='trips'){renderTrip();renderLib();}const ac=document.querySelector('.tab[aria-current="page"]');if(ac){const b=ac.parentElement;b.scrollLeft=ac.offsetLeft-(b.clientWidth-ac.clientWidth)/2}
+  window.scrollTo(0,0);setTimeout(()=>window.__beat&&__beat(),0);if(t==='report')renderRep();if(t==='mail')window.mailRender&&mailRender();if(t==='attendance')renderCal();if(t==='leave')try{coCard()}catch(e){try{console.error(e)}catch(x){}}if(t==='pay')renderPay();if(t==='slip'){fillSlip();renderSlip()}if(t==='attpdf')renderAttPdf();if((t==='emps'||t==='offer')&&window.PunchRole==='employee'){show('dash');return}if(t==='emps')window.__emps&&__emps();if(t==='team')window.__team&&__team();if(t==='offer')window.__offer&&__offer();if(t==='maps')openMaps();if(t==='lib')renderLib();if(t==='leave')renderLeave();if(t==='admin')renderAdmin();if(t==='exp')renderExp();if(t==='trips'){renderTrip();renderLib();}const ac=document.querySelector('.tab[aria-current="page"]');if(ac){const b=ac.parentElement;b.scrollLeft=ac.offsetLeft-(b.clientWidth-ac.clientWidth)/2}
 }
 document.querySelectorAll('.tab').forEach(b=>{b.onclick=()=>show(b.dataset.t)});
+document.addEventListener('click',e=>{const r=e.target.closest('[data-mid]');if(r&&window.mailOpen){mailOpen(r.dataset.mid);return}const a=e.target.closest('[data-matt]');if(a&&window.mattOpen){mattOpen(+a.dataset.matt);return}});
+$('mailBack').onclick=()=>show('mail');$('mattBack').onclick=()=>show('mailmsg');
+$('mattPrint').onclick=()=>{const mc=window.mattCur;if(!mc)return;const nm=String(mc.name||'Letter').replace(/\.pdf$/i,'').replace(/[^\w\- ]+/g,'').replace(/\s+/g,'_');if(window.PunchNative&&PunchNative.printPage){PunchNative.printPage(nm);return}const t=document.title;document.title=nm;window.print();document.title=t};
 $('grace_m').onchange=()=>{const v=parseInt($('grace_m').value);S.grace=isNaN(v)?30:Math.min(240,Math.max(0,v));save();render()};
 $('wo').innerHTML=['Su','Mo','Tu','We','Th','Fr','Sa'].map((n,i)=>`<label><input type="checkbox" data-d="${i}">${n}</label>`).join('');
 $('wo').onchange=e=>{const s=new Set(S.wo||[]),d=+e.target.dataset.d;if(e.target.checked)s.add(d);else s.delete(d);if(!S.woH||!S.woH.length)S.woH=[{f:'0000-00-00',w:[...(S.wo||[])]}];S.wo=[...s];const tk=dayKey(Date.now());S.woH=S.woH.filter(e=>e.f!==tk).concat({f:tk,w:[...s]}).sort((a,b)=>a.f<b.f?-1:1);save();render()};
@@ -3012,8 +3031,30 @@ C.signInGoogle=async token=>{if(!C.ready){const x=new Error('offline');x.code='a
   lastAtt='';lastMk='';begin();return C};
 C.signOut=async()=>{stop();try{auth&&await auth.signOut()}catch(e){}};
 const ymOf=k=>String(k).slice(0,7),months=()=>{const n=new Date(),o=[];for(let i=-2;i<=1;i++){const d=new Date(n.getFullYear(),n.getMonth()+i,1);o.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}return o};
-function stop(){unsub.forEach(f=>{try{f()}catch(e){}});unsub=[];C.on=false;teamTab()}
+function stop(){unsub.forEach(f=>{try{f()}catch(e){}});unsub=[];C.on=false;teamTab();window.MAILS=[];try{mailRender()}catch(e){}}
+/* ===== SN Mail (read): list, open a mail, open its attachment (letters are built by the same code as SN People) ===== */
+const MAIL_ME=()=>C.authUid||C.uid,mSt=m=>(m.st||{})[MAIL_ME()]||{},mUn=m=>m.from!==MAIL_ME()&&!mSt(m).r&&!mSt(m).t;
+let mailCur=null,mattCur=null;const mEsc=x=>String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mWhen=t=>{const d=new Date(t||0),n=new Date();return d.toDateString()===n.toDateString()?d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}):d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})};
+window.mailRender=function(){const L=(window.MAILS||[]).filter(m=>!mSt(m).t),un=L.filter(mUn).length,b=document.getElementById('mailN');if(b){b.hidden=!un;b.textContent=un}
+  const mb=document.getElementById('moreBtn');if(mb){let d=mb.querySelector('.mbadge');if(!d){d=document.createElement('b');d.className='mbadge';mb.appendChild(d)}d.hidden=!un;d.textContent=un}
+  const box=document.getElementById('mailList');if(!box)return;
+  box.innerHTML=!C.uid?'<p class="sub">Sign in to see your mail.</p>':L.length?L.map(m=>`<button class="mrow${mUn(m)?' un':''}" data-mid="${mEsc(m._id)}">${mUn(m)?'<span class="udot"></span>':''}<span class="g1"><span class="mf">${mEsc(m.fromName||'HR')}</span><span class="ms">${mEsc(m.subject||'(no subject)')}${(m.att||[]).length?' 📎':''}</span><span class="mp">${mEsc(String(m.body||'').replace(/\s+/g,' ').slice(0,90))}</span></span><span class="md">${mWhen(m.at)}</span></button>`).join(''):'<p class="sub">No mail yet.</p>';
+  if(mailCur&&!document.getElementById('p-mailmsg').hidden)mailOpen(mailCur,true)};
+function mailOpen(id,quiet){const m=(window.MAILS||[]).find(x=>x._id===id);if(!m)return;mailCur=id;
+  document.getElementById('mailMsg').innerHTML=`<h2 class="ph" style="margin-top:8px">${mEsc(m.subject||'(no subject)')}</h2><p class="sub">From <b>${mEsc(m.fromName||'HR')}</b> · ${new Date(m.at||0).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'})}</p><div class="mbody">${mEsc(m.body||'')}</div>`+(m.att||[]).map((x,i)=>`<div class="matt"><span class="ai">PDF</span><span class="an">${mEsc(x.name||'Letter.pdf')}</span><button data-matt="${i}">View</button></div>`).join('');
+  if(!quiet)show('mailmsg');
+  if(mUn(m)&&fsx)fsx.doc('mail/'+id).update({['st.'+MAIL_ME()]:Object.assign({},mSt(m),{r:1})}).catch(()=>{})}
+const mScripts={};const mLoad=u=>mScripts[u]||(mScripts[u]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>{delete mScripts[u];no(new Error('load'))};document.head.appendChild(s)}));
+async function mattOpen(i){const m=(window.MAILS||[]).find(x=>x._id===mailCur),x=m&&(m.att||[])[i];if(!x)return;const body=document.getElementById('mattBody');body.innerHTML='<p class="sub">Opening…</p>';show('mailatt');
+  try{if(x.kind==='slip'){await mLoad('https://naveen5531.github.io/portal/payslip.js?v=2');body.innerHTML=Payslip.html(x.data)}
+    else{await mLoad('https://naveen5531.github.io/portal/offer.js?v=8');const d=await fsx.doc('punch_offer/'+x.uid).get();if(!d.exists)throw new Error('gone');const o=d.data(),co={name:'SN Logistics'};
+      if(x.kind==='rev'){const r=(o.revs||[]).find(z=>z.f===x.f);if(!r)throw new Error('gone');body.innerHTML=OfferLetter.revHtml(o,r,co,r.at)}else body.innerHTML=x.kind==='ctc'?OfferLetter.ctcHtml(o,co,o.ctcAt):OfferLetter.html(o,co)}
+    mattCur=x}catch(e){mattCur=null;body.innerHTML='<p class="sub">'+(e&&e.code==='permission-denied'?'Only the employee and HR can open this letter.':e&&e.message==='load'?'No internet – could not open the letter.':'This letter is no longer available.')+'</p>'}}
+window.mailOpen=mailOpen;window.mattOpen=mattOpen;Object.defineProperty(window,'mattCur',{get:()=>mattCur,configurable:true});
 function begin(){if(C.on||!C.uid)return;C.on=true;const uid=C.uid;teamTab();
+  // SN Mail: mail sent to this login (letters and payslips from HR)
+  unsub.push(fsx.collection('mail').where('rcpt','array-contains',C.authUid||uid).onSnapshot(q=>{window.MAILS=q.docs.map(d=>Object.assign({_id:d.id},d.data())).sort((a,b)=>(b.at||0)-(a.at||0));try{mailRender()}catch(e){}},()=>{}));
   // profile kept by HR
   unsub.push(fsx.doc('punch_emp/'+uid).onSnapshot(d=>{if(!d.exists)return;const e=d.data();
     S.slip=Object.assign({},S.slip,{name:e.name||S.slip&&S.slip.name,eid:e.eid||'',desg:e.desg||'',grade:e.grade||'',cat:e.cat||''});['pan','uan','esino','bank','acct','ifsc'].forEach(f=>{if(e[f])S.slip[f]=String(e[f])});if(e.join)S.join=e.join;
@@ -3106,7 +3147,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=61,APP_VN='7.7',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=62,APP_VN='7.8',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
