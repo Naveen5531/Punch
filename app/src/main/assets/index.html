@@ -2033,6 +2033,7 @@ $('swv').onclick=()=>{const v=$('swp').type==='text';$('swp').type=v?'password':
 $('swo').onclick=async()=>{const u=$('swu').value.trim(),pw=$('swp').value;let ok=false;
   try{ok=swTo==='admin'?(u.toLowerCase()==='admin'&&await sha(pw)===admH()):(u===ID&&await pwOK(pw))}catch(e){}
   if(!ok){$('swe').textContent='Wrong user ID or password.';return}
+  try{if(window.PunchCloud&&PunchCloud.useLocal)await PunchCloud.useLocal()}catch(e){}
   const keep=!!keepGet();$('swd').hidden=true;unlock(keep,swTo);try{say('Switched to '+(swTo==='admin'?'Admin':'Employee')+'.')}catch(e){}};
 ['swu','swp'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')$('swo').click()});
 setTimeout(()=>{try{swLbl()}catch(e){}},0);
@@ -2050,9 +2051,12 @@ $('li').onclick=async()=>{
       err('e1','');unlock($('kp').checked,lr==='admin'?'admin':'employee');return}
     catch(x){cloudErr=PC.msg(x);err('e1','')}
     finally{b.disabled=false}}
+  /* a login checked on this phone is this phone's own person: leave any portal login still open here and put back
+     this phone's own data, so the last portal person's profile and check-ins are never shown under it */
+  const local=async()=>{try{if(PC&&PC.useLocal)await PC.useLocal()}catch(e){}};
   if(lr==='admin'){let ok=false;try{ok=$('u').value.trim().toLowerCase()==='admin'&&await sha($('p').value)===admH()}catch(e){}
-    if(ok)unlock($('kp').checked,'admin');else err('e1',cloudErr||'Wrong admin username or password.');return}
-  if($('u').value.trim()===ID&&await pwOK($('p').value))unlock($('kp').checked,'employee');else err('e1',cloudErr||'Wrong login name or password.')};
+    if(ok){await local();unlock($('kp').checked,'admin')}else err('e1',cloudErr||'Wrong admin username or password.');return}
+  if($('u').value.trim()===ID&&await pwOK($('p').value)){await local();unlock($('kp').checked,'employee')}else err('e1',cloudErr||'Wrong login name or password.')};
 $('lgG').onclick=()=>{const PC=window.PunchCloud,N=window.PunchNative;
   if(!N||!N.googleToken){err('e1','Update Punch to use Google sign-in.');return}
   if(!(PC&&PC.ready)){err('e1','Connect to the internet, then try again.');return}
@@ -2968,7 +2972,10 @@ async function start(){
     try{fsx.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
     C.ready=true;
     /* a kept portal session resumes syncing only once Punch itself is unlocked */
-    auth.onAuthStateChanged(async u=>{if(u){if(!window.PunchRole)return;try{await whoAmI(u);begin()}catch(e){}}else stop()});
+    /* on opening: a kept login with no portal login open is this phone's own person, so show this phone's data,
+       not the data of whoever last signed in to the portal here */
+    let first=true;
+    auth.onAuthStateChanged(async u=>{const f=first;first=false;if(u){if(!window.PunchRole)return;try{await whoAmI(u);begin()}catch(e){}}else{stop();if(f&&window.PunchRole&&S.owner){try{await C.useLocal()}catch(e){}}}});
     window.addEventListener('punchrole',async()=>{const u=auth.currentUser;if(u&&window.PunchRole&&!C.on){try{await whoAmI(u);begin()}catch(e){}}})}
   catch(e){C.err=String(e&&e.message||e)}}
 /* One phone, several people: each login keeps its own Punch data on this phone (localStorage punch_u_<uid>).
@@ -3030,6 +3037,14 @@ C.signInGoogle=async token=>{if(!C.ready){const x=new Error('offline');x.code='a
   try{await whoAmI(u)}catch(e){await auth.signOut();throw e}
   lastAtt='';lastMk='';begin();return C};
 C.signOut=async()=>{stop();try{auth&&await auth.signOut()}catch(e){}};
+/* Back to this phone's own person (login checked on the phone, not the portal): close the portal login and put away
+   the portal person's data. A check-in started today on this phone after the switch stays with this phone's person. */
+C.useLocal=async()=>{await C.signOut();C.uid='';C.authUid='';C.role='';C.hr=false;C.approve=false;C.name='';
+  if(!S.owner)return;const prev=S;let lg=null;try{lg=JSON.parse(localStorage.getItem('punch_legacy')||'null')}catch(e){}
+  const co=S.co;S=Object.assign(BLANK_S(),lg||{});delete S.owner;if(!S.co&&co)S.co=co;
+  if(!S.open&&prev.open&&dayKey(prev.open.t)===dayKey(Date.now())){S.open=prev.open;prev.open=null}
+  try{localStorage.setItem('punch_u_'+prev.owner,JSON.stringify(prev))}catch(e){}
+  keepPlaces(prev);lastAtt='';lastMk='';save();try{render()}catch(e){}autoFollow()};
 const ymOf=k=>String(k).slice(0,7),months=()=>{const n=new Date(),o=[];for(let i=-2;i<=1;i++){const d=new Date(n.getFullYear(),n.getMonth()+i,1);o.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}return o};
 function stop(){unsub.forEach(f=>{try{f()}catch(e){}});unsub=[];C.on=false;teamTab();window.MAILS=[];try{mailRender()}catch(e){}}
 /* ===== SN Mail (read): list, open a mail, open its attachment (letters are built by the same code as SN People) ===== */
@@ -3147,7 +3162,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=64,APP_VN='8.0',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=65,APP_VN='8.1',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
