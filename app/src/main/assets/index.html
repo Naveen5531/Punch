@@ -889,7 +889,7 @@ function dayRows(ds){
     if(m==='holpresent')return{k,d,...(x||{}),st:'Marked present',ot:0,hol:true,co:1,hp:1};
     return{k,d,...(x||{}),st:m==='weekoff'?'Week off':m==='leave'?'Leave':m==='compoff'?'Comp off':m==='holiday'?'Holiday':m==='absent'?'Marked absent':m==='present'?'Marked present':'No check-in',short:x?x.ms:undefined}});
 }
-const sc=t=>({'Full day':'#0f8a6d','Shift completed':'#0a6b54','Marked present':'#0f8a6d','Half day':'#d99a06','Absent':'#dc2626','Marked absent':'#dc2626','Week off':'#3b6fd4','Holiday':'#7c3aed','Leave':'#ea580c','Comp off':'#0891b2'}[t]||'#6a7686');
+const sc=t=>({'Full day':'#0f8a6d','Shift completed':'#0a6b54','Marked present':'#0f8a6d','Half day':'#d99a06','Absent':'#dc2626','Marked absent':'#dc2626','Week off':'#3b6fd4','Holiday':'#7c3aed','Leave':'#ea580c','Comp off':'#0891b2','On duty':'#0f8a6d'}[t]||'#6a7686');
 const f5=v=>v===undefined?'':(+v).toFixed(5);
 function renderRep(){
   const r=repRows(),loc=(S.wp&&S.wp.name)||'Workplace';
@@ -1075,7 +1075,7 @@ $('payCsv').onclick=()=>{const a=document.createElement('a');
   a.download=fname(`Salary_Statement_${P().month}`,'csv');document.body.appendChild(a);a.click();a.remove()};
 $('join').onchange=()=>{S.join=$('join').value;save();render()};
 let cal={y:new Date().getFullYear(),m:new Date().getMonth()};const sel=new Set(),cal0=cal.y*12+cal.m;
-const AB={'Full day':'P','Shift completed':'P','Marked present':'P','Half day':'\u00bd','Absent':'A','Marked absent':'A','Week off':'W','Holiday':'H','Leave':'L','Comp off':'CO','Not joined':'\u2013'};
+const AB={'Full day':'P','Shift completed':'P','Marked present':'P','Half day':'\u00bd','Absent':'A','Marked absent':'A','Week off':'W','Holiday':'H','Leave':'L','Comp off':'CO','Not joined':'\u2013','On duty':'\u2022'};
 function markDays(keys,v){
   let n=0,skip=0;
   dayRows(keys.map(k=>new Date(k+'T00:00:00'))).forEach(x=>{
@@ -1086,9 +1086,11 @@ function markDays(keys,v){
   else if(v&&v.startsWith('leave:')){coSync();const t=v.slice(6),b=lvStats()[t].b;cb=` ${t} balance: ${b}${b<0?' (more leave than available)':''}.`}
   return `${v?'Marked':'Cleared'} ${n} day${n===1?'':'s'}${skip?`, skipped ${skip} with recorded check-ins or before joining`:''}.${cb}`;
 }
+// Calendar view: a past day with no check-in shows as Absent; today while still checked in shows On duty (not Absent yet).
+function calSt(x){const t=dayKey(Date.now());if(x.st==='No check-in'&&x.k<t)return{...x,st:'Absent',nc:1};if(x.live&&x.k===t&&(x.st==='Absent'||x.st==='Half day'))return{...x,st:'On duty',sf:x.st};return x}
 function renderCal(){
   const{y,m}=cal,dim=new Date(y,m+1,0).getDate(),lead=new Date(y,m,1).getDay(),today=dayKey(Date.now());
-  const rows=dayRows(Array.from({length:dim},(_,i)=>new Date(y,m,i+1)));
+  const rows=dayRows(Array.from({length:dim},(_,i)=>new Date(y,m,i+1))).map(calSt);
   $('cmon').textContent=new Date(y,m,1).toLocaleDateString([], {month:'long',year:'numeric'});
   $('cgo').textContent=$('bgo').textContent=isAdm()?'Apply':'Send request';renderAreq();
   $('cprev').disabled=y*12+m<=cal0-3;$('cnext').disabled=y*12+m>=cal0+3;
@@ -1100,8 +1102,8 @@ function renderCal(){
   const n=sel.size;
   $('csub').textContent=n?`${n} day${n===1?'':'s'} selected. Choose a status and tap ${isAdm()?'Apply':'Send request'}.`:'Tap days on the calendar to select them.';
   if(n===1){
-    const k=[...sel][0],x=dayRows([new Date(k+'T00:00:00')])[0];
-    $('cdet').innerHTML=`<b>${dy(x.d)}</b>: ${x.st}${hname(x.k)?' ('+esc(hname(x.k))+')':''}${x.co?`<br>Comp off earned: ${x.co}`:''}${x.a!==undefined?`<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}, ${hm(x.ms)}`:''}${x.ot?`, Overtime ${hm(x.ot)}`:''}`;
+    const k=[...sel][0],x=calSt(dayRows([new Date(k+'T00:00:00')])[0]);
+    $('cdet').innerHTML=`<b>${dy(x.d)}</b>: ${x.nc?'Absent (no check-in)':x.st}${hname(x.k)?' ('+esc(hname(x.k))+')':''}${x.co?`<br>Comp off earned: ${x.co}`:''}${x.a!==undefined?`<br>In ${tm(x.a)}, Out ${x.live?'still checked in':tm(x.b)}, ${hm(x.ms)}`:''}${x.ot?`, Overtime ${hm(x.ot)}`:''}`;
   }else $('cdet').textContent=n?'':'Tap a day to see its details.';
   renderHol();
 }
@@ -3162,7 +3164,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=66,APP_VN='8.2',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=67,APP_VN='8.3',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
