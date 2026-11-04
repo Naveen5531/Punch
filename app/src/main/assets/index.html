@@ -1122,9 +1122,10 @@ function arSend(keys,v,why){S.areq=S.areq||[];
   rows.forEach(x=>{if(x.st==='Not joined'||(WORK.includes(x.st)&&v!=='holiday'&&v!=='')||S.areq.some(q=>q.s==='Pending'&&q.v===v&&q.days.includes(x.k))){skip++;return}days.push(x.k)});
   if(!days.length)return[false,'No days to request'+(skip?' ('+skip+' skipped: recorded check-in, before joining, or already requested).':'.')];
   S.areq.unshift({id:Date.now(),days:days.slice(0,62),v,why:why||'',s:'Pending',at:Date.now()});save();try{window.PunchCloud&&PunchCloud.on&&PunchCloud.sendReq(S.areq[0],'att')}catch(e){}
-  return[true,'Request sent to the admin for '+Math.min(days.length,62)+' day'+(days.length===1?'':'s')+'. It counts only after the admin approves it.'+(skip?' '+skip+' skipped.':'')]}
+  const nd=Math.min(days.length,62)+' day'+(days.length===1?'':'s'),onl=window.PunchCloud&&PunchCloud.on;
+  return[true,(onl?'Request sent to HR for '+nd+'. It counts only after it is approved.':'Saved on this phone only ('+nd+'). HR cannot see it yet: you are not signed in with your portal login. Log out and sign in with your employee ID and portal password (with internet); it is sent automatically then.')+(skip?' '+skip+' skipped.':'')]}
 function renderAreq(){const el=$('arList');if(!el)return;S.areq=S.areq||[];
-  el.innerHTML=S.areq.length?`<div class="hbox">${S.areq.slice(0,15).map(q=>`<div class="hrow"><div><b>${arRange(q.days)}</b><small>${vLab(q.v)} · ${q.days.length} day${q.days.length===1?'':'s'} · ${q.s}${q.by?' by '+q.by:''}${q.why?' · '+esc(q.why):''}</small></div>${q.s==='Pending'?`<button class="ghost" data-ac="${q.id}" style="width:auto;padding:7px 14px">Cancel</button>`:''}</div>`).join('')}</div>`:'<p class="sub">No requests yet.</p>'}
+  el.innerHTML=S.areq.length?`<div class="hbox">${S.areq.slice(0,15).map(q=>`<div class="hrow"><div><b>${arRange(q.days)}</b><small>${vLab(q.v)} · ${q.days.length} day${q.days.length===1?'':'s'} · ${q.s}${q.by?' by '+q.by:''}${q.s==='Pending'?(q.cl?' · ✓ Sent to HR':' · ⚠ On this phone only'):''}${q.why?' · '+esc(q.why):''}</small></div>${q.s==='Pending'?`<button class="ghost" data-ac="${q.id}" style="width:auto;padding:7px 14px">Cancel</button>`:''}</div>`).join('')}</div>`:'<p class="sub">No requests yet.</p>'}
 function AOPT(sel){const o=[['present','Present'],['holpresent','Holiday + Present'],['absent','Absent'],['weekoff','Week off'],['holiday','Holiday'],['compoff','Comp off']].concat(LT.map(([t])=>['leave:'+t,'Leave - '+t]),[['-','Clear mark']]);
   return o.map(([v,n])=>`<option value="${v}"${(sel===''?'-':sel)===v?' selected':''}>${n}</option>`).join('')}
 $('cgo').onclick=()=>{if(!sel.size){say('Tap days on the calendar first.',true);return}
@@ -2057,8 +2058,10 @@ $('li').onclick=async()=>{
      this phone's own data, so the last portal person's profile and check-ins are never shown under it */
   const local=async()=>{try{if(PC&&PC.useLocal)await PC.useLocal()}catch(e){}};
   if(lr==='admin'){let ok=false;try{ok=$('u').value.trim().toLowerCase()==='admin'&&await sha($('p').value)===admH()}catch(e){}
-    if(ok){await local();unlock($('kp').checked,'admin')}else err('e1',cloudErr||'Wrong admin username or password.');return}
-  if($('u').value.trim()===ID&&await pwOK($('p').value)){await local();unlock($('kp').checked,'employee')}else err('e1',cloudErr||'Wrong login name or password.')};
+    if(ok){await local();unlock($('kp').checked,'admin');offWarn(cloudErr)}else err('e1',cloudErr||'Wrong admin username or password.');return}
+  if($('u').value.trim()===ID&&await pwOK($('p').value)){await local();unlock($('kp').checked,'employee');offWarn(cloudErr)}else err('e1',cloudErr||'Wrong login name or password.')};
+/* the portal sign-in did not work, so this is a phone-only login: say so, because requests then stay on this phone */
+function offWarn(why){setTimeout(()=>{try{say('Signed in on this phone only'+(why?' (portal: '+why.replace(/\.$/,'')+')':' (no internet or portal not reachable)')+'. Requests will not reach HR until you sign in with your portal login.',true)}catch(e){}},400)}
 $('lgG').onclick=()=>{const PC=window.PunchCloud,N=window.PunchNative;
   if(!N||!N.googleToken){err('e1','Update Punch to use Google sign-in.');return}
   if(!(PC&&PC.ready)){err('e1','Connect to the internet, then try again.');return}
@@ -2438,7 +2441,7 @@ function renderLeave(){
   $('lvNote').hidden=!nt;$('lvNote').textContent=nt?`${nt} leave day${nt===1?'':'s'} marked without a type ${nt===1?'is':'are'} not deducted. In Reports pick the leave type for those days.`:'';
   const ts=$('lvT');if(!ts.dataset.b){ts.dataset.b=1;ts.innerHTML=LT.map(([t,n])=>`<option value="${t}">${t} · ${n}</option>`).join('')+'<option value="CO">CO · Comp off</option>'}
   {const tv=ts.value||'PL';if(tv==='CO')$('lvAvail').textContent='Available comp off: '+fN(T.co.b);else{const av=s[tv];$('lvAvail').textContent=av.b===null?tv+' has no balance limit.':'Available '+tv+': '+av.b}}
-  $('lvReqs').innerHTML=S.req.length?`<h3 class="hh">My requests</h3><div class="hbox">`+S.req.slice(0,10).map(q=>`<div class="hrow"><div><b>${q.a===q.b?fd(q.a):fd(q.a)+' to '+fd(q.b)}</b><small>${q.t} · ${q.n} day${q.n===1?'':'s'} · ${q.s}${q.why?' · '+esc(q.why):''}</small></div>${q.s==='Pending'||q.s==='Approved'?`<button class="ghost" data-cq="${q.id}" style="width:auto;padding:7px 14px">Cancel</button>`:''}</div>`).join('')+'</div>':'';
+  $('lvReqs').innerHTML=S.req.length?`<h3 class="hh">My requests</h3><div class="hbox">`+S.req.slice(0,10).map(q=>`<div class="hrow"><div><b>${q.a===q.b?fd(q.a):fd(q.a)+' to '+fd(q.b)}</b><small>${q.t} · ${q.n} day${q.n===1?'':'s'} · ${q.s}${q.s==='Pending'?(q.cl?' · ✓ Sent to HR':' · ⚠ On this phone only'):''}${q.why?' · '+esc(q.why):''}</small></div>${q.s==='Pending'||q.s==='Approved'?`<button class="ghost" data-cq="${q.id}" style="width:auto;padding:7px 14px">Cancel</button>`:''}</div>`).join('')+'</div>':'';
   /* holiday calendar split */
   const row=(h,opt)=>{const tk=S.marks[h.k]==='holiday';return `<div class="hrow"><div><b>${fdt(h.k)}</b><small>${esc(h.n)}${h.o?' · '+esc(h.o):''}${h.r?' · '+esc(h.r):''}</small></div>${opt?`<button class="ghost" data-ok="${h.k}" style="width:auto;padding:7px 14px${tk?';background:#7c3aed;color:#fff':''}">${tk?'Taken':'Take'}</button>`:''}</div>`};
   $('lvHols').innerHTML=!os.ys.length?'<p class="sub">No holidays yet. The admin can add or upload the holiday calendar.</p>':
@@ -2458,7 +2461,7 @@ $('lvGo').onclick=()=>{const t=$('lvT').value,a=$('lvA').value,b=$('lvB').value|
   if(st.b!==null&&d>st.b+1e-9){say(`Only ${st.b} ${t} left but you need ${d}. Choose fewer days or LOP.`,true);return}
   const q={id:Date.now(),t,a,b,n:d,why,s:'Pending',at:Date.now()};S.req.unshift(q);
   if(window.PunchCloud&&PunchCloud.on){q.days=lvDays(a,b);PunchCloud.sendReq(q,'leave')}else if(!lvCfg().appr){const m=lvApprove(q,'Auto');if(m){say(m,true);S.req.shift();return}}
-  save();$('lvW').value='';render();renderLeave();say(q.s==='Approved'?'Leave approved and added.':'Leave request sent for approval.')};
+  save();$('lvW').value='';render();renderLeave();say(q.s==='Approved'?'Leave approved and added.':window.PunchCloud&&PunchCloud.on?'Leave request sent to HR for approval.':'Leave request saved on this phone only. HR cannot see it until you sign in with your portal login; it is sent automatically then.',!(q.s==='Approved'||(window.PunchCloud&&PunchCloud.on)))};
 $('lvReqs').onclick=e=>{const b=e.target.closest('[data-cq]');if(!b)return;const q=S.req.find(x=>x.id===+b.dataset.cq);if(!q||!confirm('Cancel this leave request?'))return;if(window.PunchCloud&&PunchCloud.on&&q.s!=='Pending'){say('Ask HR to cancel an approved leave.',true);return}lvCancel(q);save();render();renderLeave();try{window.PunchCloud&&PunchCloud.on&&PunchCloud.cancelReq(q,'leave')}catch(e){}};
 $('lvHols').onclick=e=>{const b=e.target.closest('[data-ok]');if(!b)return;const k=b.dataset.ok;if(!isAdm()){if(S.marks[k]==='holiday'){say('Only the admin can remove a taken holiday.',true);return}const o=optStats();if(o.b<=0){say(`You have used all ${o.q} optional holidays for ${o.y}.`,true);return}const[ok,m]=arSend([k],'holiday','Optional holiday');say(m,!ok);if(ok)render();return}
   if(S.marks[k]==='holiday')delete S.marks[k];else{const o=optStats();if(o.b<=0){say(`You have used all ${o.q} optional holidays for ${o.y}.`,true);return}S.marks[k]='holiday'}
@@ -2489,6 +2492,7 @@ function renderAdmin(){
   <div class="row"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-p="appr" ${c.appr?'checked':''} style="width:auto">Leave needs admin approval</label></div></div>
   <div class="card"><h2>Leave requests</h2>${pend.length?`<div class="hbox">${pend.map(q=>`<div class="hrow"><div><b>${q.a===q.b?fd(q.a):fd(q.a)+' to '+fd(q.b)}</b><small>${q.t} · ${q.n} day${q.n===1?'':'s'}${q.why?' · '+esc(q.why):''}</small></div><span style="display:flex;gap:6px"><button class="ghost" data-x="appr" data-id="${q.id}" style="width:auto;padding:7px 12px">Approve</button><button class="ghost" data-x="rej" data-id="${q.id}" style="width:auto;padding:7px 12px">Reject</button></span></div>`).join('')}</div>`:'<p class="sub">No pending requests.</p>'}
   ${done.length?`<h3 class="hh">Recent</h3><div class="hbox">${done.map(q=>`<div class="hrow"><div><b>${fd(q.a)}${q.a===q.b?'':' to '+fd(q.b)}</b><small>${q.t} · ${q.s}${q.by?' by '+q.by:''}</small></div></div>`).join('')}</div>`:''}</div>
+  ${window.PunchCloud&&PunchCloud.on&&PunchCloud.hr?`<div class="card"><h2>Employees' requests</h2><p class="sub">Requests from employees' phones are in the Team tab.</p><button data-x="toteam">Open Team</button></div>`:`<div class="card"><h2>Employees' requests</h2><p class="sub" style="color:var(--out)">This Admin login works on this phone only, so requests from other employees' phones do not come here. Log out, then sign in as Admin with your portal HR login or Gmail – they show in the Team tab. The lists below are requests made on this phone.</p></div>`}
   <div class="card"><h2>Attendance requests</h2><p class="sub">Choose the final status, then Approve. Use Holiday + Present for a holiday worked: double pay and 1 comp off.</p>${pendA.length?`<div class="hbox">${pendA.map(q=>`<div class="hrow" style="flex-wrap:wrap;gap:8px"><div><b>${arRange(q.days)}</b><small>Requested: ${vLab(q.v)} · ${q.days.length} day${q.days.length===1?'':'s'}${q.why?' · '+esc(q.why):''}</small></div><span style="display:flex;gap:6px;align-items:center"><select class="in2" data-ao="${q.id}" style="max-width:150px">${AOPT(q.v)}</select><button class="ghost" data-x="aap" data-id="${q.id}" style="width:auto;padding:7px 12px">Approve</button><button class="ghost" data-x="arj" data-id="${q.id}" style="width:auto;padding:7px 12px">Reject</button></span></div>`).join('')}</div>`:'<p class="sub">No pending requests.</p>'}
   ${doneA.length?`<h3 class="hh">Recent</h3><div class="hbox">${doneA.map(q=>`<div class="hrow"><div><b>${arRange(q.days)}</b><small>${vLab(q.v)} · ${q.s}${q.by?' by '+q.by:''}</small></div></div>`).join('')}</div>`:''}</div>
   <div class="card"><h2>Holiday calendar</h2><p class="sub">${(S.hols||[]).length} mandatory and ${(S.opts||[]).length} optional holidays loaded. Upload the list below (Holiday Date, Occasion, Holiday Type).</p></div>
@@ -2504,6 +2508,7 @@ function renderAdmin(){
 $('admBody').onclick=e=>{const el=e.target.closest('[data-x]');if(!el)return;const x=el.dataset.x,d=el.dataset;
   if(x==='setpin'){const v=$('admP').value;if(!/^\d{4,8}$/.test(v)){say('PIN must be 4 to 8 digits.',true);return}S.adm={pin:hp(v)};admOK=true;save();renderAdmin();return}
   if(x==='unlock'){if(hp($('admP').value)===S.adm.pin){admOK=true;renderAdmin()}else say('Wrong PIN.',true);return}
+  if(x==='toteam'){show('team');return}
   if(!admOK)return;
   if(x==='lock'){admOK=false}
   else if(x==='aap'||x==='arj'){const q=(S.areq||[]).find(r=>r.id===+d.id);if(!q||q.s!=='Pending')return;let msg='Request rejected.';
@@ -3090,9 +3095,9 @@ function begin(){if(C.on||!C.uid)return;C.on=true;const uid=C.uid;teamTab();
   unsub.push(fsx.collection('punch_req').where('uid','==',uid).onSnapshot(q=>{let ch=0;
     q.docs.forEach(d=>{const v=d.data(),L=v.kind==='leave'?(S.req=S.req||[]):(S.areq=S.areq||[]);let x=L.find(r=>String(r.id)===d.id);
       if(!x){x=v.kind==='leave'?{id:+d.id||d.id,t:v.t,a:v.a,b:v.b,n:v.n,why:v.why||'',at:v.at}:{id:+d.id||d.id,days:v.days||[],v:v.v,why:v.why||'',at:v.at};x.days=v.days||x.days;L.unshift(x);ch=1}
-      if(x.s!==v.s||x.by!==(v.byName||v.by)){x.s=v.s;x.by=v.byName||'';ch=1}});
+      if(!x.cl){x.cl=1;ch=1}if(x.s!==v.s||x.by!==(v.byName||v.by)){x.s=v.s;x.by=v.byName||'';ch=1}});
     if(ch){coSync();save();try{render();renderAreq&&renderAreq()}catch(x){}}},()=>{}));
-  pushAtt();if(C.hr)pushMarks();
+  pushAtt();if(C.hr)pushMarks();setTimeout(sendLeft,2500);
   unsub.push((()=>{const t=setInterval(()=>{pushAtt();if(C.hr)pushMarks()},15000);return()=>clearInterval(t)})());
   if(window.__teamWatch)__teamWatch()}
 /* my check-ins → punch_att/<uid>_<yyyy-mm> */
@@ -3116,15 +3121,20 @@ C.pushMarks=pushMarks;function pushMarks(){if(!C.on||!C.hr)return;const cur=myMa
 /* requests to HR */
 C.sendReq=(q,kind)=>{if(!C.on)return;const d={uid:C.uid,name:(S.slip&&S.slip.name)||C.name||'',eid:(S.slip&&S.slip.eid)||'',kind,s:'Pending',why:q.why||'',at:q.at||Date.now(),days:(q.days||[]).slice(0,62)};
   if(kind==='leave')Object.assign(d,{t:q.t,a:q.a,b:q.b,n:q.n});else d.v=q.v;
-  fsx.doc('punch_req/'+q.id).set(d).catch(e=>{try{say('Could not send the request to HR: '+(e.code||e.message),true)}catch(x){}})};
+  return fsx.doc('punch_req/'+q.id).set(d).then(()=>{q.cl=1;save();try{renderAreq();renderLeave()}catch(x){}}).catch(e=>{try{say('Could not send the request to HR: '+(e.code==='permission-denied'?'this login is not allowed to send requests. Ask HR to check your Punch access in the portal.':(e.code||e.message)),true)}catch(x){}})};
+/* requests made while not connected (offline, or before signing in) are sent once the portal login is on */
+async function sendLeft(){if(!C.on)return;const L=[].concat((S.areq||[]).map(q=>[q,'att']),(S.req||[]).map(q=>[q,'leave'])).filter(([q])=>q.s==='Pending'&&!q.cl);
+  let n=0;for(const[q,k]of L){try{const d=await fsx.doc('punch_req/'+q.id).get();if(d.exists){q.cl=1;continue}await C.sendReq(q,k);if(q.cl)n++}catch(e){}}
+  if(L.length)save();if(n)try{say(n+' waiting request'+(n===1?'':'s')+' sent to HR.')}catch(e){}}
 C.cancelReq=q=>{if(!C.on)return;fsx.doc('punch_req/'+q.id).update({s:'Cancelled',updatedAt:Date.now()}).catch(()=>{})};
 
 /* ===== Team page: HR sees everyone's requests and today's check-ins, and approves ===== */
 let T={tab:'req',reqs:[],emps:{},att:{},ym:''},tw=[];
-function teamTab(){document.querySelectorAll('.tab[data-t="team"]').forEach(b=>b.hidden=!(C.on&&C.hr&&window.PunchRole==='admin'))}
+function teamTab(){document.querySelectorAll('.tab[data-t="team"]').forEach(b=>b.hidden=!(C.on&&C.hr&&window.PunchRole==='admin'));tBadge()}
+function tBadge(){const n=C.on&&C.hr&&window.PunchRole==='admin'?(T.reqs||[]).length:0;document.querySelectorAll('.tab[data-t="team"]').forEach(b=>{b.style.position='relative';let d=b.querySelector('.mbadge');if(!d){d=document.createElement('b');d.className='mbadge';b.appendChild(d)}d.hidden=!n;d.textContent=n})}
 window.addEventListener('punchrole',()=>{teamTab();if(window.PunchRole!=='admin'&&!g('p-team').hidden)show('dash')});
 window.__teamWatch=()=>{tw.forEach(f=>f());tw=[];if(!(C.on&&C.hr))return;const ym=dayKey(Date.now()).slice(0,7);T.ym=ym;
-  tw.push(fsx.collection('punch_req').where('s','==','Pending').onSnapshot(q=>{T.reqs=q.docs.map(d=>Object.assign({_id:d.id},d.data())).sort((a,b)=>a.at-b.at);draw()},()=>{}));
+  tw.push(fsx.collection('punch_req').where('s','==','Pending').onSnapshot(q=>{T.err='';T.reqs=q.docs.map(d=>Object.assign({_id:d.id},d.data())).sort((a,b)=>a.at-b.at);tBadge();draw()},e=>{T.err=e&&e.code==='permission-denied'?'This login is not allowed to read requests. In the portal give it an HR role (HR head, HR manager or HR executive).':'Could not load requests ('+((e&&(e.code||e.message))||'error')+'). Check the internet and open Team again.';draw()}));
   tw.push(fsx.collection('punch_emp').onSnapshot(q=>{T.emps={};q.docs.forEach(d=>T.emps[d.id]=d.data());draw()},()=>{}));
   tw.push(fsx.collection('punch_att').where('ym','==',ym).onSnapshot(q=>{T.att={};q.docs.forEach(d=>{const v=d.data();T.att[v.uid]=v});draw()},()=>{}))};
 const VL={present:'Present',weekoff:'Week off',holiday:'Holiday',compoff:'Comp off',absent:'Absent',holpresent:'Holiday + Present','-':'Clear mark'};
@@ -3133,6 +3143,7 @@ const dr=a=>{a=(a||[]).slice().sort();return !a.length?'—':a.length===1?fd(a[0
 function draw(){const el=g('tmBody');if(!el||g('p-team').hidden)return;document.querySelectorAll('#tmTabs button').forEach(b=>b.classList.toggle('on',b.dataset.tm===T.tab));
   if(!(C.on&&C.hr)){el.innerHTML='<div class="card"><p class="sub">Sign in with an HR login connected to the portal to see your team.</p></div>';return}
   const nm=r=>esc(r.name||(T.emps[r.uid]||{}).name||'Employee'),today=dayKey(Date.now());
+  if(T.tab==='req'&&T.err){el.innerHTML=`<div class="card"><h2>Requests</h2><p class="sub" style="color:var(--out)">${esc(T.err)}</p></div>`;return}
   if(T.tab==='req'){el.innerHTML=`<div class="card"><h2>Waiting for approval · ${T.reqs.length}</h2>${T.reqs.length?`<div class="hbox">${T.reqs.map(r=>`<div class="hrow" style="align-items:flex-start"><div><b>${nm(r)}</b><small>${esc(reqLabel(r))} · ${dr(r.days&&r.days.length?r.days:[r.a,r.b].filter(Boolean))} · ${(r.days||[]).length||r.n||1} day${((r.days||[]).length||r.n||1)===1?'':'s'}${r.why?' · '+esc(r.why):''}</small></div>${C.approve?`<div style="display:flex;gap:6px"><button data-ap="${r._id}" style="width:auto;padding:7px 12px">Approve</button><button class="ghost" data-rj="${r._id}" style="width:auto;padding:7px 12px">Reject</button></div>`:''}</div>`).join('')}</div>`:'<p class="sub">Nothing waiting.</p>'}${C.approve?'':'<p class="sub">HR executives can see requests; HR manager or HR head approves them.</p>'}</div>`;return}
   const ids=Object.keys(T.emps).sort((a,b)=>String(T.emps[a].name).localeCompare(T.emps[b].name));
   if(T.tab==='today'){const st=id=>{const a=T.att[id],d=a&&a.days&&a.days[today.slice(8)];if(a&&a.open)return['In since '+tm(a.open.t),'#0f8a6d'];if(d&&d.a!=null)return[`${tm(d.a)} – ${d.b?tm(d.b):'—'} · ${hm(d.ms||0)}`,'#3b6fd4'];return['Not checked in','#dc2626']};
@@ -3164,7 +3175,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=67,APP_VN='8.3',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=68,APP_VN='8.4',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
