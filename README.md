@@ -214,3 +214,8 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - Signed in with the portal login, everything Punch keeps on the phone (check-ins, trips, places, expenses, leave, requests, payslip and company settings, employees, holidays, theme choices) is saved on the web (Firestore punch_state/<login>) within a few seconds of every change, and comes back on any phone after signing in. If the phone and the web both changed, check-ins, trips, expenses and requests from both are kept.
 - Settings › "Saved on the web" shows the last save time and a Save now button. Needs the latest firestore.rules published in Firebase console.
 - Festival themes: the floating emoji stickers are gone. A canvas animation runs behind the cards (never over text): fireworks, live diya flames with embers, turning petals, Holi colour bursts, moon and stars with shooting stars, snow, kites, balloons, glowing lights. The Home banner has its own animation (Diwali: a row of diyas with fireworks). Pauses in the background; still with "reduce motion".
+
+## Changes in v8.7 – festival animation only on the greeting banner
+- No animation over or behind the rest of the app any more; the festival plays only in the greeting banner on Home.
+- The banner is a night sky in the festival colours: bright, coloured fireworks (peony, ring, willow, palm) with glow, flashes, glitter and fading trails; diyas with flickering flames, glow and embers; Holi colour bursts; crescent moon with stars and shooting stars; petals, snow, kites, balloons, glowing lights.
+- The greeting text shimmers in gold with a soft glow (no emoji sticker).
