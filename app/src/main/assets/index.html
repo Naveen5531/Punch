@@ -3124,7 +3124,8 @@ C.sendReq=(q,kind)=>{if(!C.on)return;const d={uid:C.uid,name:(S.slip&&S.slip.nam
   return fsx.doc('punch_req/'+q.id).set(d).then(()=>{q.cl=1;save();try{renderAreq();renderLeave()}catch(x){}}).catch(e=>{try{say('Could not send the request to HR: '+(e.code==='permission-denied'?'this login is not allowed to send requests. Ask HR to check your Punch access in the portal.':(e.code||e.message)),true)}catch(x){}})};
 /* requests made while not connected (offline, or before signing in) are sent once the portal login is on */
 async function sendLeft(){if(!C.on)return;const L=[].concat((S.areq||[]).map(q=>[q,'att']),(S.req||[]).map(q=>[q,'leave'])).filter(([q])=>q.s==='Pending'&&!q.cl);
-  let n=0;for(const[q,k]of L){try{const d=await fsx.doc('punch_req/'+q.id).get();if(d.exists){q.cl=1;continue}await C.sendReq(q,k);if(q.cl)n++}catch(e){}}
+  if(!L.length)return;let have=null;try{const r=await fsx.collection('punch_req').where('uid','==',C.uid).get();have=new Set(r.docs.map(d=>d.id))}catch(e){return}
+  let n=0;for(const[q,k]of L){try{if(have.has(String(q.id))){q.cl=1;continue}await C.sendReq(q,k);if(q.cl)n++}catch(e){}}
   if(L.length)save();if(n)try{say(n+' waiting request'+(n===1?'':'s')+' sent to HR.')}catch(e){}}
 C.cancelReq=q=>{if(!C.on)return;fsx.doc('punch_req/'+q.id).update({s:'Cancelled',updatedAt:Date.now()}).catch(()=>{})};
 
@@ -3175,7 +3176,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=68,APP_VN='8.4',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=69,APP_VN='8.4.1',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;

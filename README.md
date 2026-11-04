@@ -197,7 +197,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - Without the connection, or offline, Punch keeps working on its own with the logins kept on the phone.
 - Fixed: the attendance request list could fail at start-up (date formatter used before it was ready).
 
-## Changes in v8.4 – requests reach HR
+## Changes in v8.4.1 – requests reach HR
 - If the portal sign-in fails (no internet, wrong portal password, no Punch access), Punch still logs in on the phone, but now says so: "Signed in on this phone only … Requests will not reach HR".
 - Attendance and leave requests show "✓ Sent to HR" or "⚠ On this phone only". A request saved on the phone is sent to HR automatically the next time the portal login is on.
 - Admin › Team: red badge with the number of waiting requests; if the login cannot read requests, the reason is shown instead of an empty list.
