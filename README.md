@@ -202,3 +202,10 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - Attendance and leave requests show "✓ Sent to HR" or "⚠ On this phone only". A request saved on the phone is sent to HR automatically the next time the portal login is on.
 - Admin › Team: red badge with the number of waiting requests; if the login cannot read requests, the reason is shown instead of an empty list.
 - Admin page (phone-only Admin login): explains that other employees' requests come to the Team tab with the portal HR login or Gmail. Attendance logic is unchanged.
+
+## Changes in v8.5 – Employees page for HR
+- With the portal HR login (or Gmail), Admin › Employees lists every portal employee with today's status (in since / worked / not checked in), a red count of waiting requests, and search.
+- Tap an employee: profile, their waiting requests with Approve / Reject, and the month's attendance (check-ins, HR marks, leave, week offs, hours, OT) with a month picker.
+- Phone-only Admin login: the page says portal employees are shown only with the portal HR login.
+- All HR roles in the Firestore rules (HR TL, AM, SRM, GM, SGM, AVP, VP, SVP, Sr) now get the Admin/Team access; approvers match the rules.
+- "Add employee" button colour fixed. Attendance logic unchanged.

@@ -2930,6 +2930,7 @@ g('offShare').onclick=()=>{const e=S.emps[curOff];if(!e)return;const c=CO(),k=ct
 const roleTabs=()=>document.querySelectorAll('.tab[data-t="emps"]').forEach(b=>b.hidden=window.PunchRole==='employee');
 window.addEventListener('punchrole',roleTabs);roleTabs();
 document.head.insertAdjacentHTML('beforeend',`<style>
+#empAdd{background:var(--in);color:#fff}
 .lgp{display:flex;gap:12px;align-items:center;margin:8px 0}.lgp img{width:64px;height:64px;border-radius:14px;flex:none}.lgp p{margin:2px 0}
 /* letterhead (offer letter, payslip, attendance report) */
 .slip .lh{display:flex;align-items:center;gap:14px;padding:2px 0 10px}.slip .lh img{width:58px;height:58px;object-fit:contain;flex:none;border-radius:12px}
@@ -2961,7 +2962,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
    profile come down. Without the connection (or offline) Punch keeps working on its own as before. */
 (()=>{const g=id=>document.getElementById(id);
 const CFG_URL='https://naveen5531.github.io/portal/firebase-config.js',DOMAIN='staff.movana.app',VER='10.12.2';
-const HR=['superadmin','admin_head','hr_head','hr_manager','hr_exec'],APPR=['superadmin','admin_head','hr_head','hr_manager'];
+const HR=['superadmin','admin_head','hr_head','hr_manager','hr_exec','hr_sr','hr_tl','hr_am','hr_srm','hr_gm','hr_sgm','hr_avp','hr_vp','hr_svp'],APPR=['superadmin','admin_head','hr_head','hr_manager','hr_tl','hr_am','hr_srm','hr_gm','hr_sgm','hr_avp','hr_vp','hr_svp'];
 const toEmail=u=>{u=String(u||'').trim().toLowerCase();return u.includes('@')?u:u.replace(/[^a-z0-9._-]/g,'')+'@'+DOMAIN};
 const C=window.PunchCloud={ready:false,on:false,uid:'',role:'',hr:false,approve:false,name:'',err:''};
 let fsx=null,auth=null,unsub=[],lastAtt='',lastMk='',cfg=null;
@@ -3016,7 +3017,7 @@ async function whoAmI(u){C.uid=u.uid;
   const[m,o,p]=await Promise.all([fsx.doc('members/'+u.uid).get().catch(()=>null),fsx.doc('settings/owner').get().catch(()=>null),fsx.doc('users/'+u.uid).get().catch(()=>null)]);
   const owner=o&&o.exists&&o.data().uid===u.uid,md=m&&m.exists?m.data():null;
   C.role=owner?'superadmin':(md&&md.status!=='Suspended'?md.role:'none');C.name=(p&&p.exists&&p.data().name)||'';
-  C.hr=HR.includes(C.role);C.approve=APPR.includes(C.role);C.salEdit=['superadmin','admin_head','hr_head'].includes(C.role);
+  C.hr=HR.includes(C.role);C.approve=APPR.includes(C.role);C.salEdit=['superadmin','admin_head','hr_head','hr_gm','hr_sgm','hr_avp','hr_vp','hr_svp'].includes(C.role);
   if(C.role==='none'){const x=new Error('no access');x.code='no-access';throw x}
   /* App access (portal › Settings › App access): only the roles ticked for Punch may sign in; Super admin always can */
   if(!owner){try{const ap=await fsx.doc('settings/apps').get(),L=ap.exists?ap.data().punch:null;if(Array.isArray(L)&&L.length){const rs=[C.role].concat((md&&md.roles)||[]);if(!rs.includes('superadmin')&&!rs.some(r=>L.includes(r))){const x=new Error('no app');x.code='no-app';throw x}}}catch(e){if(e.code==='no-app')throw e}}
@@ -3165,6 +3166,61 @@ async function decide(id,ok){const r=T.reqs.find(x=>x._id===id);if(!r||!C.approv
     await fsx.doc('punch_req/'+id).update({s:ok?'Approved':'Rejected',by:C.uid,byName:C.name||'',decidedAt:Date.now()});
     say(ok?'Approved.':'Rejected.')}catch(e){say('Could not save: '+(e.code||e.message),true)}}
 g('tmBody').onclick=e=>{const a=e.target.closest('[data-ap]'),j=e.target.closest('[data-rj]');if(a)decide(a.dataset.ap,true);if(j&&confirm('Reject this request?'))decide(j.dataset.rj,false)};
+/* ===== Employees page with the portal login: every employee, today's status, their requests; tap one for the detail ===== */
+const EC={sel:'',ym:'',q:'',data:{}};
+const ML={present:'Present',absent:'Absent',weekoff:'Week off',holiday:'Holiday',leave:'Leave',compoff:'Comp off',holpresent:'Holiday + Present'};
+const MC={'Full day':'#0f8a6d','Shift completed':'#0a6b54','Present':'#0f8a6d','Holiday + Present':'#0f8a6d','Half day':'#d99a06','Absent':'#dc2626','Week off':'#3b6fd4','Holiday':'#7c3aed','Leave':'#ea580c','Comp off':'#0891b2','On duty':'#0f8a6d','In now':'#0f8a6d'};
+const ecOn=()=>C.on&&C.hr&&window.PunchRole==='admin';
+function ecBox(){let b=g('empCloud');if(!b){const h=document.querySelector('#p-emps .ph');if(!h)return null;h.insertAdjacentHTML('afterend','<div class="card" id="empCloud"></div>');b=g('empCloud')}return b}
+const today=()=>dayKey(Date.now());
+function ecToday(id){const a=T.att[id],d=a&&a.days&&a.days[today().slice(8)];if(a&&a.open)return['In since '+tm(a.open.t),MC['In now']];if(d&&d.a!=null)return[tm(d.a)+' – '+(d.b?tm(d.b):'—'),'#3b6fd4'];return['Not checked in','#dc2626']}
+const ecReqs=id=>(T.reqs||[]).filter(r=>r.uid===id);
+async function ecLoad(id,ym){const k=id+'_'+ym;if(EC.data[k])return EC.data[k];
+  const[a,m]=await Promise.all([fsx.doc('punch_att/'+k).get().catch(()=>null),fsx.doc('punch_mark/'+k).get().catch(()=>null)]);
+  return EC.data[k]={att:a&&a.exists?a.data():{},mk:m&&m.exists?m.data():{}}}
+function ecDays(id,ym,x){const e=T.emps[id]||{},[y,mo]=ym.split('-').map(Number),n=new Date(y,mo,0).getDate(),wo=Array.isArray(e.wo)?e.wo.map(Number):[],marks=x.mk.marks||{},lt=x.mk.lt||{},days=x.att.days||{},td=today(),out=[];
+  for(let i=1;i<=n;i++){const k=ym+'-'+String(i).padStart(2,'0'),d=new Date(y,mo-1,i),a=days[String(i).padStart(2,'0')]||{},mv=marks[k];let st,c;
+    if(e.join&&k<e.join)st='Before joining';
+    else if(mv)st=mv==='leave'&&lt[k]?'Leave · '+lt[k]:(ML[mv]||mv);
+    else if(k===td&&x.att.open)st='On duty';
+    else if(a.st&&a.a!=null)st=a.st;
+    else if(wo.includes(d.getDay()))st='Week off';
+    else if(k<td)st='Absent';else st='';
+    if(k>td)continue;
+    c=MC[st.split(' · ')[0]]||'#6a7686';out.push({k,d,st,c,a})}
+  return out}
+async function ecDraw(){const b=ecBox();if(!b||g('p-emps').hidden)return;
+  const loc=g('empList'),fm=g('empForm');
+  if(!ecOn()){if(loc)loc.hidden=false;b.innerHTML=`<h2>Portal employees</h2><p class="sub" style="color:var(--out)">This Admin login works on this phone only, so the employees you added in the portal and their requests are not shown. Log out, then sign in as Admin with your portal HR login or Gmail.</p>`;return}
+  if(loc)loc.hidden=true;if(fm&&!fm.innerHTML.includes('empSave'))fm.hidden=true;
+  const ids=Object.keys(T.emps).filter(id=>T.emps[id].status!=='Left').sort((a,c)=>String(T.emps[a].name).localeCompare(T.emps[c].name));
+  if(!EC.sel||!T.emps[EC.sel]){EC.sel='';const q=EC.q.toLowerCase(),L=ids.filter(id=>!q||[T.emps[id].name,T.emps[id].eid,T.emps[id].desg].join(' ').toLowerCase().includes(q)),inN=ids.filter(id=>T.att[id]&&T.att[id].open).length,pend=(T.reqs||[]).length;
+    b.innerHTML=`<h2>Employees · ${ids.length}</h2><p class="sub">${inN} checked in now${pend?` · <b style="color:var(--out)">${pend} request${pend===1?'':'s'} waiting</b>`:''}. Tap an employee to see their attendance and requests. New employees are added in the portal (HR › Punch › Employees).</p>
+    <div class="row"><input class="in2" id="ecQ" placeholder="Search name or ID" value="${esc(EC.q)}"></div>
+    ${L.length?`<div class="hbox">${L.map(id=>{const e=T.emps[id],[t,c]=ecToday(id),n=ecReqs(id).length;return `<button class="hrow ecRow" data-ec="${id}" style="border-left:4px solid ${c}"><div style="text-align:left"><b>${esc(e.name||'—')}${n?` <span class="ecN">${n}</span>`:''}</b><small>${esc(e.eid||'')}${e.desg?' · '+esc(e.desg):''}</small></div><b style="font-size:12.5px;color:${c}">${t}</b></button>`}).join('')}</div>`:`<p class="sub">${ids.length?'No match.':'No employees in the portal yet. Add them in the portal: HR › Punch › Employees.'}</p>`}`;
+    const q2=g('ecQ');if(q2){q2.oninput=()=>{EC.q=q2.value;const pos=q2.selectionStart;ecDraw().then(()=>{const z=g('ecQ');if(z){z.focus();try{z.setSelectionRange(pos,pos)}catch(e){}}})}}
+    return}
+  const id=EC.sel,e=T.emps[id],ym=EC.ym||today().slice(0,7),R=ecReqs(id);
+  b.innerHTML=`<div class="row" style="margin-top:0"><button class="ghost" data-ecb style="width:auto;padding:7px 14px">‹ All employees</button></div><h2 style="margin-top:6px">${esc(e.name||'—')}</h2>
+    <p class="sub">${[e.eid,e.desg,e.grade&&'Grade '+e.grade,e.cat,e.join&&'Joined '+fd(e.join),e.mob].filter(Boolean).map(esc).join(' · ')}</p>
+    <h3 class="hh">Requests waiting · ${R.length}</h3>${R.length?`<div class="hbox">${R.map(r=>`<div class="hrow" style="align-items:flex-start;flex-wrap:wrap;gap:8px"><div><b>${esc(reqLabel(r))}</b><small>${dr(r.days&&r.days.length?r.days:[r.a,r.b].filter(Boolean))} · ${(r.days||[]).length||r.n||1} day${((r.days||[]).length||r.n||1)===1?'':'s'}${r.why?' · '+esc(r.why):''}</small></div>${C.approve?`<div style="display:flex;gap:6px"><button data-ecap="${r._id}" style="width:auto;padding:7px 12px;background:var(--in);color:#fff">Approve</button><button class="ghost" data-ecrj="${r._id}" style="width:auto;padding:7px 12px">Reject</button></div>`:''}</div>`).join('')}</div>${C.approve?'':'<p class="sub">HR manager or HR head approves requests.</p>'}`:'<p class="sub">No requests waiting.</p>'}
+    <div class="row" style="align-items:center"><h3 class="hh" style="flex:1;margin:0">Attendance</h3><input class="in2" type="month" id="ecM" value="${ym}" style="max-width:170px"></div><div id="ecAtt"><p class="sub">Loading…</p></div>`;
+  g('ecM').onchange=()=>{EC.ym=g('ecM').value||today().slice(0,7);ecDraw()};
+  let x;try{x=await ecLoad(id,ym)}catch(er){g('ecAtt').innerHTML='<p class="sub">Could not load attendance.</p>';return}
+  if(EC.sel!==id||(EC.ym||today().slice(0,7))!==ym||!g('ecAtt'))return;
+  const D=ecDays(id,ym,x),cnt=f=>D.filter(z=>f(z.st)).length,ms=Object.values(x.att.days||{}).reduce((s,z)=>s+(z.ms||0),0),ot=Object.values(x.att.days||{}).reduce((s,z)=>s+(z.ot||0),0);
+  g('ecAtt').innerHTML=`<div class="chips" style="margin:8px 0"><span class="chip" style="--c:#0f8a6d"><i></i>Present<b>${cnt(t=>/^(Full day|Shift completed|Present|Holiday \+ Present|On duty)$/.test(t))}</b></span><span class="chip" style="--c:#d99a06"><i></i>Half<b>${cnt(t=>t==='Half day')}</b></span><span class="chip" style="--c:#dc2626"><i></i>Absent<b>${cnt(t=>t==='Absent')}</b></span><span class="chip" style="--c:#ea580c"><i></i>Leave<b>${cnt(t=>t.startsWith('Leave'))}</b></span><span class="chip" style="--c:#3b6fd4"><i></i>Week off<b>${cnt(t=>t==='Week off')}</b></span><span class="chip" style="--c:#6a7686"><i></i>Hours<b>${hm(ms)}</b></span>${ot?`<span class="chip" style="--c:#7c3aed"><i></i>OT<b>${hm(ot)}</b></span>`:''}</div>
+    <div class="hbox">${D.filter(z=>z.st&&z.st!=='Before joining').reverse().map(z=>`<div class="hrow" style="border-left:4px solid ${z.c}"><div><b>${z.d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'})}</b>${z.a&&z.a.a!=null?`<small>In ${tm(z.a.a)} · Out ${z.a.b?tm(z.a.b):'—'}${z.a.ms?' · '+hm(z.a.ms):''}</small>`:''}</div><b style="font-size:13px;color:${z.c}">${esc(z.st)}</b></div>`).join('')||'<p class="sub">No days yet.</p>'}</div>
+    <p class="sub">Shown from check-ins and HR marks. Change marks in the portal register.</p>`}
+const ecPane=g('p-emps');if(ecPane)ecPane.addEventListener('click',e=>{const r=e.target.closest('[data-ec]'),bk=e.target.closest('[data-ecb]'),ap=e.target.closest('[data-ecap]'),rj=e.target.closest('[data-ecrj]');
+  if(r){EC.sel=r.dataset.ec;EC.ym='';ecDraw();ecBox().scrollIntoView({behavior:'smooth'});return}
+  if(bk){EC.sel='';ecDraw();return}
+  if(ap){decide(ap.dataset.ecap,true).then(()=>{Object.keys(EC.data).forEach(k=>{if(k.startsWith(EC.sel+'_'))delete EC.data[k]});ecDraw()});return}
+  if(rj&&confirm('Reject this request?')){decide(rj.dataset.ecrj,false).then(ecDraw)}});
+{const o=window.__emps;window.__emps=()=>{try{o&&o()}catch(e){}ecDraw()}}
+const _draw=draw;draw=function(){_draw();try{if(!g('p-emps').hidden)ecDraw()}catch(e){}};
+window.addEventListener('punchrole',()=>{try{if(!g('p-emps').hidden)ecDraw()}catch(e){}});
+document.head.insertAdjacentHTML('beforeend','<style>.ecRow{width:100%;background:var(--card);color:var(--ink);border-radius:12px;font-weight:600;cursor:pointer}.ecN{display:inline-block;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e5484d;color:#fff;font:700 11px/18px system-ui;text-align:center;vertical-align:2px;margin-left:4px}</style>');
 /* in portal mode salary is set by HR in the portal */
 const note=()=>{const f=g('payForm');if(!f)return;const on=C.on&&S.payCloud;f.querySelectorAll('input,select').forEach(i=>{if(i.id!=='pf_month'){if(on){i.disabled=true;i.dataset.pc=1}else if(i.dataset.pc){i.disabled=false;delete i.dataset.pc}}});
   let n=g('payCloudNote');if(on&&!n){f.insertAdjacentHTML('afterbegin','<p class="sub" id="payCloudNote">Salary is set by HR in the portal.</p>')}else if(!on&&n)n.remove()};
@@ -3176,7 +3232,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=69,APP_VN='8.4.1',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=70,APP_VN='8.5',SRC='https://naveen5531.github.io/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
