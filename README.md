@@ -222,3 +222,7 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 
 ## Changes in v8.8
 - Festival animation back to the 8.6 version (canvas animation behind the page plus the banner), as chosen. Everything else unchanged.
+
+## Changes in v8.9 – employee CTC in Punch
+- Admin › Employees (portal HR login): CTC a year under each name, and in the employee detail a Salary & CTC card – CTC / year, CTC / month, take-home, Basic, HRA, Conveyance, Special, Gross, Employer PF, Gratuity, Employee PF, PT – worked out exactly like the portal and the offer letter, with salary hikes applied, plus the offer letter status.
+- Shown only to roles that may see salary (HR head, HR manager, Admin head, Super admin and senior HR); others see a note.
