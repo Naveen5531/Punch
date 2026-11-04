@@ -12,6 +12,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap" rel="stylesheet">
 <title>Punch – Location Attendance</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="brand.js"></script>
+<script>window.BRAND=window.BRAND||{company:"SN Logistics",site:"https://naveen5531.github.io",portal:"https://naveen5531.github.io/portal/",authDomain:"staff.movana.app",mailName:"SN Mail",mailDomain:"snlogistics",logo:"sn-logo.png",mark:"sn-mark.png"};</script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{--bg:#f2f3f7;--card:#fff;--ink:#101828;--mute:#6b7280;--line:#e9ebf1;--in:#0c9b76;--in2:#25cf9f;--out:#f26a1b;--warn:#d97706;--soft:#f3f4f8;--glass:rgba(255,255,255,.86);--on:#fff;--sh:0 1px 2px rgba(16,24,40,.05),0 8px 24px -12px rgba(16,24,40,.12);--pin:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z'/%3E%3Ccircle cx='12' cy='10' r='2.5'/%3E%3C/svg%3E");--tap:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M12 3a9 9 0 0 1 9 9M12 21a9 9 0 0 1-9-9M7 5.5A9 9 0 0 0 3 12M17 18.5A9 9 0 0 0 21 12'/%3E%3C/svg%3E");--out-i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 4H5v16h4M16 8l4 4-4 4M20 12H9'/%3E%3C/svg%3E");color-scheme:light;box-sizing:border-box}
@@ -602,7 +604,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
       <div class="row"><label for="pacct">Bank account</label><input id="pacct" type="text" maxlength="20" inputmode="numeric"></div>
       <div class="row"><label for="pifsc">IFSC</label><input id="pifsc" type="text" maxlength="11" autocapitalize="characters"></div>
       <p class="sub">These details appear on your payslip. The bank account shows only its last 4 digits.</p>
-      <details><summary style="cursor:pointer">DMart grade guide</summary><div class="sub" id="gGuide"></div></details></div>
+      <details><summary style="cursor:pointer">Grade guide</summary><div class="sub" id="gGuide"></div></details></div>
     <div class="card"><h2>Festival theme</h2><div class="row"><label for="festSel">Theme</label><select id="festSel"></select></div><p class="sub" id="festNow"></p><p class="sub">The whole app (background, header, buttons, switches and tabs) and the falling decorations change automatically on Indian and Telangana festivals and national days. Pick a festival to preview it.</p></div>
     <div class="card"><h2>Appearance</h2><div class="seg" id="theme"><button data-th="">Auto</button><button data-th="light">Light</button><button data-th="dark">Dark</button></div></div>
     <div class="card"><h2>Account</h2><div class="row"><button class="ghost" id="pOut">Log out</button></div></div>
@@ -1144,7 +1146,7 @@ function inWords(n){n=Math.round(n);if(n<0)return 'Minus '+inWords(-n);if(n===0)
   const cr=Math.floor(n/1e7),l=Math.floor(n%1e7/1e5),t=Math.floor(n%1e5/1e3),r=n%1000,p=[];
   if(cr)p.push(inWords(cr)+' Crore');if(l)p.push(_two(l)+' Lakh');if(t)p.push(_two(t)+' Thousand');if(r)p.push(_three(r));return p.join(' ')}
 function fillSlip(){const p=P();$('sf_calc').checked=!(S.slip&&S.slip.calc===0);$('sf_month').innerHTML=cycOpts().map(([v,n])=>`<option value="${v}"${v===p.month?' selected':''}>${n}</option>`).join('')}
-const GRADES=[['F','Frontline','Customer Service Associate, Cashier, Packer, Receiving staff'],['S','Supervisor','Team Leader, Senior Associate, Section in-charge, Assistant Manager'],['M','Manager','Department Manager, Assistant Store Manager, Store Manager, HO Manager'],['G','General Manager','Cluster / Regional Head, Category Head, GM, AVP, VP']];
+const GRADES=(window.BRAND&&Array.isArray(BRAND.grades)&&BRAND.grades.length)?BRAND.grades:[['F','Frontline','Associates, operators, drivers, support staff'],['S','Supervisor','Team leader, senior associate, in-charge, assistant manager'],['M','Manager','Department manager, branch / site manager'],['G','General Manager','Regional / function head, GM, AVP, VP']];
 const CATS=['Foods (Staples, Groceries, Dairy, F&V)','Non-Foods (FMCG)','General Merchandise','Apparel','Store Operations','Head Office'];
 const gradeOf=q=>q.grade!==undefined?q.grade:((String(q.desg||'').match(/\b([FSMG][1-4])\b/i)||[,''])[1].toUpperCase());
 const gradeName=gr=>{const x=GRADES.find(r=>r[0]===String(gr||'')[0]);return x?`${gr} · ${x[1]}`:''};
@@ -1481,7 +1483,7 @@ function coStats(){const d=coDetail(),e=d.E.reduce((s,x)=>s+x.v,0),pn=coPending(
 function coCard(){const el=$('coCard');if(!el)return;const d=coDetail(),st=coStats(),soon=d.E.filter(e=>!e.exp&&e.left>0&&e.daysLeft!==null&&e.daysLeft<=7);
   el.innerHTML=`<h2>Comp off</h2><div class="tiles" style="grid-template-columns:repeat(2,1fr)"><div class="tile"><span>Earned</span><b>${fN(st.e)}</b></div><div class="tile"><span>Available</span><b style="${st.b<0?'color:var(--out)':''}">${fN(st.b)}</b></div><div class="tile"><span>Used${st.p?' / applied':''}</span><b>${fN(st.u)}</b></div><div class="tile"><span>Expired</span><b>${fN(st.x)}</b></div></div>
 ${soon.length?`<p class="sub" style="color:var(--out)">${soon.map(e=>`${fN(e.left)} comp off from ${fd(e.k)} expires ${e.daysLeft===0?'today':'in '+e.daysLeft+' day'+(e.daysLeft===1?'':'s')}`).join('<br>')}</p>`:''}
-<div class="row" id="coExpRow"><label for="coDays">Valid for (days after earning)</label><input class="in2" id="coDays" type="number" min="0" max="365" value="${d.V}" style="max-width:100px"></div><p class="sub">${d.V?`Each comp off must be used within ${d.V} days. The oldest valid one is used first.`:'0 = comp offs never expire. Check the DMart rule with HR and set it here.'}</p>
+<div class="row" id="coExpRow"><label for="coDays">Valid for (days after earning)</label><input class="in2" id="coDays" type="number" min="0" max="365" value="${d.V}" style="max-width:100px"></div><p class="sub">${d.V?`Each comp off must be used within ${d.V} days. The oldest valid one is used first.`:'0 = comp offs never expire. Check your company rule with HR and set it here.'}</p>
 ${d.E.length?`<div class="hbox">${d.E.slice().reverse().map(e=>`<div class="hrow"><div><b>Earned ${fd(e.k)}</b><small>${e.till?'Valid till '+fd(e.till):'No expiry'}${e.used.length?' · Used on '+e.used.map(fd).join(', '):''}</small></div><b style="${e.exp?'color:var(--out)':''}">${e.left<=0?'Used':e.exp?'Expired':e.daysLeft!==null?e.daysLeft+' day'+(e.daysLeft===1?'':'s')+' left':'Available'}</b></div>`).join('')}</div>`:'<p class="sub">No comp off earned yet. Mark a worked holiday as "Holiday + Present" to earn one.</p>'}
 ${st.p?`<p class="sub">${fN(st.p)} comp off applied and waiting for approval, already taken out of the balance.</p>`:''}${d.over>0?`<p class="sub" style="color:var(--out)">${fN(d.over)} comp off taken without a valid one to use.</p>`:''}`}
 /* ===== Holidays: file reading (xlsx / csv), date parsing, template builder ===== */
@@ -1949,10 +1951,10 @@ let a='',ar='';try{a=sessionStorage.getItem('att_in');ar=sessionStorage.getItem(
 if(!(a&&ar)){a='';const k=keepGet();if(k&&k===ktok('admin')){a='1';ar='admin'}else if(k&&k===ktok('employee')){a='1';ar='employee'}}
 if(a)setRole(ar);else{window.PunchRole='';B.classList.add('locked')}
 B.insertAdjacentHTML('afterbegin',`<div id="lg"><div class="box">
-<img src="sn-logo.png" alt="SN Logistics – Speed & Trust" style="height:64px;width:auto;max-width:100%;display:block;margin:0 auto 12px"><h1>Attendance Management</h1><p class="s" id="lgs">Sign in to continue</p>
+<img src="${BRAND.logo}" alt="${BRAND.company}" style="height:64px;width:auto;max-width:100%;display:block;margin:0 auto 12px"><h1>Attendance Management</h1><p class="s" id="lgs">Sign in to continue</p>
 <div id="v1"><div class="rseg" id="lgRole" role="tablist" aria-label="Login as"><button type="button" data-r="employee" class="on" role="tab" aria-selected="true">Employee</button><button type="button" data-r="admin" role="tab" aria-selected="false">Admin</button></div>
 <p class="rnote" id="lgNote">View attendance, salary and payslips, send requests and download.</p>
-<label id="uL">Employee ID or SN Mail ID</label><input id="u" autocomplete="username" inputmode="text" autocapitalize="none">
+<label id="uL">Employee ID or ${BRAND.mailName} ID</label><input id="u" autocomplete="username" inputmode="text" autocapitalize="none">
 <label>Password</label><div class="pwrow"><input id="p" type="password" autocomplete="current-password"><button type="button" class="pwview" id="vp" aria-label="Show password">Show</button></div>
 <label class="kp"><input type="checkbox" id="kp" checked> Keep me logged in</label>
 <div class="er" id="e1"></div><button class="b" id="li">Login</button><button type="button" class="lgG" id="lgG" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.2V7.2H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.2L5.8 10c.9-2.7 3.3-4.6 6.2-4.6z"/></svg>Sign in with Google</button><button class="lk" id="fg">Forgot password?</button></div>
@@ -2017,7 +2019,7 @@ B.insertAdjacentHTML('beforeend',`<div id="swd" hidden><div class="box"><h2 id="
 <div class="er" id="swe"></div><div class="sbtn"><button type="button" class="lk" id="swc">Cancel</button><button type="button" class="b" id="swo">Switch</button></div></div></div>`);
 $('lgout').onclick=()=>{try{window.PunchCloud&&PunchCloud.signOut()}catch(e){}try{sessionStorage.removeItem('att_in');sessionStorage.removeItem('att_role')}catch(e){}keepSet(null);window.PunchRole='';$('u').value=$('p').value='';show(1);B.classList.add('locked');window.dispatchEvent(new CustomEvent('punchrole',{detail:''}))};
 let lr='employee';const pickRole=r=>{lr=r;{const b=$('lgAdm');if(b){b.textContent=r==='admin'?'Employee':'Admin';b.setAttribute('aria-label',r==='admin'?'Switch to employee login':'Switch to admin login')}}document.querySelectorAll('#lgRole button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
-  $('uL').textContent=r==='admin'?'Username, SN Mail ID or Gmail':'Employee ID or SN Mail ID';{const gb=$('lgG');if(gb)gb.hidden=r!=='admin'}$('u').inputMode='text';$('u').value='';$('p').value='';$('fg').hidden=false;
+  $('uL').textContent=r==='admin'?'Username, '+BRAND.mailName+' ID or Gmail':'Employee ID or '+BRAND.mailName+' ID';{const gb=$('lgG');if(gb)gb.hidden=r!=='admin'}$('u').inputMode='text';$('u').value='';$('p').value='';$('fg').hidden=false;
   $('lgNote').textContent=r==='admin'?'Full access: change settings, salary, attendance, expenses and approve requests.':'View attendance, salary and payslips, send requests and download.';err('e1','')};
 $('lgRole').hidden=true;
 {const bx=document.querySelector('#lg .box');bx.style.position='relative';bx.insertAdjacentHTML('afterbegin','<button type="button" id="lgAdm" aria-label="Switch to admin login">Admin</button>')}
@@ -2857,7 +2859,7 @@ apply();try{render()}catch(e){}
 (()=>{const g=id=>document.getElementById(id),D=864e5;
 S.emps=S.emps||[];S.co=S.co||{};
 /* Company name: SN Logistics unless the admin types another one. The workplace name (e.g. "Office") is never used as the company name. */
-const CO=()=>{const o=CO0();if(!o.name||o.name===(S.wp&&S.wp.name)||/^office$/i.test(o.name)||/^movana logistics$/i.test(o.name))o.name='SN Logistics';return o};
+const CO=()=>{const o=CO0();if(!o.name||o.name===(S.wp&&S.wp.name)||/^office$/i.test(o.name)||/^movana logistics$/i.test(o.name))o.name=BRAND.company;return o};
 const CO0=()=>Object.assign({name:'',addr:'',sig:'',sigD:'HR Manager',ref:'HR/OFFER',jur:'',ret:'58',col:'#a87a1e',logo:'ml',web:'',phone:'',cin:''},S.co);
 window.__co=CO;
 /* Company logo, drawn from the company name: a monogram mark plus the name. Used on offer letters,
@@ -2873,11 +2875,11 @@ function mlSvg(){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12
 window.__mlSvg=mlSvg;
 /* SN Logistics logo (assets/sn-logo.png) unless the admin uploaded their own or picked the plain mark */
 const snLogo=()=>!(S.slip&&S.slip.logo)&&CO().logo!=='mono';
-const logoUri=()=>(S.slip&&S.slip.logo)||(CO().logo==='mono'?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSvg()):'sn-logo.png');
+const logoUri=()=>(S.slip&&S.slip.logo)||(CO().logo==='mono'?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSvg()):BRAND.logo);
 window.__logo=logoUri;
 /* Letterhead used on every printed page: logo, company name, address and contact, and a brand-colour rule. */
 window.__lh=(short)=>{const c=CO(),col=/^#[0-9a-f]{6}$/i.test(c.col)?c.col:'#0f6e56',ct=[c.phone&&'Tel: '+esc(c.phone),c.web&&esc(c.web)].filter(Boolean).join(' · ');
-  if(snLogo())return `<div class="lh" style="--bc:${col}"><img class="snlh" src="sn-logo.png" alt="${esc(c.name)} – Speed & Trust"><div class="lht" style="margin-left:auto;text-align:right">${short?'':`${c.addr?`<span>${esc(c.addr)}</span>`:''}${ct?`<span>${ct}</span>`:''}${c.cin?`<span>CIN: ${esc(c.cin)}</span>`:''}`}</div></div><div class="lhbar sn" style="--bc:${col}"></div>`;
+  if(snLogo())return `<div class="lh" style="--bc:${col}"><img class="snlh" src="${BRAND.logo}" alt="${esc(c.name)} – Speed & Trust"><div class="lht" style="margin-left:auto;text-align:right">${short?'':`${c.addr?`<span>${esc(c.addr)}</span>`:''}${ct?`<span>${ct}</span>`:''}${c.cin?`<span>CIN: ${esc(c.cin)}</span>`:''}`}</div></div><div class="lhbar sn" style="--bc:${col}"></div>`;
   return `<div class="lh" style="--bc:${col}"><img src="${logoUri()}" alt="${esc(c.name)} logo"><div class="lht"><b>${esc(c.name)||'Company name'}</b>${short?'':`${c.addr?`<span>${esc(c.addr)}</span>`:''}${ct?`<span>${ct}</span>`:''}${c.cin?`<span>CIN: ${esc(c.cin)}</span>`:''}`}</div></div><div class="lhbar" style="--bc:${col}"></div>`};
 const F=[['name','Full name','text'],['eid','Employee ID (login ID)','text'],['desg','Designation','text'],['grade','Grade','grade'],['cat','Department / category','text'],['loc','Work location','text'],
   ['join','Date of joining','date'],['mgr','Reporting manager','text'],['mob','Mobile','tel'],['email','Email','email'],['addr','Address','text'],['pan','PAN','text'],['uan','UAN (if any)','text'],['bank','Bank name','text'],['acct','Bank account','text'],['ifsc','IFSC','text'],
@@ -3050,7 +3052,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
    logins and roles. The employee's check-ins go up to HR; HR's attendance marks, approvals, salary set-up and
    profile come down. Without the connection (or offline) Punch keeps working on its own as before. */
 (()=>{const g=id=>document.getElementById(id);
-const CFG_URL='https://naveen5531.github.io/portal/firebase-config.js',DOMAIN='staff.movana.app',VER='10.12.2';
+const CFG_URL=BRAND.portal+'firebase-config.js',DOMAIN=BRAND.authDomain,VER='10.12.2';
 const HR=['superadmin','admin_head','hr_head','hr_manager','hr_exec','hr_sr','hr_tl','hr_am','hr_srm','hr_gm','hr_sgm','hr_avp','hr_vp','hr_svp'],APPR=['superadmin','admin_head','hr_head','hr_manager','hr_tl','hr_am','hr_srm','hr_gm','hr_sgm','hr_avp','hr_vp','hr_svp'];
 const toEmail=u=>{u=String(u||'').trim().toLowerCase();return u.includes('@')?u:u.replace(/[^a-z0-9._-]/g,'')+'@'+DOMAIN};
 const C=window.PunchCloud={ready:false,on:false,uid:'',role:'',hr:false,approve:false,name:'',err:''};
@@ -3117,7 +3119,7 @@ async function whoAmI(u){C.uid=u.uid;
 C.signIn=async(user,pw)=>{if(!C.ready){const x=new Error('offline');x.code='auth/network-request-failed';throw x}
   stop();user=String(user||'').trim().toLowerCase();
   /* SN Mail ID (name@snlogistics): look up which employee ID it belongs to, then sign in with that ID and the same password */
-  if(/^[^@\s]+@snlogistics$/.test(user)){let d=null;try{d=await fsx.doc('mailid/'+user).get()}catch(e){}
+  if(new RegExp('^[^@\\s]+@'+String(BRAND.mailDomain).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$').test(user)){let d=null;try{d=await fsx.doc('mailid/'+user).get()}catch(e){}
     if(!d||!d.exists||!d.data().user){const x=new Error('mail');x.code='auth/user-not-found';throw x}user=String(d.data().user)}
   const cr=await auth.signInWithEmailAndPassword(toEmail(user),pw);
   try{await whoAmI(cr.user)}catch(e){await auth.signOut();throw e}
@@ -3159,8 +3161,8 @@ function mailOpen(id,quiet){const m=(window.MAILS||[]).find(x=>x._id===id);if(!m
   if(mUn(m)&&fsx)fsx.doc('mail/'+id).update({['st.'+MAIL_ME()]:Object.assign({},mSt(m),{r:1})}).catch(()=>{})}
 const mScripts={};const mLoad=u=>mScripts[u]||(mScripts[u]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>{delete mScripts[u];no(new Error('load'))};document.head.appendChild(s)}));
 async function mattOpen(i){const m=(window.MAILS||[]).find(x=>x._id===mailCur),x=m&&(m.att||[])[i];if(!x)return;const body=document.getElementById('mattBody');body.innerHTML='<p class="sub">Opening…</p>';show('mailatt');
-  try{if(x.kind==='slip'){await mLoad('https://naveen5531.github.io/portal/payslip.js?v=2');body.innerHTML=Payslip.html(x.data)}
-    else{await mLoad('https://naveen5531.github.io/portal/offer.js?v=10');const d=await fsx.doc('punch_offer/'+x.uid).get();if(!d.exists)throw new Error('gone');const o=d.data(),co={name:'SN Logistics'};
+  try{if(x.kind==='slip'){await mLoad(BRAND.portal+'payslip.js?v=2');body.innerHTML=Payslip.html(x.data)}
+    else{await mLoad(BRAND.portal+'offer.js?v=10');const d=await fsx.doc('punch_offer/'+x.uid).get();if(!d.exists)throw new Error('gone');const o=d.data(),co={name:BRAND.company};
       const h=OfferLetter.attHtml?OfferLetter.attHtml(o,x,co):'';if(!h)throw new Error('gone');body.innerHTML=h}
     mattCur=x}catch(e){mattCur=null;body.innerHTML='<p class="sub">'+(e&&e.code==='permission-denied'?'Only the employee and HR can open this letter.':e&&e.message==='load'?'No internet – could not open the letter.':'This letter is no longer available.')+'</p>'}}
 window.mailOpen=mailOpen;window.mattOpen=mattOpen;Object.defineProperty(window,'mattCur',{get:()=>mattCur,configurable:true});
@@ -3390,7 +3392,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=74,APP_VN='8.9',SRC='https://naveen5531.github.io/punch-version.json';
+  const APP_VC=75,APP_VN='9.0',SRC=BRAND.site+'/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
@@ -3417,7 +3419,7 @@ start();
   function bar(){let b=g('updBar');
     if(!has()||busy||(()=>{try{return localStorage.getItem('updLater')===String(latest.versionCode)}catch(e){return false}})()){if(b)b.remove();return}
     if(!b){b=document.createElement('div');b.id='updBar';b.setAttribute('role','status');document.body.appendChild(b)}
-    b.innerHTML=`<img src="sn-mark.png" alt=""><div class="t"><b>Update available</b><small>Punch ${E(latest.versionName)}${latest.size?' · '+mb(latest.size):''}</small></div><button type="button" id="updBarGo">Update</button><button type="button" class="x" id="updBarX" aria-label="Later">×</button>`;
+    b.innerHTML=`<img src="${BRAND.mark}" alt=""><div class="t"><b>Update available</b><small>Punch ${E(latest.versionName)}${latest.size?' · '+mb(latest.size):''}</small></div><button type="button" id="updBarGo">Update</button><button type="button" class="x" id="updBarX" aria-label="Later">×</button>`;
     g('updBarGo').onclick=open;g('updBarX').onclick=()=>{try{localStorage.setItem('updLater',String(latest.versionCode))}catch(e){}b.remove()}}
   function card(){const t=g('updText'),bt=g('updGo');if(!t)return;
     t.textContent=latest?(has()?'You have Punch '+APP_VN+'. Punch '+latest.versionName+' is available'+(latest.date?' ('+latest.date+')':'')+'.':'You have the latest Punch ('+APP_VN+').'):'You have Punch '+APP_VN+'. Could not reach the website to check – try again when online.';
@@ -3426,13 +3428,13 @@ start();
     s.addEventListener('click',e=>{if(e.target===s&&!busy)s.hidden=true;const b=e.target.closest('[data-u]');if(!b)return;
       if(b.dataset.u==='later'){s.hidden=true}else if(b.dataset.u==='go')go()});return s}
   function open(){const s=sheet(),L=latest||{},N=notes();
-    s.innerHTML=`<div class="ub"><i class="grab"></i><div class="uh"><img src="sn-mark.png" alt=""><div><b>Punch</b><small>SN Logistics · Attendance &amp; payroll</small></div></div>
+    s.innerHTML=`<div class="ub"><i class="grab"></i><div class="uh"><img src="${BRAND.mark}" alt=""><div><b>Punch</b><small>${E(BRAND.company)} · Attendance &amp; payroll</small></div></div>
     <div class="um"><div><b>${E(L.versionName||'')}</b>New version</div><div><b>${E(APP_VN)}</b>On this phone</div>${L.size?`<div><b>${mb(L.size)}</b>Download</div>`:''}${L.date?`<div><b>${E(L.date)}</b>Released</div>`:''}</div>
     ${N.length?`<h3>What's new</h3><ul>${N.map(x=>`<li>${E(x)}</li>`).join('')}</ul>`:''}
     <div class="pg" id="updPg" hidden><i id="updPi"></i></div><div class="us" id="updSt">${has()?'Your attendance, salary and settings stay as they are.':'Punch is up to date.'}</div>
     <div class="ua"><button type="button" class="ghost" data-u="later" id="updL">${busy?'Hide':'Later'}</button><button type="button" class="go" data-u="go" id="updB" ${has()&&!busy?'':'disabled'}>${busy?'Updating…':'Update'}</button></div></div>`;
     s.hidden=false;if(state)upd(state.s,state.t)}
-  function go(){const u=(latest&&latest.url)||'https://naveen5531.github.io/Punch.apk';
+  function go(){const u=(latest&&latest.url)||BRAND.site+'/Punch.apk';
     if(window.PunchNative&&PunchNative.updateApp){busy=true;upd('dl','Starting the download…');const b=g('updBar');if(b)b.remove();PunchNative.updateApp(u);return}
     location.href=u}
   /* messages from the in-app updater (Updater.java): drive the progress bar and the status line */
@@ -3452,6 +3454,36 @@ start();
   document.addEventListener('click',e=>{if(e.target.closest('#updCheck')){g('updText').textContent='Checking…';check(true).then(()=>{if(has())open()})}else if(e.target.closest('#updGo'))open()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)check(false)});
   setTimeout(()=>check(true),2500);
+})();
+</script>
+<script>
+/* ===== Location and data notice: shown once per person after sign-in, before Punch is used (consent under the
+   DPDP Act 2023). "I agree" is recorded with the time on the phone and in the web copy; "Don't agree" signs out. ===== */
+(()=>{const K='punch_consent_v1',g=id=>document.getElementById(id);
+const who=()=>(window.PunchCloud&&(PunchCloud.authUid||PunchCloud.uid))||(typeof S!=='undefined'&&S.owner)||'local';
+const done=()=>{try{if((JSON.parse(localStorage.getItem(K)||'{}'))[who()])return true}catch(e){}try{return !!(S.consent&&S.consent.v===1)}catch(e){return false}};
+const E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
+function open(){if(g('cnsD'))return;const co=E((window.BRAND&&BRAND.company)||'Your employer'),pol=E(((window.BRAND&&BRAND.site)||'')+'/privacy.html');
+  document.body.insertAdjacentHTML('beforeend',`<div id="cnsD" role="dialog" aria-modal="true" aria-labelledby="cnsT"><div class="cb">
+  <b id="cnsT">Before you start</b>
+  <p>${co} uses Punch for attendance and pay. To do that, Punch:</p>
+  <ul><li>records your <b>location</b> when you check in and out, and while you are checked in;</li>
+  <li>with <b>Auto check-in</b> on, also checks your location in the background (even when the app is closed) to check you in and out at work and log work trips;</li>
+  <li>keeps your attendance, leave, requests, profile and pay details on this phone and in ${co}'s secure online database, where HR can see them (salary only HR head, HR manager and admins).</li></ul>
+  <p>Location is not tracked when you are not checked in and Auto check-in is off. You can turn Auto check-in off any time in Settings, and ask HR to see, correct or delete your data.</p>
+  <p><a href="${pol}" target="_blank" rel="noopener">Read the full privacy policy</a></p>
+  <div class="ca"><button type="button" class="ghost" id="cnsNo">Don't agree</button><button type="button" id="cnsOk">I agree</button></div></div></div>`);
+  g('cnsOk').onclick=()=>{const at=Date.now();try{const m=JSON.parse(localStorage.getItem(K)||'{}');m[who()]=at;localStorage.setItem(K,JSON.stringify(m))}catch(e){}
+    try{S.consent={v:1,at,by:who()};save()}catch(e){}g('cnsD').remove()};
+  g('cnsNo').onclick=()=>{g('cnsD').remove();try{say('Punch needs your agreement to record attendance. Signed out.',true)}catch(e){}try{g('lgout').click()}catch(e){}}}
+function check(){if(!window.PunchRole||document.body.classList.contains('locked')){const d=g('cnsD');if(d)d.remove();return}if(!done())open()}
+window.addEventListener('punchrole',()=>setTimeout(check,800));setTimeout(check,1500);setInterval(check,4000);
+document.head.insertAdjacentHTML('beforeend',`<style>
+#cnsD{position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
+#cnsD .cb{width:100%;max-width:520px;max-height:90vh;overflow:auto;background:var(--card);color:var(--ink);border-radius:24px 24px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));box-sizing:border-box;font-size:14.5px;line-height:1.5}
+#cnsD b#cnsT{display:block;font-size:20px;margin-bottom:6px}#cnsD ul{padding-left:20px;margin:6px 0}#cnsD li{margin:4px 0}#cnsD p{margin:8px 0}#cnsD a{color:var(--in);font-weight:600}
+#cnsD .ca{display:flex;gap:10px;margin-top:14px}#cnsD .ca button{flex:1;margin:0;padding:13px;border-radius:999px;font-weight:800}#cnsD #cnsOk{background:var(--in);color:#fff;border:0}
+</style>`);
 })();
 </script>
 </body>

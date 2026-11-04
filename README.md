@@ -226,3 +226,9 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 ## Changes in v8.9 – employee CTC in Punch
 - Admin › Employees (portal HR login): CTC a year under each name, and in the employee detail a Salary & CTC card – CTC / year, CTC / month, take-home, Basic, HRA, Conveyance, Special, Gross, Employer PF, Gratuity, Employee PF, PT – worked out exactly like the portal and the offer letter, with salary hikes applied, plus the offer letter status.
 - Shown only to roles that may see salary (HR head, HR manager, Admin head, Super admin and senior HR); others see a note.
+
+## Changes in v9.0 – ready to sell
+- Signing: release build (not debug). CI rotates the signing key to a private key kept in the PUNCH_KEYSTORE and PUNCH_KS_PASS secrets (APK Signature Scheme v3, rollback off). Until the secrets are added, builds are signed with the old key as before. Also builds Punch.aab for the Play Store.
+- One company file: app/src/main/assets/brand.js holds the company name, website, portal, login domain, mail name/domain, logo files and grade levels. Change it (and sn-logo.png / sn-mark.png) to set Punch up for another company.
+- Grades and wording are generic (no DMart grade guide or rule text).
+- First sign-in shows a location and data notice (DPDP Act consent) with a link to the privacy policy (website /privacy.html). "I agree" is recorded; "Don't agree" signs out.
