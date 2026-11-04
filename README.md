@@ -219,3 +219,6 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - No animation over or behind the rest of the app any more; the festival plays only in the greeting banner on Home.
 - The banner is a night sky in the festival colours: bright, coloured fireworks (peony, ring, willow, palm) with glow, flashes, glitter and fading trails; diyas with flickering flames, glow and embers; Holi colour bursts; crescent moon with stars and shooting stars; petals, snow, kites, balloons, glowing lights.
 - The greeting text shimmers in gold with a soft glow (no emoji sticker).
+
+## Changes in v8.8
+- Festival animation back to the 8.6 version (canvas animation behind the page plus the banner), as chosen. Everything else unchanged.
