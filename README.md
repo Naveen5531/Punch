@@ -209,3 +209,8 @@ On Xiaomi/Oppo/Vivo/Samsung also enable Autostart / "Never sleeping apps".
 - Phone-only Admin login: the page says portal employees are shown only with the portal HR login.
 - All HR roles in the Firestore rules (HR TL, AM, SRM, GM, SGM, AVP, VP, SVP, Sr) now get the Admin/Team access; approvers match the rules.
 - "Add employee" button colour fixed. Attendance logic unchanged.
+
+## Changes in v8.6 – everything saved on the web, real festival animation
+- Signed in with the portal login, everything Punch keeps on the phone (check-ins, trips, places, expenses, leave, requests, payslip and company settings, employees, holidays, theme choices) is saved on the web (Firestore punch_state/<login>) within a few seconds of every change, and comes back on any phone after signing in. If the phone and the web both changed, check-ins, trips, expenses and requests from both are kept.
+- Settings › "Saved on the web" shows the last save time and a Save now button. Needs the latest firestore.rules published in Firebase console.
+- Festival themes: the floating emoji stickers are gone. A canvas animation runs behind the cards (never over text): fireworks, live diya flames with embers, turning petals, Holi colour bursts, moon and stars with shooting stars, snow, kites, balloons, glowing lights. The Home banner has its own animation (Diwali: a row of diyas with fireworks). Pauses in the background; still with "reduce motion".
