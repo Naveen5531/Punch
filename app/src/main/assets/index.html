@@ -252,6 +252,13 @@ input[type=range]{accent-color:var(--in);padding:0!important;background:none!imp
 .row>label+input[type=range]{max-width:55%}
 .hero-clock,.hero{background:radial-gradient(90% 120% at 100% 0,rgba(255,255,255,.22),transparent 60%),linear-gradient(160deg,var(--fa,#0c9b76),var(--fb,#0a6a6e) 65%,var(--fc,#173f73))}
 #festFx{position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden}#festFx canvas{display:block;width:100%;height:100%}
+#festShow{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .35s ease;background:radial-gradient(circle at 50% 38%,rgba(12,7,24,.82),rgba(4,2,10,.95));-webkit-tap-highlight-color:transparent;cursor:pointer}
+#festShow.on{opacity:1}
+#festShow canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#festShow .fsmsg{position:relative;z-index:1;color:#fff;font-weight:800;font-size:clamp(28px,8.5vw,56px);letter-spacing:.5px;text-align:center;padding:0 24px;text-shadow:0 2px 26px rgba(0,0,0,.6);pointer-events:none;animation:fsPop .6s cubic-bezier(.2,1.3,.4,1) both}
+#festShow .fshint{position:absolute;left:0;right:0;bottom:calc(34px + env(safe-area-inset-bottom));text-align:center;color:rgba(255,255,255,.72);font-size:13px;z-index:1;pointer-events:none}
+@keyframes fsPop{0%{transform:scale(.55);opacity:0}60%{transform:scale(1.07);opacity:1}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#festShow canvas{display:none}}
 .fbn{position:relative;overflow:hidden;isolation:isolate}.fbn>canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}.fbn>b,.fbn>span{position:relative;z-index:1;text-shadow:0 1px 6px rgba(0,0,0,.35)}.fbn.dy{padding-bottom:44px;align-items:flex-start}
 #festFx span{position:absolute;top:-8vh;opacity:.85;animation:fall linear infinite;will-change:transform}
 @keyframes fall{0%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(18px,56vh,0) rotate(180deg)}100%{transform:translate3d(-10px,112vh,0) rotate(360deg)}}
@@ -614,6 +621,7 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
 <div class="dlg" id="dlg" hidden role="dialog" aria-modal="true" aria-labelledby="dlgT"><div class="dbox"><b id="dlgT"></b><p class="sub" id="dlgP"></p><input class="in2" id="dlgIn" maxlength="60" placeholder="Location name" aria-label="Location name"><p class="sub" id="dlgE" style="color:var(--out)"></p><div class="row"><button class="ghost" id="dlgNo">Cancel</button><button id="dlgOk" style="background:var(--in);font-size:16px;padding:12px">Save</button></div></div></div>
 <div class="dlg" id="alDlg" hidden role="alertdialog" aria-modal="true" aria-labelledby="alT"><div class="dbox"><b id="alT" style="font-size:22px"></b><p class="sub" id="alP"></p><div class="row"><button class="ghost" id="alSnz">Snooze 10 min</button><button id="alGo" style="background:linear-gradient(145deg,#ffa05e,var(--out));color:#fff">Go to Check out</button></div></div></div>
 <div id="festFx" aria-hidden="true"></div>
+<div id="festShow" aria-hidden="true"></div>
 <div id="msg" role="status" aria-live="polite"></div>
 
 <nav class="bar" aria-label="Main">
@@ -2451,6 +2459,22 @@ function fx(f){const box=g('festFx'),k=f?f[0]:'';if(box.dataset.f===k&&(!f||SC.s
 function fxBanner(bn,f){bn.querySelectorAll('canvas').forEach(c=>c.remove());SC=SC.filter(s=>s.cv.isConnected);if(!f)return;const kind=KIND[f[0]]||'glow';
   bn.classList.toggle('dy',kind==='diwali'||kind==='diya');const c=document.createElement('canvas');bn.prepend(c);
   requestAnimationFrame(()=>{SC.push(Scene(c,kind,f[3].split(','),'banner'));go()})}
+/* Tap the Home festival banner -> a full-screen celebration of the current festival plays, then closes
+   (also closes on tap, after ~6.5s, or when Punch goes to the background). Reuses the same canvas scenes. */
+let CURF=null,showTO=0,showing=false;const festShow=g('festShow');
+function closeShow(){if(!showing)return;showing=false;clearTimeout(showTO);festShow.classList.remove('on');
+  setTimeout(()=>{SC=SC.filter(s=>s.cv.parentNode!==festShow);festShow.innerHTML='';festShow.style.display=''},400)}
+function celebrate(){const f=CURF;if(!f||showing)return;showing=true;
+  const kind=KIND[f[0]]||'glow',cols=f[3].split(','),em=f[4].split(' ')[0],txt=f[2];
+  festShow.innerHTML='<canvas></canvas><div class="fsmsg">'+em+' '+txt+'!</div><div class="fshint">tap to close</div>';
+  festShow.style.display='flex';
+  requestAnimationFrame(()=>{festShow.classList.add('on');
+    if(!RM()){const sc=Scene(festShow.querySelector('canvas'),kind,cols,'bg');SC.push(sc);go()}});
+  clearTimeout(showTO);showTO=setTimeout(closeShow,6500)}
+festShow.addEventListener('click',closeShow);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)closeShow()});
+{const bn=g('festBanner');bn.setAttribute('role','button');bn.tabIndex=0;bn.setAttribute('aria-label','Play festival animation');
+ bn.addEventListener('click',celebrate);bn.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();celebrate()}});}
 const tc=document.querySelector('meta[name="theme-color"]'),tc0=tc&&tc.content;
 /* The whole app takes the festival colour (buttons, switches, tabs, rings, links), made dark or light enough to read
    (contrast 4.5 or more) in the light and the dark look. */
@@ -2463,9 +2487,9 @@ function accent(h){const c=hx(h),dk=darkLook(),to=dk?[255,255,255]:[0,0,0],bg=dk
 function tint(f){if(!f){['--in','--in2'].forEach(k=>R.style.removeProperty(k));return}const[a,b]=accent(f[3].split(',')[0]);R.style.setProperty('--in',a);R.style.setProperty('--in2',b)}
 function apply(){let mode='auto';try{mode=localStorage.getItem('punch_fest')||'auto'}catch(e){}
   const a=mode==='auto'?active():mode==='off'?null:pick(mode),now=g('festNow'),bn=g('festBanner'),tg=g('festTag');
-  if(!a){R.removeAttribute('data-fest');['--fa','--fb','--fc'].forEach(k=>R.style.removeProperty(k));fx(null);tint(null);bn.hidden=tg.hidden=true;bn.dataset.h='';fxBanner(bn,null);if(tc&&tc0)tc.content=tc0;now.textContent=mode==='off'?'Festival themes are off.':'No festival right now. The theme switches on automatically.';return}
+  if(!a){CURF=null;closeShow();R.removeAttribute('data-fest');['--fa','--fb','--fc'].forEach(k=>R.style.removeProperty(k));fx(null);tint(null);bn.hidden=tg.hidden=true;bn.dataset.h='';fxBanner(bn,null);if(tc&&tc0)tc.content=tc0;now.textContent=mode==='off'?'Festival themes are off.':'No festival right now. The theme switches on automatically.';return}
   const[f,n]=[a.f,a.n],c=f[3].split(','),em=f[4].split(' ')[0],txt=n===0?f[2]+'!':n>0?`${f[1]} in ${n} day${n===1?'':'s'}`:f[2]+'!';
-  R.dataset.fest=f[0];R.style.setProperty('--fa',c[0]);R.style.setProperty('--fb',c[1]);R.style.setProperty('--fc',c[2]);fx(f);tint(f);
+  CURF=f;R.dataset.fest=f[0];R.style.setProperty('--fa',c[0]);R.style.setProperty('--fb',c[1]);R.style.setProperty('--fc',c[2]);fx(f);tint(f);
   {const h=`<b>${em} ${txt}</b><span>${n===0?'Wishing you joy and light today':'Festive theme on'}</span>`;bn.hidden=false;if(bn.dataset.h!==h+f[0]){bn.dataset.h=h+f[0];bn.innerHTML=h;fxBanner(bn,f)}}tg.textContent=`${em} ${txt}`;tg.hidden=false;if(tc)tc.content=c[0];
   now.textContent=`Showing: ${f[1]}${mode==='auto'?' (automatic)':' (preview)'}`}
 const sel=g('festSel');sel.innerHTML='<option value="auto">Auto (by date)</option><option value="off">Off</option>'+F.map(f=>`<option value="${f[0]}">Preview: ${f[1]}</option>`).join('');
