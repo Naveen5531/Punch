@@ -1150,7 +1150,7 @@ function arSend(keys,v,why){S.areq=S.areq||[];
   return[true,(onl?'Request sent to HR for '+nd+'. It counts only after it is approved.':'Saved on this phone only ('+nd+'). HR cannot see it yet: you are not signed in with your portal login. Log out and sign in with your employee ID and portal password (with internet); it is sent automatically then.')+(skip?' '+skip+' skipped.':'')]}
 function renderAreq(){const el=$('arList');if(!el)return;S.areq=S.areq||[];
   el.innerHTML=S.areq.length?`<div class="hbox">${S.areq.slice(0,15).map(q=>`<div class="hrow"><div><b>${arRange(q.days)}</b><small>${vLab(q.v)} · ${q.days.length} day${q.days.length===1?'':'s'} · ${q.s}${q.by?' by '+q.by:''}${q.s==='Pending'?(q.cl?' · ✓ Sent to HR':' · ⚠ On this phone only'):''}${q.why?' · '+esc(q.why):''}</small></div>${q.s==='Pending'?`<button class="ghost" data-ac="${q.id}" style="width:auto;padding:7px 14px">Cancel</button>`:''}</div>`).join('')}</div>`:'<p class="sub">No requests yet.</p>'}
-function AOPT(sel){const o=[['present','Present'],['holpresent','Holiday + Present'],['absent','Absent'],['weekoff','Week off'],['holiday','Holiday'],['compoff','Comp off']].concat(LT.map(([t])=>['leave:'+t,'Leave - '+t]),[['-','Clear mark']]);
+function AOPT(sel){const o=[['present','Present'],['holpresent','Holiday + Present'],['absent','Absent'],['weekoff','Week off'],['holiday','Holiday'],['opthol','Optional holiday (OH)'],['compoff','Comp off']].concat(LT.map(([t])=>['leave:'+t,'Leave - '+t]),[['-','Clear mark']]);
   return o.map(([v,n])=>`<option value="${v}"${(sel===''?'-':sel)===v?' selected':''}>${n}</option>`).join('')}
 $('cgo').onclick=()=>{if(!sel.size){say('Tap days on the calendar first.',true);return}
   const v=$('cs').value;if(isAdm()){const t=markDays([...sel],v);sel.clear();render();say(t);return}const[ok,m]=arSend([...sel],v,$('arW').value.trim());if(ok){sel.clear();$('arW').value='';render();renderCal()}say(m,!ok)};
@@ -2604,8 +2604,8 @@ const _render=render;render=function(){_render.apply(this,arguments);try{if(!$('
 /* ---------- Admin ---------- */
 let admOK=false,aaMonth=dayKey(Date.now()).slice(0,7);
 const hp=v=>{let h=5381;for(const ch of 'punch|'+v)h=((h<<5)+h)^ch.charCodeAt(0);return String(h>>>0)};
-const setMark=(k,v)=>{S.lt=S.lt||{};if(v&&v!=='-'){const l=v.startsWith('leave:')?v.slice(6):'';S.marks[k]=l?'leave':v;if(l)S.lt[k]=l;else delete S.lt[k]}else{delete S.marks[k];delete S.lt[k]}};
-const markOpts='<option value="">Set status…</option><option value="present">Present</option><option value="holpresent">Holiday + Present (double pay + comp off)</option><option value="absent">Absent</option><option value="weekoff">Week off</option><option value="holiday">Holiday</option><option value="compoff">Comp off</option>'+LT.map(([t])=>`<option value="leave:${t}">Leave - ${t}</option>`).join('')+'<option value="-">Clear mark</option>';
+const setMark=(k,v)=>{S.lt=S.lt||{};if(v==='opthol'){const r=ohPrep([k]);if(!r[0].length)return;v='holiday'}if(v&&v!=='-'){const l=v.startsWith('leave:')?v.slice(6):'';S.marks[k]=l?'leave':v;if(l)S.lt[k]=l;else delete S.lt[k]}else{delete S.marks[k];delete S.lt[k]}};
+const markOpts='<option value="">Set status…</option><option value="present">Present</option><option value="holpresent">Holiday + Present (double pay + comp off)</option><option value="absent">Absent</option><option value="weekoff">Week off</option><option value="holiday">Holiday</option><option value="opthol">Optional holiday (OH)</option><option value="compoff">Comp off</option>'+LT.map(([t])=>`<option value="leave:${t}">Leave - ${t}</option>`).join('')+'<option value="-">Clear mark</option>';
 function renderAdmin(){
   const b=$('admBody');if(!b)return;$('admHol').hidden=!admOK;
   if(!(S.adm&&S.adm.pin)){b.innerHTML=`<div class="card"><h2>Set admin PIN</h2><p class="sub">Choose a 4 to 8 digit PIN. Only someone with the PIN can change leave policy, approve leave, edit attendance and manage the holiday calendar. The PIN is stored on this device.</p><div class="row"><input class="in2" id="admP" type="password" inputmode="numeric" maxlength="8" placeholder="New PIN"><button data-x="setpin" style="width:auto">Set PIN</button></div></div>`;return}
@@ -2643,7 +2643,7 @@ $('admBody').onclick=e=>{const el=e.target.closest('[data-x]');if(!el)return;con
   if(!admOK)return;
   if(x==='lock'){admOK=false}
   else if(x==='aap'||x==='arj'){const q=(S.areq||[]).find(r=>r.id===+d.id);if(!q||q.s!=='Pending')return;let msg='Request rejected.';
-    if(x==='aap'){const se=document.querySelector('[data-ao="'+q.id+'"]');let v=se?se.value:q.v;if(v==='-')v='';msg=markDays(q.days,v);q.v=v;q.s='Approved'}else q.s='Rejected';
+    if(x==='aap'){const se=document.querySelector('[data-ao="'+q.id+'"]');let v=se?se.value:q.v;if(v==='-')v='';msg=markDays(q.days,v);q.v=v==='opthol'?'holiday':v;q.s='Approved'}else q.s='Rejected';
     q.by='Admin';save();render();say(msg)}
   else if(x==='appr'||x==='rej'){const q=S.req.find(r=>r.id===+d.id);if(!q)return;if(x==='appr'){const m=lvApprove(q,'Admin');if(m){say(m,true);return}say('Leave approved.')}else{q.s='Rejected';q.by='Admin';save()}render()}
   else if(x==='hadd'){const k=toKey($('hdD').value),n=$('hdN').value.trim(),l=$('hdT').value;if(!k||!n){say('Enter the date and holiday name.',true);return}
@@ -2661,7 +2661,7 @@ $('admBody').onclick=e=>{const el=e.target.closest('[data-x]');if(!el)return;con
   renderAdmin()};
 $('admBody').onchange=e=>{const el=e.target;if(!admOK)return;
   if(el.id==='aaM'){aaMonth=el.value||aaMonth;renderAdmin();return}
-  if(el.dataset.am){if(el.value){setMark(el.dataset.am,el.value);save();coSync();render();renderAdmin()}return}
+  if(el.dataset.am){if(el.value==='opthol'){say(markDays([el.dataset.am],'opthol'));render();renderAdmin();return}if(el.value){setMark(el.dataset.am,el.value);save();coSync();render();renderAdmin()}return}
   const k=el.dataset.p;if(!k)return;S.lv=S.lv||{};
   if(k==='start'){if(/^\d{4}-\d{2}$/.test(el.value))S.lv.start=el.value}
   else if(k==='appr')S.lv.appr=el.checked?1:0;
@@ -3433,7 +3433,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=79,APP_VN='9.4',SRC=BRAND.site+'/punch-version.json';
+  const APP_VC=80,APP_VN='9.5',SRC=BRAND.site+'/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
