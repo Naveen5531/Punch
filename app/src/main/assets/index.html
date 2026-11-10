@@ -960,7 +960,9 @@ $('mailBack').onclick=()=>show('mail');$('mattBack').onclick=()=>show('mailmsg')
 $('mattPrint').onclick=()=>{const mc=window.mattCur;if(!mc)return;const nm=String(mc.name||'Letter').replace(/\.pdf$/i,'').replace(/[^\w\- ]+/g,'').replace(/\s+/g,'_');if(window.PunchNative&&PunchNative.printPage){PunchNative.printPage(nm);return}const t=document.title;document.title=nm;window.print();document.title=t};
 $('grace_m').onchange=()=>{const v=parseInt($('grace_m').value);S.grace=isNaN(v)?30:Math.min(240,Math.max(0,v));save();render()};
 $('wo').innerHTML=['Su','Mo','Tu','We','Th','Fr','Sa'].map((n,i)=>`<label><input type="checkbox" data-d="${i}">${n}</label>`).join('');
-$('wo').onchange=e=>{const s=new Set(S.wo||[]),d=+e.target.dataset.d;if(e.target.checked)s.add(d);else s.delete(d);if(!S.woH||!S.woH.length)S.woH=[{f:'0000-00-00',w:[...(S.wo||[])]}];S.wo=[...s];const tk=dayKey(Date.now());S.woH=S.woH.filter(e=>e.f!==tk).concat({f:tk,w:[...s]}).sort((a,b)=>a.f<b.f?-1:1);save();render()};
+$('wo').onchange=e=>{const cl=window.PunchCloud&&PunchCloud.on;if(cl&&!PunchCloud.hr){e.target.checked=!e.target.checked;say('Weekly offs are set by HR. Ask HR to change them.',true);return}
+  const s=new Set(S.wo||[]),d=+e.target.dataset.d;if(e.target.checked)s.add(d);else s.delete(d);if(!S.woH||!S.woH.length)S.woH=[{f:'0000-00-00',w:[...(S.wo||[])]}];S.wo=[...s];const tk=dayKey(Date.now());S.woH=S.woH.filter(e=>e.f!==tk).concat({f:tk,w:[...s]}).sort((a,b)=>a.f<b.f?-1:1);save();render();
+  if(cl&&PunchCloud.setWo)PunchCloud.setWo([...s].sort()).then(()=>say('Weekly offs saved.')).catch(()=>say('Weekly offs saved on this phone, but not online. Check internet and try again.',true))};
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function hikeOpts(){const n=new Date(),o=[['','Pick month']];for(let i=-36;i<=24;i++){const d=new Date(n.getFullYear(),n.getMonth()+i,1);o.push([`${d.getFullYear()}-${pad(d.getMonth()+1)}`,`${MN[d.getMonth()]} ${d.getFullYear()}`])}return o}
 function cycOpts(){const n=new Date(),o=[];let y=n.getFullYear(),m=n.getMonth();for(let i=0;i<12;i++){o.push([`${y}-${pad(m+1)}`,`${MN[m]} ${y}`]);m--;if(m<0){m=11;y--}}return o}
@@ -3296,6 +3298,7 @@ C.pushAtt=pushAtt;function pushAtt(){if(!C.on)return;try{pushBal()}catch(e){}con
   out.forEach(([ym,d])=>fsx.doc(`punch_att/${uid}_${ym}`).set(d).catch(()=>{lastAtt=''}))}
 /* HR's own marks from the app → punch_mark (employees cannot mark; HR can, for themselves too) */
 function myMarks(){const o={};Object.keys(S.marks||{}).forEach(k=>{if(months().includes(ymOf(k)))o[k]=[S.marks[k],(S.lt||{})[k]||'']});return o}
+C.setWo=w=>fsx.doc('punch_emp/'+C.uid).set({wo:w},{merge:true});
 C.pushMarks=pushMarks;function pushMarks(){if(!C.on||!C.hr)return;const cur=myMarks(),sig=JSON.stringify(cur);if(sig===lastMk)return;lastMk=sig;
   months().forEach(ym=>{const marks={},lt={};Object.entries(cur).forEach(([k,[v,t]])=>{if(ymOf(k)===ym){marks[k]=v;if(t)lt[k]=t}});
     fsx.doc(`punch_mark/${C.uid}_${ym}`).set({uid:C.uid,ym,marks,lt,by:C.uid,updatedAt:Date.now()}).catch(()=>{lastMk=''})})}
@@ -3430,7 +3433,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=78,APP_VN='9.3',SRC=BRAND.site+'/punch-version.json';
+  const APP_VC=79,APP_VN='9.4',SRC=BRAND.site+'/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;
