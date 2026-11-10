@@ -353,11 +353,11 @@ html[data-fest] .logo::before{background:var(--pin) center/18px no-repeat,linear
       <p class="sub" id="arN1">Only the admin can mark attendance. Pick the days and a status, then send a request. It does not count until the admin approves it.</p>
       <div class="row"><input class="in2" type="text" id="arW" placeholder="Reason (optional)" maxlength="80"></div>
       <div class="row"><button class="ghost" id="call">Select whole month</button><button class="ghost" id="cnone">Clear selection</button></div>
-      <div class="row"><select class="in2" id="cs"><option value="present">Present</option><option value="weekoff">Week off</option><option value="holiday">Holiday</option><option value="leave:PL">Leave - PL</option><option value="leave:SL">Leave - SL</option><option value="leave:CL">Leave - CL</option><option value="leave">Leave (no type)</option><option value="compoff">Comp off</option><option value="absent">Absent</option><option value="">Clear mark</option></select><button class="ghost" id="cgo" style="width:auto;padding:10px 18px">Apply</button></div>
+      <div class="row"><select class="in2" id="cs"><option value="present">Present</option><option value="weekoff">Week off</option><option value="holiday">Holiday</option><option value="opthol">Optional holiday</option><option value="leave:PL">Leave - PL</option><option value="leave:SL">Leave - SL</option><option value="leave:CL">Leave - CL</option><option value="leave">Leave (no type)</option><option value="compoff">Comp off</option><option value="absent">Absent</option><option value="">Clear mark</option></select><button class="ghost" id="cgo" style="width:auto;padding:10px 18px">Apply</button></div>
       <p class="sub" id="arN2">Days with a recorded check-in of 4 hrs or more keep their recorded status. Only Holiday and Clear apply to them. Comp off is a paid day off given for extra work and counts as a paid day in salary.</p>
       <p class="sub" style="margin-top:14px">Or mark a range of days</p>
       <div class="row"><input class="in2" type="date" id="bf" aria-label="From date"><input class="in2" type="date" id="bt" aria-label="To date"></div>
-      <div class="row"><select class="in2" id="bs"><option value="present">Present</option><option value="weekoff">Week off</option><option value="holiday">Holiday</option><option value="leave:PL">Leave - PL</option><option value="leave:SL">Leave - SL</option><option value="leave:CL">Leave - CL</option><option value="leave">Leave (no type)</option><option value="compoff">Comp off</option><option value="absent">Absent</option><option value="">Clear mark</option></select><button class="ghost" id="bgo" style="width:auto;padding:10px 18px">Apply</button></div>
+      <div class="row"><select class="in2" id="bs"><option value="present">Present</option><option value="weekoff">Week off</option><option value="holiday">Holiday</option><option value="opthol">Optional holiday</option><option value="leave:PL">Leave - PL</option><option value="leave:SL">Leave - SL</option><option value="leave:CL">Leave - CL</option><option value="leave">Leave (no type)</option><option value="compoff">Comp off</option><option value="absent">Absent</option><option value="">Clear mark</option></select><button class="ghost" id="bgo" style="width:auto;padding:10px 18px">Apply</button></div>
     </div>
     <div class="card"><h2>My attendance requests</h2><div id="arList"></div></div>
   
@@ -1089,15 +1089,20 @@ $('payCsv').onclick=()=>{const a=document.createElement('a');
 $('join').onchange=()=>{S.join=$('join').value;save();render()};
 let cal={y:new Date().getFullYear(),m:new Date().getMonth()};const sel=new Set(),cal0=cal.y*12+cal.m;
 const AB={'Full day':'P','Shift completed':'P','Marked present':'P','Half day':'\u00bd','Absent':'A','Marked absent':'A','Week off':'W','Holiday':'H','Leave':'L','Comp off':'CO','Not joined':'\u2013','On duty':'\u2022'};
+function ohPrep(keys){const q=lvCfg().optQ,cnt={},ok=[];let skip=0;S.opts=S.opts||[];
+  keys.slice().sort().forEach(k=>{const y=k.slice(0,4);if(cnt[y]===undefined)cnt[y]=S.opts.filter(h=>h.k.startsWith(y)&&regionOk(h)&&S.marks[h.k]==='holiday').length;
+    if(S.marks[k]==='holiday'&&S.opts.some(h=>h.k===k)){skip++;return}if(cnt[y]>=q){skip++;return}
+    if(!S.opts.some(h=>h.k===k))S.opts.push({k,n:'Optional holiday'});cnt[y]++;ok.push(k)});
+  S.opts.sort((a,b)=>a.k<b.k?-1:1);return[ok,skip]}
 function markDays(keys,v){
-  let n=0,skip=0;
+  let n=0,skip=0;if(v==='opthol'){const r=ohPrep(keys);keys=r[0];skip=r[1];v='holiday';if(skip&&!keys.length){save();return `No optional holiday marked: all ${lvCfg().optQ} for the year are already used, or the day is already taken.`}}
   dayRows(keys.map(k=>new Date(k+'T00:00:00'))).forEach(x=>{
     if(x.st==='Not joined'){skip++;return}
     S.lt=S.lt||{};
     if(v){const lv=v.startsWith('leave:')?v.slice(6):'';S.marks[x.k]=lv?'leave':v;if(lv)S.lt[x.k]=lv;else delete S.lt[x.k]}else{delete S.marks[x.k];delete S.lt[x.k]}n++});
   save();try{window.PunchCloud&&PunchCloud.on&&PunchCloud.pushMarks()}catch(e){}let cb='';if(v==='holpresent'){coSync();cb=` Comp off earned: ${n}.`}else if(v==='compoff'){coSync();const b=coStats().b;cb=` Comp off balance: ${b}${b<0?' (more comp offs booked than earned)':''}.`}
   else if(v&&v.startsWith('leave:')){coSync();const t=v.slice(6),b=lvStats()[t].b;cb=` ${t} balance: ${b}${b<0?' (more leave than available)':''}.`}
-  return `${v?'Marked':'Cleared'} ${n} day${n===1?'':'s'}${skip?`, skipped ${skip} before the joining date`:''}.${cb}`;
+  return `${v?'Marked':'Cleared'} ${n} day${n===1?'':'s'}${skip?`, skipped ${skip} (before joining, already taken, or over the optional holiday limit)`:''}.${cb}`;
 }
 // Calendar view: a past day with no check-in shows as Absent; today while still checked in shows On duty (not Absent yet).
 function calSt(x){const t=dayKey(Date.now());if(x.st==='No check-in'&&x.k<t)return{...x,st:'Absent',nc:1};if(x.live&&x.k===t&&(x.st==='Absent'||x.st==='Half day'))return{...x,st:'On duty',sf:x.st};return x}
@@ -1129,11 +1134,12 @@ $('cnext').onclick=()=>{if(++cal.m>11){cal.m=0;cal.y++}renderCal()};
 $('call').onclick=()=>{const dim=new Date(cal.y,cal.m+1,0).getDate();for(let i=1;i<=dim;i++)sel.add(dayKey(new Date(cal.y,cal.m,i).getTime()));renderCal()};
 $('cnone').onclick=()=>{sel.clear();renderCal()};
 function isAdm(){try{return admOK}catch(e){return false}}
-function vLab(v){return({present:'Present',weekoff:'Week off',holiday:'Holiday',compoff:'Comp off',absent:'Absent',leave:'Leave (no type)',holpresent:'Holiday + Present','':'Clear mark'})[v]||(String(v).startsWith('leave:')?'Leave - '+v.slice(6):String(v))}
+function vLab(v){return({present:'Present',weekoff:'Week off',holiday:'Holiday',compoff:'Comp off',absent:'Absent',leave:'Leave (no type)',holpresent:'Holiday + Present',opthol:'Optional holiday','':'Clear mark'})[v]||(String(v).startsWith('leave:')?'Leave - '+v.slice(6):String(v))}
 /* own date formatter: this runs at start-up, before the later script that defines fd() */
 const fdA=k=>new Date(k+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
 function arRange(days){const a=days.slice().sort(),f=a[0],z=a[a.length-1];return f===z?fdA(f):fdA(f)+' to '+fdA(z)}
 function arSend(keys,v,why){S.areq=S.areq||[];
+  if(v==='opthol'){const r=ohPrep(keys);if(!r[0].length)return[false,`No optional holiday left: all ${lvCfg().optQ} for the year are used, or the day is already taken.`];keys=r[0];v='holiday';why=why||'Optional holiday'}
   const rows=dayRows(keys.map(k=>new Date(k+'T00:00:00'))),days=[];let skip=0;
   rows.forEach(x=>{if(x.st==='Not joined'||(WORK.includes(x.st)&&v!=='holiday'&&v!=='')||S.areq.some(q=>q.s==='Pending'&&q.v===v&&q.days.includes(x.k))){skip++;return}days.push(x.k)});
   if(!days.length)return[false,'No days to request'+(skip?' ('+skip+' skipped: recorded check-in, before joining, or already requested).':'.')];
