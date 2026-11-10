@@ -2565,8 +2565,8 @@ function renderLeave(){
   $('lvRule').textContent=`Credited every month: PL ${r2(c.PL.r)}, SL ${r2(c.SL.r)}, CL ${r2(c.CL.r)}. Counting from ${c.start} (${s.months} month${s.months===1?'':'s'} credited so far, including this month).`;
   const nt=Object.keys(S.marks).filter(k=>S.marks[k]==='leave'&&!(S.lt&&S.lt[k])).length;
   $('lvNote').hidden=!nt;$('lvNote').textContent=nt?`${nt} leave day${nt===1?'':'s'} marked without a type ${nt===1?'is':'are'} not deducted. In Reports pick the leave type for those days.`:'';
-  const ts=$('lvT');if(!ts.dataset.b){ts.dataset.b=1;ts.innerHTML=LT.map(([t,n])=>`<option value="${t}">${t} · ${n}</option>`).join('')+'<option value="CO">CO · Comp off</option>'}
-  {const tv=ts.value||'PL';if(tv==='CO')$('lvAvail').textContent='Available comp off: '+fN(T.co.b);else{const av=s[tv];$('lvAvail').textContent=av.b===null?tv+' has no balance limit.':'Available '+tv+': '+av.b}}
+  const ts=$('lvT');if(!ts.dataset.b){ts.dataset.b=1;ts.innerHTML=LT.map(([t,n])=>`<option value="${t}">${t} · ${n}</option>`).join('')+'<option value="CO">CO · Comp off</option><option value="OH">OH · Optional holiday</option>'}
+  {const tv=ts.value||'PL';if(tv==='OH')$('lvAvail').textContent=`Optional holidays left: ${os.b} of ${os.q} (${os.y}). Any date can be taken.`;else if(tv==='CO')$('lvAvail').textContent='Available comp off: '+fN(T.co.b);else{const av=s[tv];$('lvAvail').textContent=av.b===null?tv+' has no balance limit.':'Available '+tv+': '+av.b}}
   $('lvReqs').innerHTML=S.req.length?`<h3 class="hh">My requests</h3><div class="hbox">`+S.req.slice(0,10).map(q=>`<div class="hrow"><div><b>${q.a===q.b?fd(q.a):fd(q.a)+' to '+fd(q.b)}</b><small>${q.t} · ${q.n} day${q.n===1?'':'s'} · ${q.s}${q.s==='Pending'?(q.cl?' · ✓ Sent to HR':' · ⚠ On this phone only'):''}${q.why?' · '+esc(q.why):''}</small></div>${q.s==='Pending'||q.s==='Approved'?`<button class="ghost" data-cq="${q.id}" style="width:auto;padding:7px 14px">Cancel</button>`:''}</div>`).join('')+'</div>':'';
   /* holiday calendar split */
   const row=(h,opt)=>{const tk=S.marks[h.k]==='holiday';return `<div class="hrow"><div><b>${fdt(h.k)}</b><small>${esc(h.n)}${h.o?' · '+esc(h.o):''}${h.r?' · '+esc(h.r):''}</small></div>${opt?`<button class="ghost" data-ok="${h.k}" style="width:auto;padding:7px 14px${tk?';background:#7c3aed;color:#fff':''}">${tk?'Taken':'Take'}</button>`:''}</div>`};
@@ -2576,12 +2576,15 @@ function renderLeave(){
     <h3 class="hh">Mandatory holidays (${os.M.length})</h3>${os.M.length?`<div class="hbox">${os.M.map(h=>row(h,false)).join('')}</div>`:'<p class="sub">None for this year.</p>'}
     <p class="sub">Mandatory holidays are paid days off and are not deducted from leave. If you work on one you get double pay.</p>
     <h3 class="hh">Optional holidays (${os.O.length})</h3>${os.O.length?`<div class="hbox">${os.O.map(h=>row(h,true)).join('')}</div>`:'<p class="sub">None for this year.</p>'}
-    <p class="sub">Maximum ${os.q} optional holidays a year, only on the dates above. Taken ${os.taken}, left ${os.b}. No double pay on optional holidays.</p>`;
+    <p class="sub">Maximum ${os.q} optional holidays a year, on the dates above or any date chosen in Apply leave (OH). Taken ${os.taken}, left ${os.b}. No double pay on optional holidays.</p>`;
   const L=Object.entries(S.lvL||{}).sort((a,b)=>a[0]<b[0]?1:-1);
   $('lvHist').innerHTML=L.length?`<div class="hbox">${L.slice(0,20).map(([k,t])=>`<div class="hrow"><div><b>${fdt(k)}</b><small>${t} · ${lvName(t)}</small></div></div>`).join('')}</div>`:'<p class="sub">No leave taken yet.</p>'}
 const lvName=t=>(LT.find(x=>x[0]===t)||[t,t])[1];
 $('lvGo').onclick=()=>{const t=$('lvT').value,a=$('lvA').value,b=$('lvB').value||a,why=$('lvW').value.trim();
   if(!a){say('Choose the from date.',true);return}if(b<a){say('The to date is before the from date.',true);return}
+  if(t==='OH'){const ks=[];for(let x=new Date(a+'T00:00:00');dayKey(x.getTime())<=b&&ks.length<10;x.setDate(x.getDate()+1))ks.push(dayKey(x.getTime()));
+    if(isAdm()){const m=markDays(ks,'opthol');$('lvW').value='';render();renderLeave();say(m);return}
+    const[ok,m]=arSend(ks,'opthol',why||'Optional holiday');if(ok){$('lvW').value='';render();renderLeave()}say(m,!ok);return}
   const d=lvDays(a,b).length,st=t==='CO'?{b:coStats().b}:lvStats()[t];if(!d){say('Those dates are week offs or holidays, so no leave is needed.',true);return}
   if(t==='CO'&&d>st.b+1e-9){say(`Only ${fN(Math.max(0,st.b))} comp off available but you need ${d}.`,true);return}
   if(st.b!==null&&d>st.b+1e-9){say(`Only ${st.b} ${t} left but you need ${d}. Choose fewer days or LOP.`,true);return}
@@ -3427,7 +3430,7 @@ start();
    and updates inside the app like the Play Store: an update sheet with version, size, date and what's new, then a
    progress bar while the new APK downloads, then Android's install screen. ===== */
 (function(){
-  const APP_VC=77,APP_VN='9.2',SRC=BRAND.site+'/punch-version.json';
+  const APP_VC=78,APP_VN='9.3',SRC=BRAND.site+'/punch-version.json';
   let latest=null,last=0,state='',busy=false;
   const g=id=>document.getElementById(id),E=v=>String(v==null?'':v).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
   const has=()=>latest&&latest.versionCode>APP_VC;

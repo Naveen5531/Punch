@@ -6,8 +6,8 @@ android {
         applicationId 'com.punch.attendance'
         minSdk 26
         targetSdk 34
-        versionCode 77
-        versionName '9.2'
+        versionCode 78
+        versionName '9.3'
     }
     // Original key (public in this repo). It is only the first link of the key rotation: CI re-signs every release
     // with the private key from the PUNCH_KEYSTORE secret (see .github/workflows/build.yml).
