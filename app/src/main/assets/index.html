@@ -2743,8 +2743,8 @@ $('p-exp').onclick=e=>{const xm=e.target.closest('[data-xm]');if(xm){exMonth=xm.
   else if(!exOK())return;
   else if(x==='add'){const d=toKey($('exD').value),a=parseFloat($('exA').value);if(!d){say('Choose the date.',true);return}if(!(a>0)){say('Enter an amount above 0.',true);return}
     const f=$('exFr').value,ev=parseInt($('exEv').value)||0,en=f==='O'?'':$('exEn').value;if(f==='X'&&ev<1){say('Enter how many months between deductions.',true);return}if(en&&en<d.slice(0,7)){say('The end month is before the first due date.',true);return}
-    S.exp.push({id:Date.now(),d,c:$('exC').value,a:Math.round(a*100)/100,n:$('exN').value.trim(),f,ev:f==='X'?ev:0,en});save();exMonth=d.slice(0,7);say('Expense added.')}
-  else if(x==='del'){const _e=S.exp.find(v=>v.id===+b.dataset.id);if(!confirm(_e&&exStep(_e)?'Delete this repeating expense? It will be removed from every month.':'Delete this expense?'))return;S.exp=S.exp.filter(v=>v.id!==+b.dataset.id);save()}
+    S.exp=S.exp||[];S.exp.push({id:Date.now(),d,c:$('exC').value,a:Math.round(a*100)/100,n:$('exN').value.trim(),f,ev:f==='X'?ev:0,en});save();exMonth=d.slice(0,7);say('Expense added.')}
+  else if(x==='del'){const _e=S.exp.find(v=>v.id===+b.dataset.id);if(!confirm(_e&&exStep(_e)?'Delete this repeating expense? It will be removed from every month.':'Delete this expense?'))return;S.exp=S.exp.filter(v=>v.id!==+b.dataset.id);S.expDel=(S.expDel||[]).concat(+b.dataset.id).slice(-500);save()}
   renderExp()};
 $('exM').onchange=e=>{exMonth=e.target.value||exMonth;renderExp()};
 $('exAdd').onchange=e=>{if(e.target.id!=='exFr')return;const f=e.target.value;$('exCuR').hidden=f!=='X';$('exEnR').hidden=f==='O'};
@@ -2786,6 +2786,7 @@ function mergeS(a,b,cw){const o=cw?{...a,...b}:{...b,...a};
       else if(r.length&&r.every(e=>e&&typeof e.t0==='number'))r.sort((p,q)=>q.t0-p.t0);
       o[k]=r}
     else if(x&&y&&typeof x==='object'&&typeof y==='object'&&k==='marks')o[k]=cw?{...x,...y}:{...y,...x}}
+  if(Array.isArray(o.exp)&&Array.isArray(o.expDel)&&o.expDel.length){const dl=new Set(o.expDel);o.exp=o.exp.filter(e=>!dl.has(e.id))}
   return o}
 function merge(L,C,cw){const o=cw?{...L,...C}:{...C,...L};
   if(L.punch&&C.punch)try{o.punch=JSON.stringify(mergeS(JSON.parse(L.punch),JSON.parse(C.punch),cw))}catch(e){}
@@ -3120,7 +3121,7 @@ async function start(){
 /* One phone, several people: each login keeps its own Punch data on this phone (localStorage punch_u_<uid>).
    Signing in as someone else puts the current person's data away and loads theirs; a person new to this phone
    gets their check-ins back from the cloud. Nothing of one person is ever shown to, or sent as, another. */
-const BLANK_S=()=>({wp:null,radius:150,open:null,logs:[],marks:{},pay:{},grace:30,wo:[0],outSince:null,locs:[],trips:[],tripN:0,home:null,trip:null,here:null,homeDeparture:500});
+const BLANK_S=()=>({exp:[],expDel:[],wp:null,radius:150,open:null,logs:[],marks:{},pay:{},grace:30,wo:[0],outSince:null,locs:[],trips:[],tripN:0,home:null,trip:null,here:null,homeDeparture:500});
 /* Workplace, home, saved places and auto check-in belong to this phone: a login that has none of its own keeps the
    ones already set up here (from before logins were split per person, or from the previous login on this phone). */
 function keepPlaces(prev){let lg=null;try{lg=JSON.parse(localStorage.getItem('punch_legacy')||'null')}catch(e){}
@@ -3223,11 +3224,26 @@ const U=(a,b,k)=>{const m=new Map();(b||[]).forEach(x=>{if(x)m.set(String(k(x)),
 function stMerge(web,mine){const o=Object.assign(BLANK_S(),web);
   o.logs=U(mine.logs,web.logs,l=>l.in).sort((a,b)=>b.in-a.in);
   o.trips=U(mine.trips,web.trips,t=>t.t0+'_'+t.n).sort((a,b)=>(b.t0||0)-(a.t0||0));o.tripN=Math.max(mine.tripN||0,web.tripN||0);
-  o.exp=U(mine.exp,web.exp,x=>x.id);o.areq=U(mine.areq,web.areq,x=>x.id).sort((a,b)=>(b.at||0)-(a.at||0));o.req=U(mine.req,web.req,x=>x.id).sort((a,b)=>(b.at||0)-(a.at||0));
+  o.expDel=[...new Set([...(mine.expDel||[]),...(web.expDel||[])])].slice(-500);{const dl=new Set(o.expDel);o.exp=U(mine.exp,web.exp,x=>x.id).filter(e=>!dl.has(e.id)).sort((a,b)=>a.id-b.id)}o.areq=U(mine.areq,web.areq,x=>x.id).sort((a,b)=>(b.at||0)-(a.at||0));o.req=U(mine.req,web.req,x=>x.id).sort((a,b)=>(b.at||0)-(a.at||0));
   o.locs=U(mine.locs,web.locs,x=>x.name);o.emps=U(mine.emps,web.emps,x=>String(x.eid||'').toLowerCase()||x.created);o.adj=U(mine.adj,web.adj,x=>x.id);
   o.marks=Object.assign({},mine.marks,web.marks);o.lt=Object.assign({},mine.lt,web.lt);
   const td=dayKey(Date.now()),op=[mine.open,web.open].filter(x=>x&&x.t&&dayKey(x.t)===td).sort((a,b)=>a.t-b.t)[0];o.open=op&&!o.logs.some(l=>l.in===op.t)?op:null;
   ['wp','home','co','slip','pay','lv','hols','opts'].forEach(k=>{if(o[k]==null&&mine[k]!=null)o[k]=mine[k]});return o}
+/* Expenses added on another phone (or by the same person's other login) appear here within seconds, not only at sign-in.
+   Only expenses are brought in live; deleted ones stay deleted (expDel). Nothing else on this phone is touched. */
+function stLive(v){if(!C.on||!ST.ready||ST.busy||!v||!v.data)return;let web=null;try{web=JSON.parse(v.data)}catch(e){return}
+  if(!web||typeof web!=='object')return;
+  const md=new Set(S.expDel||[]),wd=new Set(web.expDel||[]),dl=new Set([...md,...wd]);
+  const ids=(a,x)=>new Set((a||[]).filter(e=>e&&!x.has(e.id)).map(e=>e.id)),lm=ids(S.exp,dl),lw=ids(web.exp,dl);
+  const gain=[...lw].some(i=>!lm.has(i))||[...wd].some(i=>!md.has(i)),give=[...lm].some(i=>!lw.has(i))||[...md].some(i=>!wd.has(i));
+  if(!gain&&!give)return;
+  const synced=stPack()===ST.sig;
+  if(give||!synced){const own=S.owner,mine=S,lg=mine.slip&&mine.slip.logo;S=stMerge(web,mine);if(own)S.owner=own;if(!S.slip||!S.slip.logo){if(lg)S.slip=Object.assign({},S.slip,{logo:lg})}}
+  else{S.exp=U(S.exp,web.exp,x=>x.id).filter(e=>!dl.has(e.id)).sort((a,b)=>a.id-b.id);S.expDel=[...dl].slice(-500)}
+  save();
+  if(!give&&synced){ST.sig=stPack();try{localStorage.setItem(stKey(),JSON.stringify({at:v.at||ST.at,h:hsh(ST.sig)}))}catch(e){}}
+  try{if(!g('p-exp').hidden)renderExp();if(!g('p-pay').hidden)renderPay();if(!g('p-slip').hidden)renderSlip()}catch(e){}}
+C._live=stLive;C._st=ST;
 async function stStart(){ST.ready=false;let d=null;
   try{const r=await fsx.doc('punch_state/'+stId()).get();d=r.exists?r.data():null;ST.err=''}catch(e){ST.err=e.code||e.message||'error'}
   const loc=stLocal(),changed=hsh(stPack())!==loc.h;
@@ -3243,7 +3259,8 @@ async function stStart(){ST.ready=false;let d=null;
 async function stPush(force){if(!C.on||!ST.ready||ST.busy)return;let js;try{js=stPack()}catch(e){return}if(js===ST.sig&&!force)return;
   const at=Date.now(),prefs={};PREFS.forEach(k=>{try{const v=localStorage.getItem(k);if(v!=null)prefs[k]=v}catch(e){}});ST.busy=true;
   try{await fsx.doc('punch_state/'+stId()).set({uid:stId(),owner:C.uid,name:(S.slip&&S.slip.name)||C.name||'',data:js,prefs,at,size:js.length,dev:(navigator.userAgent.match(/\(([^)]*)\)/)||[,''])[1].slice(0,60),v:1});
-    ST.sig=js;ST.at=at;ST.err='';try{localStorage.setItem(stKey(),JSON.stringify({at,h:hsh(js)}))}catch(e){}}
+    ST.sig=js;ST.at=at;ST.err='';try{localStorage.setItem(stKey(),JSON.stringify({at,h:hsh(js)}))}catch(e){}
+    if(C.uid&&C.uid!==stId()){try{fsx.doc('punch_state/'+C.uid).set({uid:C.uid,owner:C.uid,name:(S.slip&&S.slip.name)||C.name||'',data:js,prefs,at,size:js.length,v:1}).catch(()=>{})}catch(e){}}}
   catch(e){ST.err=e.code||e.message||'error';ST.sig=js;setTimeout(()=>{if(ST.sig===js)ST.sig=''},60000)}
   finally{ST.busy=false;stNote()}}
 C.saveNow=()=>stPush(true);
@@ -3258,6 +3275,7 @@ setTimeout(()=>{try{stNote()}catch(e){}},500);setInterval(()=>{try{stNote()}catc
 function begin(){if(C.on||!C.uid||ST.loading)return;ST.loading=true;
   stStart().catch(()=>{}).then(()=>{ST.loading=false;if(C.on||!C.uid)return;begin2();ST.ready=true;stPush(true)})}
 function begin2(){if(C.on||!C.uid)return;C.on=true;const uid=C.uid;teamTab();
+  [...new Set([stId(),uid])].forEach(id=>{try{unsub.push(fsx.doc('punch_state/'+id).onSnapshot(d=>{if(d.exists&&!d.metadata.hasPendingWrites)stLive(d.data())},()=>{}))}catch(e){}});
   // SN Mail: mail sent to this login (letters and payslips from HR)
   unsub.push(fsx.collection('mail').where('rcpt','array-contains',C.authUid||uid).onSnapshot(q=>{window.MAILS=q.docs.map(d=>Object.assign({_id:d.id},d.data())).sort((a,b)=>(b.at||0)-(a.at||0));try{mailRender()}catch(e){}},()=>{}));
   // profile kept by HR
